@@ -1,7 +1,6 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ROUTES from './routes';
-import DoctorDashboard from './pages/Doctor/doctor/DoctorDashboard';
 
 const App = () => {
   return (
