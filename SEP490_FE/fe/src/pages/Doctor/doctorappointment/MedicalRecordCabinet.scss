@@ -1,0 +1,76 @@
+/* MedicalRecordCabinet.scss */
+.record-cabinet {
+  padding: 20px;
+  font-family: "Segoe UI", sans-serif;
+
+  h2 {
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+
+  .record-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+
+    .record-item {
+      background: #f4f6f8;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      width: 260px;
+      cursor: pointer;
+      transition: all 0.3s;
+
+      h4 {
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+
+      &:hover {
+        background-color: #dcefff;
+        transform: scale(1.02);
+      }
+    }
+  }
+
+  .record-detail {
+    margin-top: 30px;
+    background: #fff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+
+    h3 {
+      margin-bottom: 12px;
+    }
+
+    p {
+      margin: 6px 0;
+    }
+
+    .record-images {
+      margin-top: 15px;
+      img {
+        max-width: 150px;
+        margin: 10px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+      }
+    }
+
+    button {
+      margin-top: 20px;
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+
+      &:hover {
+        background: #0056b3;
+      }
+    }
+  }
+}
