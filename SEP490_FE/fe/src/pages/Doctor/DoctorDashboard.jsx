@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import DoctorProfile from "../doctorprofile/DoctorProfile";
-import DoctorScheduleView from "../doctorschedule/DoctorScheduleView";
-import AppointmentList from "../doctorappointment/AppointmentList";
-import MedicalRecordCabinet from "../doctorappointment/MedicalRecordCabinet";
+import DoctorProfile from "./DoctorProfile";
+import DoctorScheduleView from "./DoctorScheduleView";
+import AppointmentList from "./AppointmentList";
+import MedicalRecordCabinet from "./MedicalRecordCabinet";
 import "./DoctorDashboard.scss";
 
 const DoctorDashboard = () => {

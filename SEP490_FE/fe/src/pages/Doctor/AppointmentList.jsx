@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import AppointmentDetailModal from "./AppointmentDetailModal";
-import CreateServiceModal from "./CreateServiceModal";
-import MedicalRecordModal from "./MedicalRecordModal";
+import AppointmentDetailModal from "./Component/AppointmentDetailModal";
+import CreateServiceModal from "./Component/CreateServiceModal";
+import MedicalRecordModal from "./Component/MedicalRecordModal";
 import "./AppointmentList.scss";
 
 const AppointmentList = () => {

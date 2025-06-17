@@ -1,10 +1,15 @@
-import PatientDashboard from '../pages/Patient/Dashboard';
+import LoginPage from '../pages/Auth/Login';
+import HomePage from '../pages/Patient/HomePage';
 import { Navigate } from 'react-router-dom';
 
 const PATIENT_ROUTES = [
   {
     path: '/',
-    element: <PatientDashboard />,
+    element: <HomePage />,
+  },
+  {
+    path: '/login',
+    element: <LoginPage />,
   },
   {
     path: '*',
