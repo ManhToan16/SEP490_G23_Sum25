@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import "./DoctorScheduleView.scss";
-import AddScheduleModal from "./AddScheduleModal";
-import EditScheduleModal from "./EditScheduleModal";
+import AddScheduleModal from "./Component/AddScheduleModal";
+import EditScheduleModal from "./Component/EditScheduleModal";
 
 const DoctorScheduleView = () => {
   const [showModal, setShowModal] = useState(false);
