@@ -1,5 +1,8 @@
+using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Models;
+using SEP490_BE.Repositories;
+using SEP490_BE.Repositories.impl;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,15 +22,23 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "Khanh An Neurology Clinic API", Version = "v1" });
+});
+builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddScoped<IDoctorProfileRepository, DoctorProfileRepository>();
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-app.UseHttpsRedirection(); // Enforce HTTPS
-app.UseStaticFiles(); // Serve static files (if any, e.g., images, CSS)
-app.UseRouting(); // Enable routing
-
-// Enable CORS (if configured)
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 app.UseCors("AllowAll");
+app.UseHttpsRedirection(); 
+app.UseStaticFiles(); 
+app.UseRouting(); 
+
 
 app.UseAuthorization();
 
