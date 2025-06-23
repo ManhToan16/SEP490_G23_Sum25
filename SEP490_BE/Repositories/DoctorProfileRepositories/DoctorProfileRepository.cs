@@ -1,8 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using SEP490_BE.Models;
+using SEP490_BE.Entities;
+using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.impl;
 
-namespace SEP490_BE.Repositories
+namespace SEP490_BE.Repositories.DoctorProfileRepositories
 {
     public class DoctorProfileRepository : IDoctorProfileRepository
     {
@@ -49,5 +50,5 @@ namespace SEP490_BE.Repositories
             }
         }
     }
-    
+
 }

@@ -1,4 +1,25 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using SEP490_BE.Config;
+using SEP490_BE.Constants;
+using SEP490_BE.DTO;
+using SEP490_BE.Entities;
+using SEP490_BE.Exceptions;
+using SEP490_BE.Middleware;
+using SEP490_BE.Repositories.DoctorProfileRepositories;
+using SEP490_BE.Repositories.impl;
+using SEP490_BE.Repositories.RoleRepositories;
+using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Services.AuthServices;
+using SEP490_BE.Services.UserServices;
+using StackExchange.Redis;
+using System.Text;
+using System.Text.Json;
+
+var builder = WebApplication.CreateBuilder(args);
 
 #region Cors
 builder.Services.AddCors(options =>
@@ -77,7 +98,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 #endregion
+builder.Services.AddAutoMapper(typeof(Program));
 
+builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 #region Scope
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -85,6 +108,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
+builder.Services.AddScoped<IDoctorProfileRepository, DoctorProfileRepository>();
+
 #endregion
 
 

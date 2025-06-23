@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SEP490_BE.DTO;
-using SEP490_BE.Models;
+using SEP490_BE.DTO.DoctorProfileDTO;
+using SEP490_BE.Entities;
 using SEP490_BE.Repositories.impl;
 
 namespace SEP490_BE.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/Doctor/Profiles")]
     [ApiController]
     public class DoctorProfilesController : ControllerBase
     {

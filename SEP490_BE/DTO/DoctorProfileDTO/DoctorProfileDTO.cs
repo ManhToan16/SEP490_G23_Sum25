@@ -1,4 +1,4 @@
-﻿namespace SEP490_BE.DTO
+﻿namespace SEP490_BE.DTO.DoctorProfileDTO
 {
     public class DoctorProfileDTO
     {

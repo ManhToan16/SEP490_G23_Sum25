@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
-using SEP490_BE.DTO;
-using SEP490_BE.Models;
+using SEP490_BE.DTO.DoctorProfileDTO;
+using SEP490_BE.Entities;
+
 
 namespace SEP490_BE.AutoMapper
 {
