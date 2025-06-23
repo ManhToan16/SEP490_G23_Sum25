@@ -14,6 +14,7 @@ using SEP490_BE.Repositories.impl;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuthServices;
+using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.UserServices;
 using StackExchange.Redis;
 using System.Text;
@@ -105,6 +106,8 @@ builder.Services.AddHttpContextAccessor();
 #region Scope
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
+
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();

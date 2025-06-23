@@ -1,14 +1,21 @@
-﻿using SEP490_BE.Entities;
+﻿
 
+using SEP490_BE.Entities;
 
 namespace SEP490_BE.Repositories.impl
 {
     public interface IDoctorProfileRepository
     {
-        Task<IEnumerable<DoctorProfile>> GetAllDoctorProfilesAsync();
-        Task<DoctorProfile> GetDoctorProfileByIdAsync(string id);
-        Task CreateDoctorProfileAsync(DoctorProfile doctorProfile);
-        Task UpdateDoctorProfileAsync(DoctorProfile doctorProfile);
-        Task DeleteDoctorProfileAsync(string id);
+        Task<DoctorProfile> FindByIdAsync(string id);
+        Task<DoctorProfile> FindByDoctorIdAsync(string doctorId);
+        Task<(List<DoctorProfile> DoctorProfiles, int TotalItems)> FindAll(
+            string? qualifications,
+            int? minYearsOfExperience,
+            int? maxYearsOfExperience,
+            int pageNumber,
+            int pageSize);
+        Task InsertAsync(DoctorProfile doctorProfile);
+        Task UpdateAsync(DoctorProfile doctorProfile);
+        Task DeleteAsync(DoctorProfile doctorProfile);
     }
 }

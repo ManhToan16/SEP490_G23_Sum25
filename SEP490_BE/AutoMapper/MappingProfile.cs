@@ -9,7 +9,7 @@ namespace SEP490_BE.AutoMapper
     {
         public MappingProfile()
         {
-            CreateMap<DoctorProfile, DoctorProfileDTO>().ReverseMap();
+            CreateMap<DoctorProfile, DoctorProfileResponseDTO>().ReverseMap();
         }
     }
 }

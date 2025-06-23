@@ -14,41 +14,62 @@ namespace SEP490_BE.Repositories.DoctorProfileRepositories
             _context = context;
         }
 
-        public async Task<IEnumerable<DoctorProfile>> GetAllDoctorProfilesAsync()
-        {
-            return await _context.DoctorProfiles.ToListAsync();
-        }
-
-        public async Task<DoctorProfile> GetDoctorProfileByIdAsync(string id)
+        public async Task<DoctorProfile> FindByIdAsync(string id)
         {
             return await _context.DoctorProfiles.FindAsync(id);
         }
 
-        public async Task CreateDoctorProfileAsync(DoctorProfile doctorProfile)
+        public async Task<DoctorProfile> FindByDoctorIdAsync(string doctorId)
         {
-            var user = await _context.Users.FindAsync(doctorProfile.DoctorId);
-            if (user == null) throw new ArgumentException("DoctorId does not exist.");
-            _context.DoctorProfiles.Add(doctorProfile);
-            await _context.SaveChangesAsync();
+            return await _context.DoctorProfiles.FirstOrDefaultAsync(dp => dp.DoctorId == doctorId);
         }
 
-        public async Task UpdateDoctorProfileAsync(DoctorProfile doctorProfile)
+        public async Task<(List<DoctorProfile> DoctorProfiles, int TotalItems)> FindAll(
+            string? qualifications,
+            int? minYearsOfExperience,
+            int? maxYearsOfExperience,
+            int pageNumber,
+            int pageSize)
         {
-            var existingProfile = await _context.DoctorProfiles.FindAsync(doctorProfile.Id);
-            if (existingProfile == null) throw new ArgumentException("DoctorProfile not found.");
-            _context.Entry(existingProfile).CurrentValues.SetValues(doctorProfile);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task DeleteDoctorProfileAsync(string id)
-        {
-            var doctorProfile = await GetDoctorProfileByIdAsync(id);
-            if (doctorProfile != null)
+            var query = _context.DoctorProfiles.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(qualifications))
             {
-                _context.DoctorProfiles.Remove(doctorProfile);
-                await _context.SaveChangesAsync();
+                query = query.Where(dp => dp.Qualifications.Contains(qualifications));
             }
+            if (minYearsOfExperience.HasValue)
+            {
+                query = query.Where(dp => dp.YearsOfExperience >= minYearsOfExperience);
+            }
+            if (maxYearsOfExperience.HasValue)
+            {
+                query = query.Where(dp => dp.YearsOfExperience <= maxYearsOfExperience);
+            }
+
+            var totalItems = await query.CountAsync();
+            var doctorProfiles = await query
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (doctorProfiles, totalItems);
+        }
+
+        public async Task InsertAsync(DoctorProfile doctorProfile)
+        {
+            await _context.DoctorProfiles.AddAsync(doctorProfile);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(DoctorProfile doctorProfile)
+        {
+            _context.DoctorProfiles.Update(doctorProfile);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(DoctorProfile doctorProfile)
+        {
+            _context.DoctorProfiles.Remove(doctorProfile);
+            await _context.SaveChangesAsync();
         }
     }
-
 }
