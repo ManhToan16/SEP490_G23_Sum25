@@ -12,11 +12,14 @@ namespace SEP490_BE.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IWebHostEnvironment _env;
 
         public AuthController(
-            IAuthService authService)
+            IAuthService authService,
+            IWebHostEnvironment env)
         {
             _authService = authService;
+            _env = env;
         }
 
 
@@ -62,16 +65,36 @@ namespace SEP490_BE.Controllers
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }
 
-        [HttpGet("TestAuthenticatedUser")]
-        public async Task<ActionResult<ApiResponse>> GetAuthenticatedUser()
+        [HttpPost("ForgotPassword")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO request)
         {
-            return Ok(new ApiResponse
+            await _authService.ForgotPassword(request);
+            var apiResponse = new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
-                Message = MessageConstants.GET_SUCCESS,
-                Data = await _authService.GetAuthenticatedUser()
-            });
+                Message = "Check your email for reset password requirement.",
+                Data = null
+            };
+            return StatusCode(apiResponse.StatusCode, apiResponse);
+        }
+
+        [HttpGet("ResetPassword")]
+        public IActionResult ResetPasswordForm([FromQuery] string token)
+        {
+            var filePath = Path.Combine(_env.ContentRootPath, "Templates", "reset-password-form.html");
+            var html = System.IO.File.ReadAllText(filePath);
+            html = html.Replace("{{token}}", token);
+            return Content(html, "text/html");
+        }
+
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromForm] string token, [FromForm] string newPassword)
+        {
+            await _authService.ResetPassword(token, newPassword);
+            var filePath = Path.Combine(_env.ContentRootPath, "Templates", "reset-password-success.html");
+            var html = await System.IO.File.ReadAllTextAsync(filePath);
+            return Content(html, "text/html");
         }
 
     }
