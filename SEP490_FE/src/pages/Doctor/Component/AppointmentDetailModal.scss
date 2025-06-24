@@ -1,0 +1,110 @@
+.appointment-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.appointment-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+  font-family: 'Segoe UI', sans-serif;
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+
+    h3 {
+      font-size: 1.25rem;
+      color: #2c3e50;
+    }
+
+    .close-btn {
+      background: transparent;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: #e74c3c;
+
+      &:hover {
+        color: #c0392b;
+      }
+    }
+  }
+
+  .modal-content {
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.75rem;
+      label {
+        font-weight: 600;
+        color: #34495e;
+        flex: 1.2;
+      }
+      span,
+      select {
+        flex: 2;
+        font-size: 0.95rem;
+        color: #2c3e50;
+      }
+
+      select {
+        padding: 0.3rem;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        background: #ecf0f1;
+      }
+    }
+
+    .record-section {
+      margin-top: 1.5rem;
+      border-top: 1px solid #ecf0f1;
+      padding-top: 1rem;
+
+      h4 {
+        font-size: 1.1rem;
+        margin-bottom: 0.75rem;
+        color: #2980b9;
+      }
+
+      .info-row {
+        align-items: flex-start;
+
+        label {
+          margin-right: 0.5rem;
+        }
+      }
+    }
+  }
+
+  .modal-footer {
+    margin-top: 1.5rem;
+    text-align: right;
+
+    button {
+      padding: 0.5rem 1.2rem;
+      background: #3498db;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+
+      &:hover {
+        background: #2980b9;
+      }
+    }
+  }
+}
