@@ -1,6 +1,4 @@
-﻿
-
-using SEP490_BE.Entities;
+﻿using SEP490_BE.Entities;
 
 namespace SEP490_BE.Repositories.DoctorProfileRepositories
 {
@@ -17,5 +15,6 @@ namespace SEP490_BE.Repositories.DoctorProfileRepositories
         Task InsertAsync(DoctorProfile doctorProfile);
         Task UpdateAsync(DoctorProfile doctorProfile);
         Task DeleteAsync(DoctorProfile doctorProfile);
+        Task<DoctorProfile> GetDoctorProfileWithUserDetailsAsync(string id);
     }
 }
