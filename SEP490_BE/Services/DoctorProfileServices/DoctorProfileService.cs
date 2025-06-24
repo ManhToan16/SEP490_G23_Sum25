@@ -3,6 +3,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace SEP490_BE.Services.DoctorProfileServices
 {
@@ -70,6 +71,14 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 throw new ConflictDataException("Doctor already has a profile.");
             }
 
+            var userRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == request.DoctorId)
+                .ToListAsync();
+            if (userRoles == null || !userRoles.Any(ur => ur.RoleName == "DOCTOR"))
+            {
+                throw new UnauthorizedAccessException("Only users with DOCTOR role can have a profile.");
+            }
+
             var user = await _context.Users.FindAsync(request.DoctorId);
             if (user == null)
             {
@@ -116,6 +125,14 @@ namespace SEP490_BE.Services.DoctorProfileServices
             if (doctorProfile == null)
             {
                 throw new ResourceNotFoundException("Doctor profile not found.");
+            }
+
+            var userRoles = await _context.UserRoles
+                .Where(ur => ur.UserId == doctorProfile.DoctorId)
+                .ToListAsync();
+            if (userRoles == null || !userRoles.Any(ur => ur.RoleName == "DOCTOR"))
+            {
+                throw new UnauthorizedAccessException("Only users with DOCTOR role can have a profile updated.");
             }
 
             doctorProfile.Qualifications = request.Qualifications;
