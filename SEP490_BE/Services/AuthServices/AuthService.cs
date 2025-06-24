@@ -7,6 +7,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Services.EmailServices;
 using StackExchange.Redis;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -21,9 +22,11 @@ namespace SEP490_BE.Services.AuthServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IRoleRepository _roleRepository;
+        private readonly IEmailService _emailService;
         private readonly IConfiguration _configuration;
         private readonly IUserRepository _userRepository;
         private readonly IDatabase _redis;
+        private readonly IWebHostEnvironment _env;
 
         public AuthService(
             KhanhAnNeurologyClinicContext context,
@@ -31,19 +34,23 @@ namespace SEP490_BE.Services.AuthServices
             IConfiguration configuration,
             IRoleRepository roleRepository,
             IUserRepository userRepository,
-            IConnectionMultiplexer redis)
+            IEmailService emailService,
+            IConnectionMultiplexer redis,
+            IWebHostEnvironment env)
         {
             _context = context;
             _configuration = configuration;
             _userRepository = userRepository;
             _httpContextAccessor = httpContextAccessor;
             _roleRepository = roleRepository;
+            _emailService = emailService;
             _redis = redis.GetDatabase();
+            _env = env;
         }
 
         public async Task<TokenResponseDTO> Login(LoginRequestDTO request)
         {
-            var user = await _userRepository.FindByPhoneNumber(request.PhoneNumber);
+            var user = await _userRepository.FindByEmail(request.Email);
             if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.Password))
             {
                 throw new UnauthenticatedException(MessageConstants.INVALID_LOGIN);
@@ -208,6 +215,11 @@ namespace SEP490_BE.Services.AuthServices
                     throw new UnauthenticatedException(MessageConstants.UNAUTHENTICATED_ERROR);
                 }
                 var redisKey = $"refresh:{userId}:{request.DeviceId}";
+                var exists = await _redis.KeyExistsAsync(redisKey);
+                if (!exists)
+                {
+                    throw new UnauthenticatedException(MessageConstants.UNAUTHENTICATED_ERROR);
+                }
                 await _redis.KeyDeleteAsync(redisKey);
             }
             catch (SecurityTokenException)
@@ -216,10 +228,41 @@ namespace SEP490_BE.Services.AuthServices
             }
         }
 
-        public Task ForgotPassword()
+        public async Task ForgotPassword(ForgotPasswordDTO request)
         {
-            throw new NotImplementedException();
+            var user = await _userRepository.FindByEmail(request.Email);
+            if (user == null) throw new ResourceNotFoundException(MessageConstants.NOT_FOUND);
+
+            var token = Guid.NewGuid().ToString();
+            var key = $"forgot:{token}";
+            await _redis.StringSetAsync(key, user.Id, TimeSpan.FromMinutes(15));
+
+            var link = $"{_configuration["App:BackendUrl"]}/api/Auth/ResetPassword?token={token}";
+            var templatePath = Path.Combine(_env.ContentRootPath, "Templates", "reset-password-email.html");
+            var htmlTemplate = await File.ReadAllTextAsync(templatePath);
+
+            var body = htmlTemplate.Replace("{{link}}", link);
+            await _emailService.SendAsync(request.Email, "Khanh An Neurology Clinic - Reset Password", body);
         }
+
+        public async Task ResetPassword(string token, string newPassword)
+        {
+            var key = $"forgot:{token}";
+            var userId = await _redis.StringGetAsync(key);
+            if (userId.IsNullOrEmpty) throw new BadHttpRequestException(MessageConstants.INVALID_TOKEN);
+
+            var user = await _userRepository.FindById(userId);
+            if (user == null) throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
+
+            if (newPassword.Length < 8) throw new System.ArgumentException(MessageConstants.INVALID_PASSWORD);
+
+            user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            await _userRepository.Update(user);
+            await _context.SaveChangesAsync();
+
+            await _redis.KeyDeleteAsync(key);
+        }
+
         public Task ChangePassword()
         {
             throw new NotImplementedException();
