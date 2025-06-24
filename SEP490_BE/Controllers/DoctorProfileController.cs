@@ -4,6 +4,7 @@ using SEP490_BE.Constants;
 using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.DoctorProfileServices;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SEP490_BE.Controllers
 {
@@ -33,7 +34,7 @@ namespace SEP490_BE.Controllers
 
 
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateDoctorProfile([FromBody] CreateDoctorProfileDTO dto)
         {
@@ -47,7 +48,7 @@ namespace SEP490_BE.Controllers
                 Data = createdDto
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateDoctorProfile(string id, [FromBody] UpdateDoctorProfileDTO dto)
         {
@@ -62,7 +63,7 @@ namespace SEP490_BE.Controllers
             });
 
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteDoctorProfile(string id)
         {

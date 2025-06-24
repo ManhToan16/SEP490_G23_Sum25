@@ -37,7 +37,11 @@ namespace SEP490_BE.Services.DoctorProfileServices
                     Qualifications = dp.Qualifications,
                     YearsOfExperience = dp.YearsOfExperience,
                     Biography = dp.Biography,
-                    Avatar = dp.Avatar
+                    Avatar = dp.Avatar,
+                     Name = dp.Doctor?.Name,
+                    PhoneNumber = dp.Doctor?.PhoneNumber,
+                    Email = dp.Doctor?.Email,
+                    DateOfBirth = dp.Doctor?.DateOfBirth
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
