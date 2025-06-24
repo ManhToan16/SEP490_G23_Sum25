@@ -1,4 +1,5 @@
 ﻿using SEP490_BE.DTO;
+using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;

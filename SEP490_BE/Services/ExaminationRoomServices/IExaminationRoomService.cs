@@ -1,4 +1,5 @@
 ﻿using SEP490_BE.DTO;
+using SEP490_BE.DTO.ExaminationRoomDTO;
 
 namespace SEP490_BE.Services.ExaminationRoomServices
 {
