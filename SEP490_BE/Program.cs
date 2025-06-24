@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -9,12 +8,9 @@ using SEP490_BE.DTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Middleware;
-using SEP490_BE.Repositories.DoctorProfileRepositories;
-using SEP490_BE.Repositories.impl;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuthServices;
-using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.UserServices;
 using StackExchange.Redis;
 using System.Text;
@@ -99,36 +95,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 #endregion
-builder.Services.AddAutoMapper(typeof(Program));
 
-builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 #region Scope
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
-
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-builder.Services.AddScoped<IDoctorProfileRepository, DoctorProfileRepository>();
-
 #endregion
 
 
 
 var app = builder.Build();
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-app.UseCors("AllowAll");
-app.UseHttpsRedirection(); 
-app.UseStaticFiles(); 
-app.UseRouting(); 
 
-// Configure the HTTP request pipeline.
+CreateAdmin(app.Services);
 
 
 app.UseMiddleware<GlobalExceptionHandler>();
