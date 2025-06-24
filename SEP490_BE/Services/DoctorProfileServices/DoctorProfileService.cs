@@ -47,7 +47,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
 
         public async Task<DoctorProfileResponseDTO> GetById(string id)
         {
-            var doctorProfile = await _doctorProfileRepository.FindByIdAsync(id);
+            var doctorProfile = await _doctorProfileRepository.GetDoctorProfileWithUserDetailsAsync(id);
             if (doctorProfile == null)
             {
                 throw new ResourceNotFoundException("Doctor profile not found.");
@@ -59,7 +59,11 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 Qualifications = doctorProfile.Qualifications,
                 YearsOfExperience = doctorProfile.YearsOfExperience,
                 Biography = doctorProfile.Biography,
-                Avatar = doctorProfile.Avatar
+                Avatar = doctorProfile.Avatar,
+                Name = doctorProfile.Doctor?.Name,
+                PhoneNumber = doctorProfile.Doctor?.PhoneNumber,
+                Email = doctorProfile.Doctor?.Email,
+                DateOfBirth = doctorProfile.Doctor?.DateOfBirth
             };
         }
 

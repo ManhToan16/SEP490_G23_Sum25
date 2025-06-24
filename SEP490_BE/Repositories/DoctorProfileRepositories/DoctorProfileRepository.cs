@@ -70,5 +70,11 @@ namespace SEP490_BE.Repositories.DoctorProfileRepositories
             _context.DoctorProfiles.Remove(doctorProfile);
             await _context.SaveChangesAsync();
         }
+        public async Task<DoctorProfile> GetDoctorProfileWithUserDetailsAsync(string id)
+        {
+            return await _context.DoctorProfiles
+                .Include(dp => dp.Doctor) 
+                .FirstOrDefaultAsync(dp => dp.Id == id);
+        }
     }
 }
