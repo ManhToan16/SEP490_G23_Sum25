@@ -86,7 +86,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
 
             if (request.StartTime >= request.EndTime)
             {
-                throw new ArgumentException("Start time must be before end time.");
+                throw new Exceptions.ArgumentException("Start time must be before end time.");
             }
 
             var doctorSchedule = new DoctorSchedule
@@ -147,7 +147,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
 
             if (request.StartTime.HasValue && request.EndTime.HasValue && request.StartTime.Value >= request.EndTime.Value)
             {
-                throw new ArgumentException("Start time must be before end time.");
+                throw new Exceptions.ArgumentException("Start time must be before end time.");
             }
 
             schedule.ExaminationRoomId = request.ExaminationRoomId ?? schedule.ExaminationRoomId;

@@ -1,4 +1,5 @@
-﻿using SEP490_BE.Entities;
+﻿using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Entities;
 using SEP490_BE.Utils;
 
 namespace SEP490_BE.Repositories.DoctorScheduleRepositories
