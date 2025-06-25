@@ -34,7 +34,7 @@ namespace SEP490_BE.Controllers
 
 
         }
-        //[Authorize(Roles = RoleConstants.Admin)]
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateDoctorProfile([FromBody] CreateDoctorProfileDTO dto)
         {
