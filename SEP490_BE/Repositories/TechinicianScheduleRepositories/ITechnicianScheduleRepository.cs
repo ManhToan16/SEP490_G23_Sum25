@@ -14,6 +14,6 @@ namespace SEP490_BE.Repositories.TechinicianScheduleRepositories
         Task InsertAsync(TechnicianSchedule schedule);
         Task UpdateAsync(TechnicianSchedule schedule);
         Task DeleteAsync(TechnicianSchedule schedule);
-        Task<TechnicianSchedule> FindByRoomAndDateAsync(string laboratoryRoomId, DateTime date); // Kiểm tra trùng phòng và ngày
+        Task<TechnicianSchedule> FindByRoomAndDateAsync(string laboratoryRoomId, DateTime date); 
     }
 }
