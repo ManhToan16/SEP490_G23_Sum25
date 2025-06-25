@@ -124,8 +124,8 @@ namespace SEP490_BE.Controllers
                 Data = doctor
             });
         }
-        [HttpGet("{roomID}/all-doctors")]
-        public async Task<IActionResult> GetAllDoctorsInRoom(string roomID, [FromQuery] DateTime? date = null)
+        [HttpGet("all-doctors/{roomID}/{date}")]
+        public async Task<IActionResult> GetAllDoctorsInRoom(string roomID,  DateTime date )
         {
             var doctors = await _examinationRoomService.GetAllDoctorsInRoomAsync(roomID, date);
             return Ok(new ApiResponse
