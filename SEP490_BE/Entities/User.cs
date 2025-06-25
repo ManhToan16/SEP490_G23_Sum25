@@ -14,6 +14,7 @@ namespace SEP490_BE.Entities
             DoctorSchedules = new HashSet<DoctorSchedule>();
             ExaminationResults = new HashSet<ExaminationResult>();
             LaboratoryResults = new HashSet<LaboratoryResult>();
+            TechnicianSchedules = new HashSet<TechnicianSchedule>();
             UserRoles = new HashSet<UserRole>();
         }
 
@@ -35,6 +36,7 @@ namespace SEP490_BE.Entities
         public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; }
         public virtual ICollection<ExaminationResult> ExaminationResults { get; set; }
         public virtual ICollection<LaboratoryResult> LaboratoryResults { get; set; }
+        public virtual ICollection<TechnicianSchedule> TechnicianSchedules { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; set; }
     }
 }
