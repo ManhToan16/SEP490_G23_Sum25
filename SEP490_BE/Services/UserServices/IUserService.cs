@@ -17,5 +17,7 @@ namespace SEP490_BE.Services.UserServices
         Task<UserResponseDTO> Create(CreateUserDTO request);
         Task<UserResponseDTO> Update(string id, UpdateUserDTO request);
         Task Delete(string id);
+        Task Activate(string id);
+        Task Deactivate(string id);
     }
 }
