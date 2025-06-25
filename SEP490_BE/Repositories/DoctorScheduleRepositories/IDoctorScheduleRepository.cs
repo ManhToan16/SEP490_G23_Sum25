@@ -10,11 +10,12 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         Task<(List<DoctorSchedule> Schedules, int TotalItems)> FindAll(
             string? doctorId,
             DateTime? date,
-            bool? isAvailable,
             int pageNumber,
             int pageSize);
         Task InsertAsync(DoctorSchedule schedule);
         Task UpdateAsync(DoctorSchedule schedule);
         Task DeleteAsync(DoctorSchedule schedule);
+        Task<DoctorSchedule> FindByRoomAndDateAsync(string examinationRoomId, DateTime date);
+        Task<List<DoctorSchedule>> GetSchedulesByRoomAndDateAsync(string examinationRoomId, DateTime date);
     }
 }

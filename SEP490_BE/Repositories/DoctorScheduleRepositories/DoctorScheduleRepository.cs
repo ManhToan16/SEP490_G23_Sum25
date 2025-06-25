@@ -30,7 +30,6 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         public async Task<(List<DoctorSchedule> Schedules, int TotalItems)> FindAll(
             string? doctorId,
             DateTime? date,
-            bool? isAvailable,
             int pageNumber,
             int pageSize)
         {
@@ -47,10 +46,7 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
             {
                 query = query.Where(ds => ds.Date == date.Value);
             }
-            if (isAvailable.HasValue)
-            {
-                query = query.Where(ds => ds.IsAvailable == isAvailable.Value);
-            }
+           
 
             var totalItems = await query.CountAsync();
             var schedules = await query
@@ -77,6 +73,17 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         {
             _context.DoctorSchedules.Remove(schedule);
             await _context.SaveChangesAsync();
+        }
+        public async Task<DoctorSchedule> FindByRoomAndDateAsync(string examinationRoomId, DateTime date)
+        {
+            return await _context.DoctorSchedules
+                .FirstOrDefaultAsync(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date == date.Date);
+        }
+        public async Task<List<DoctorSchedule>> GetSchedulesByRoomAndDateAsync(string examinationRoomId, DateTime date)
+        {
+            return await _context.DoctorSchedules
+                .Where(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date.Date == date.Date)
+                .ToListAsync();
         }
     }
 }

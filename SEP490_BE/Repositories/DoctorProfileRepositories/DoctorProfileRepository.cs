@@ -30,7 +30,9 @@ namespace SEP490_BE.Repositories.DoctorProfileRepositories
             int pageNumber,
             int pageSize)
         {
-            var query = _context.DoctorProfiles.AsQueryable();
+            var query = _context.DoctorProfiles
+               .Include(dp => dp.Doctor) 
+               .AsQueryable();
             if (!string.IsNullOrWhiteSpace(qualifications))
             {
                 query = query.Where(dp => dp.Qualifications.Contains(qualifications));

@@ -10,12 +10,14 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Middleware;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.DoctorScheduleRepositories;
+using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.DoctorScheduleServices;
 using SEP490_BE.Services.EmailServices;
+using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.UserServices;
 using StackExchange.Redis;
 using System.Text;
@@ -108,11 +110,14 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IDoctorProfileService, DoctorProfileService>();
 builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
+builder.Services.AddScoped<IExaminationRoomService, ExaminationRoomService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 builder.Services.AddScoped<IDoctorProfileRepository, DoctorProfileRepository>();
 builder.Services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
+builder.Services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>();
+builder.Services.AddScoped<IExaminationRoomRepository, ExaminationRoomRepository>();
 
 #endregion
 
