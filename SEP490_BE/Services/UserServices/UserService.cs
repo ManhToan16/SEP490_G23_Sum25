@@ -7,24 +7,45 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Services.AuthServices;
 
 namespace SEP490_BE.Services.UserServices
 {
     public class UserService : IUserService
     {
         private readonly KhanhAnNeurologyClinicContext _context;
+        private readonly IAuthService _authService;
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
 
         public UserService(
             KhanhAnNeurologyClinicContext context,
+            IAuthService authService, 
             IUserRepository userRepository,
             IRoleRepository roleRepository)
         {
             _context = context;
+            _authService = authService;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
         }
+
+        public async Task Activate(string id)
+        {
+            var user = await _userRepository.FindById(id);
+            user.IsActive = true;
+            await _userRepository.Update(user);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task Deactivate(string id)
+        {
+            var user = await _userRepository.FindById(id);
+            user.IsActive = false;
+            await _userRepository.Update(user);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task<UserResponseDTO> Create(CreateUserDTO request)
         {
             if (await _userRepository.FindByPhoneNumber(request.PhoneNumber) != null)
@@ -74,7 +95,9 @@ namespace SEP490_BE.Services.UserServices
                 Email = user.Email,
                 Address = user.Address,
                 Gender = user.Gender,
-                DateOfBirth = user.DateOfBirth
+                DateOfBirth = user.DateOfBirth,
+                IsActive = user.IsActive,
+                Role = request.Role
             };
         }
 
@@ -99,16 +122,7 @@ namespace SEP490_BE.Services.UserServices
             var (users, totalItems) = await _userRepository.FindAll(role, email, phoneNumber, name, pageNumber, pageSize);
             return new Pagination<UserResponseDTO>
             {
-                Items = users.Select(user => new UserResponseDTO
-                {
-                    Id = user.Id,
-                    Name = user.Name,
-                    PhoneNumber = user.PhoneNumber,
-                    Email = user.Email,
-                    Address = user.Address,
-                    Gender = user.Gender,
-                    DateOfBirth = user.DateOfBirth,
-                }).ToList(),
+                Items = users,
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
                 PageSize = pageSize
@@ -118,6 +132,7 @@ namespace SEP490_BE.Services.UserServices
         public async Task<UserResponseDTO> GetUserById(string id)
         {
             var user = await _userRepository.FindById(id);
+            var role = await _roleRepository.FindRolesByUser(id);
             if (user == null)
             {
                 throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
@@ -130,7 +145,9 @@ namespace SEP490_BE.Services.UserServices
                 Email = user.Email,
                 Address = user.Address,
                 Gender = user.Gender,
-                DateOfBirth = user.DateOfBirth
+                DateOfBirth = user.DateOfBirth,
+                IsActive = user.IsActive,
+                Role = role[0]
             };
         }
 
@@ -161,11 +178,20 @@ namespace SEP490_BE.Services.UserServices
             user.Address = request.Address;
             user.Gender = request.Gender;
             user.DateOfBirth = request.DateOfBirth;
+
+            #region Check if the authenticated user is ADMIN to have permission to update the role
+            var authenticatedUser = await _authService.GetAuthenticatedUser();
+            var roleOfAuthenticatedUser = await _roleRepository.FindRolesByUser(authenticatedUser.Id);
+            #endregion
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _userRepository.Update(user);
-                await _roleRepository.ApplyRole(user.Id, request.Role);
+                if (roleOfAuthenticatedUser[0] == RoleConstants.Admin)
+                {
+                    await _roleRepository.ApplyRole(user.Id, request.Role);
+                }
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -175,6 +201,7 @@ namespace SEP490_BE.Services.UserServices
                 throw;
             }
 
+            var newRole = await _roleRepository.FindRolesByUser(user.Id);
             return new UserResponseDTO
             {
                 Id = user.Id,
@@ -184,6 +211,8 @@ namespace SEP490_BE.Services.UserServices
                 Address = user.Address,
                 Gender = user.Gender,
                 DateOfBirth = user.DateOfBirth,
+                IsActive = user.IsActive,
+                Role = newRole[0]
             };
         }
 

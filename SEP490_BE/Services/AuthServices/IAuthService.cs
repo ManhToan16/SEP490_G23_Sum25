@@ -9,7 +9,7 @@ namespace SEP490_BE.Services.AuthServices
         Task<TokenResponseDTO> RefreshToken(TokenRequestDTO dto);
         Task Logout(TokenRequestDTO request);
         Task ForgotPassword(ForgotPasswordDTO request);
-        Task ChangePassword();
+        Task ChangePassword(ChangePasswordDTO request);
         Task<User> GetAuthenticatedUser();
         Task ResetPassword(string token, string newPassword);
     }
