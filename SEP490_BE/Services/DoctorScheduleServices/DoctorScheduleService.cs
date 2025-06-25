@@ -26,7 +26,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             int pageNumber,
             int pageSize)
         {
-            var (schedules, totalItems) = await _doctorScheduleRepository.FindAll(doctorId, date, isAvailable, pageNumber, pageSize);
+            var (schedules, totalItems) = await _doctorScheduleRepository.FindAll(doctorId, date, pageNumber, pageSize);
             return new Pagination<DoctorScheduleResponseDTO>
             {
                 Items = schedules.Select(ds => new DoctorScheduleResponseDTO
@@ -37,7 +37,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                     Date = ds.Date,
                     StartTime = ds.StartTime,
                     EndTime = ds.EndTime,
-                    IsAvailable = ds.IsAvailable
+                    
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -60,7 +60,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = schedule.Date,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
-                IsAvailable = schedule.IsAvailable
+              
             };
         }
 
@@ -97,7 +97,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = request.Date,
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
-                IsAvailable = request.IsAvailable
+                
             };
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -121,7 +121,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = doctorSchedule.Date,
                 StartTime = doctorSchedule.StartTime,
                 EndTime = doctorSchedule.EndTime,
-                IsAvailable = doctorSchedule.IsAvailable
+                
             };
         }
 
@@ -154,7 +154,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             schedule.Date = request.Date ?? schedule.Date;
             schedule.StartTime = request.StartTime ?? schedule.StartTime;
             schedule.EndTime = request.EndTime ?? schedule.EndTime;
-            schedule.IsAvailable = request.IsAvailable ?? schedule.IsAvailable;
+            
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -177,7 +177,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = schedule.Date,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
-                IsAvailable = schedule.IsAvailable
+              
             };
         }
 

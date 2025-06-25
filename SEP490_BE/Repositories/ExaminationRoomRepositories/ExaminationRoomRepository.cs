@@ -63,5 +63,72 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             _context.ExaminationRooms.Remove(room);
             await _context.SaveChangesAsync();
         }
+        public async Task<List<Queue>> GetPatientsInRoomAsync(string roomId)
+        {
+            return await _context.Queues
+                .Include(q => q.Appointment)
+                .Where(q => q.ExaminationRoomId == roomId &&
+                           (q.Status == "InProgress" ))
+                .ToListAsync();
+        }
+
+        public async Task<(List<Queue> Queues, DoctorProfile Doctor)> GetPatientsAndDoctorInRoomAsync(string roomId, DateTime date)
+        {
+            var room = await _context.ExaminationRooms
+                .Include(er => er.DoctorSchedules)
+                .Include(er => er.Queues)
+                .ThenInclude(q => q.Appointment)
+                .FirstOrDefaultAsync(er => er.Id == roomId);
+
+            if (room == null)
+            {
+                return (new List<Queue>(), null);
+            }
+
+            var queues = room.Queues
+                .Where(q => q.Status == "InProgress")
+                .ToList();
+
+            var doctorSchedule = room.DoctorSchedules
+                .Where(ds => ds.Date == date )
+                .OrderBy(ds => ds.StartTime)
+                .FirstOrDefault();
+
+            DoctorProfile doctor = null;
+            if (doctorSchedule != null)
+            {
+                doctor = await _context.DoctorProfiles
+                    .Include(dp => dp.Doctor)
+                    .FirstOrDefaultAsync(dp => dp.DoctorId == doctorSchedule.DoctorId);
+            }
+
+            return (queues, doctor);
+        }
+
+        public async Task<DoctorProfile> GetDoctorInRoomAsync(string roomId, DateTime date)
+        {
+            var room = await _context.ExaminationRooms
+                .Include(er => er.DoctorSchedules)
+                .FirstOrDefaultAsync(er => er.Id == roomId);
+
+            if (room == null)
+            {
+                return null;
+            }
+
+            var doctorSchedule = room.DoctorSchedules
+                .Where(ds => ds.Date == date)
+                .OrderBy(ds => ds.StartTime)
+                .FirstOrDefault();
+
+            if (doctorSchedule == null)
+            {
+                return null;
+            }
+
+            return await _context.DoctorProfiles
+                .Include(dp => dp.Doctor)
+                .FirstOrDefaultAsync(dp => dp.DoctorId == doctorSchedule.DoctorId);
+        }
     }
 }

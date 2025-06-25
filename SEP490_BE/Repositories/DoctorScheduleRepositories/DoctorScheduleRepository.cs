@@ -30,7 +30,6 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         public async Task<(List<DoctorSchedule> Schedules, int TotalItems)> FindAll(
             string? doctorId,
             DateTime? date,
-            bool? isAvailable,
             int pageNumber,
             int pageSize)
         {
@@ -47,10 +46,7 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
             {
                 query = query.Where(ds => ds.Date == date.Value);
             }
-            if (isAvailable.HasValue)
-            {
-                query = query.Where(ds => ds.IsAvailable == isAvailable.Value);
-            }
+           
 
             var totalItems = await query.CountAsync();
             var schedules = await query
