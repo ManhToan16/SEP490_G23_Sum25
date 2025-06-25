@@ -1,4 +1,5 @@
 ﻿using SEP490_BE.DTO;
+using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
@@ -141,6 +142,101 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
             await _examinationRoomRepository.DeleteAsync(room);
             await _context.SaveChangesAsync();
+        }
+        public async Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId)
+        {
+            var (queues, _) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
+            if (queues == null || !queues.Any())
+            {
+                return new List<PatientInRoomDTO>();
+            }
+
+            return queues.Select(q => new PatientInRoomDTO
+            {
+                AppointmentId = q.AppointmentId,
+                Name = q.Appointment.Name,
+                PhoneNumber = q.Appointment.PhoneNumber,
+                CreateAt = q.CreateAt
+            }).ToList();
+        }
+
+        public async Task<(List<PatientInRoomDTO> Patients, DoctorProfileResponseDTO Doctor)> GetPatientsAndDoctorInRoomAsync(string roomId)
+        {
+            var (queues, doctor) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
+            if (queues == null || !queues.Any())
+            {
+                return (new List<PatientInRoomDTO>(), null);
+            }
+
+            var patients = queues.Select(q => new PatientInRoomDTO
+            {
+                AppointmentId = q.AppointmentId,
+                Name = q.Appointment.Name,
+                PhoneNumber = q.Appointment.PhoneNumber,
+                CreateAt = q.CreateAt
+            }).ToList();
+
+            DoctorProfileResponseDTO doctorDto = null;
+            if (doctor != null)
+            {
+                doctorDto = new DoctorProfileResponseDTO
+                {
+                    Id = doctor.Id,
+                    DoctorId = doctor.DoctorId,
+                    Qualifications = doctor.Qualifications,
+                    YearsOfExperience = doctor.YearsOfExperience,
+                    Biography = doctor.Biography,
+                    Avatar = doctor.Avatar,
+                    Name = doctor.Doctor?.Name,
+                    PhoneNumber = doctor.Doctor?.PhoneNumber,
+                    Email = doctor.Doctor?.Email,
+                    DateOfBirth = doctor.Doctor?.DateOfBirth
+                };
+            }
+
+            return (patients, doctorDto);
+        }
+
+        public async Task<DoctorProfileResponseDTO> GetDoctorInRoomAsync(string roomId, DateTime? date = null)
+        {
+            var effectiveDate = date ?? DateTime.Today; 
+            var doctor = await _examinationRoomRepository.GetDoctorInRoomAsync(roomId, effectiveDate.Date);
+            if (doctor == null)
+            {
+                return null;
+            }
+
+            return new DoctorProfileResponseDTO
+            {
+                Id = doctor.Id,
+                DoctorId = doctor.DoctorId,
+                Qualifications = doctor.Qualifications,
+                YearsOfExperience = doctor.YearsOfExperience,
+                Biography = doctor.Biography,
+                Avatar = doctor.Avatar,
+                Name = doctor.Doctor?.Name,
+                PhoneNumber = doctor.Doctor?.PhoneNumber,
+                Email = doctor.Doctor?.Email,
+                DateOfBirth = doctor.Doctor?.DateOfBirth
+            };
+        }
+        public async Task<List<DoctorProfileResponseDTO>> GetAllDoctorsInRoomAsync(string roomId, DateTime? date = null)
+        {
+            var effectiveDate = date ?? DateTime.Today;
+            var doctors = await _examinationRoomRepository.GetAllDoctorsInRoomAsync(roomId, effectiveDate.Date);
+            return doctors.Select(d => new DoctorProfileResponseDTO
+            {
+                Id = d.Id,
+                DoctorId = d.DoctorId,
+                Qualifications = d.Qualifications,
+                YearsOfExperience = d.YearsOfExperience,
+                Biography = d.Biography,
+                Avatar = d.Avatar,
+                Name = d.Doctor?.Name,
+                PhoneNumber = d.Doctor?.PhoneNumber,
+                Email = d.Doctor?.Email,
+                DateOfBirth = d.Doctor?.DateOfBirth
+            }).ToList();
         }
     }
 }

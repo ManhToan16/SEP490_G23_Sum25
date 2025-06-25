@@ -74,5 +74,16 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
             _context.DoctorSchedules.Remove(schedule);
             await _context.SaveChangesAsync();
         }
+        public async Task<DoctorSchedule> FindByRoomAndDateAsync(string examinationRoomId, DateTime date)
+        {
+            return await _context.DoctorSchedules
+                .FirstOrDefaultAsync(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date == date.Date);
+        }
+        public async Task<List<DoctorSchedule>> GetSchedulesByRoomAndDateAsync(string examinationRoomId, DateTime date)
+        {
+            return await _context.DoctorSchedules
+                .Where(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date.Date == date.Date)
+                .ToListAsync();
+        }
     }
 }

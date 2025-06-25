@@ -17,6 +17,7 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             return await _context.ExaminationRooms
                 .Include(er => er.DoctorSchedules)
                 .Include(er => er.Queues)
+                .ThenInclude(q => q.Appointment)
                 .FirstOrDefaultAsync(er => er.Id == id);
         }
 
@@ -26,7 +27,11 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             int pageNumber,
             int pageSize)
         {
-            var query = _context.ExaminationRooms.AsQueryable();
+            var query = _context.ExaminationRooms
+                 .Include(er => er.DoctorSchedules) 
+                 .Include(er => er.Queues)
+                 .ThenInclude(q => q.Appointment)
+                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(name))
             {
@@ -86,7 +91,7 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             }
 
             var queues = room.Queues
-                .Where(q => q.Status == "InProgress")
+                .Where(q => q.Status == "InProgress" || q.Status == "Called")
                 .ToList();
 
             var doctorSchedule = room.DoctorSchedules
@@ -117,7 +122,7 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             }
 
             var doctorSchedule = room.DoctorSchedules
-                .Where(ds => ds.Date == date)
+                .Where(ds => ds.Date.Date == date.Date)
                 .OrderBy(ds => ds.StartTime)
                 .FirstOrDefault();
 
@@ -129,6 +134,37 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             return await _context.DoctorProfiles
                 .Include(dp => dp.Doctor)
                 .FirstOrDefaultAsync(dp => dp.DoctorId == doctorSchedule.DoctorId);
+        }
+        public async Task<List<DoctorProfile>> GetAllDoctorsInRoomAsync(string roomId, DateTime date)
+        {
+            var room = await _context.ExaminationRooms
+                .Include(er => er.DoctorSchedules)
+                .FirstOrDefaultAsync(er => er.Id == roomId);
+
+            if (room == null)
+            {
+                return new List<DoctorProfile>();
+            }
+
+            var doctorSchedules = room.DoctorSchedules
+                .Where(ds => ds.Date == date.Date)
+                .ToList();
+
+            var doctorIds = doctorSchedules.Select(ds => ds.DoctorId).Distinct();
+            var doctors = new List<DoctorProfile>();
+
+            foreach (var doctorId in doctorIds)
+            {
+                var doctor = await _context.DoctorProfiles
+                    .Include(dp => dp.Doctor)
+                    .FirstOrDefaultAsync(dp => dp.DoctorId == doctorId);
+                if (doctor != null)
+                {
+                    doctors.Add(doctor);
+                }
+            }
+
+            return doctors;
         }
     }
 }

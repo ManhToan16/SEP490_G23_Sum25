@@ -15,5 +15,7 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         Task InsertAsync(DoctorSchedule schedule);
         Task UpdateAsync(DoctorSchedule schedule);
         Task DeleteAsync(DoctorSchedule schedule);
+        Task<DoctorSchedule> FindByRoomAndDateAsync(string examinationRoomId, DateTime date);
+        Task<List<DoctorSchedule>> GetSchedulesByRoomAndDateAsync(string examinationRoomId, DateTime date);
     }
 }

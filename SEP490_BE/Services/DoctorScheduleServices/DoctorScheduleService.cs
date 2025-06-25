@@ -71,7 +71,22 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             {
                 throw new ConflictDataException("Doctor already has a schedule for this date.");
             }
-
+            //var roomSchedule = await _doctorScheduleRepository.FindByRoomAndDateAsync(request.ExaminationRoomId, request.Date);
+            //if (roomSchedule != null)
+            //{
+            //    throw new ConflictDataException("This examination room is already scheduled for another doctor on this date.");
+            //}
+            var roomSchedules = await _doctorScheduleRepository.GetSchedulesByRoomAndDateAsync(request.ExaminationRoomId, request.Date);
+            if (roomSchedules.Any())
+            {
+                foreach (var schedule in roomSchedules)
+                {
+                    if (request.StartTime < schedule.EndTime && request.EndTime > schedule.StartTime)
+                    {
+                        throw new ConflictDataException($"This examination room is already scheduled from {schedule.StartTime} to {schedule.EndTime} on this date.");
+                    }
+                }
+            }
             var doctor = await _context.Users.FindAsync(request.DoctorId);
             if (doctor == null)
             {
@@ -94,7 +109,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Id = Guid.NewGuid().ToString(),
                 DoctorId = request.DoctorId,
                 ExaminationRoomId = request.ExaminationRoomId,
-                Date = request.Date,
+                Date = request.Date.Date,
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
                 
@@ -151,7 +166,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             }
 
             schedule.ExaminationRoomId = request.ExaminationRoomId ?? schedule.ExaminationRoomId;
-            schedule.Date = request.Date ?? schedule.Date;
+            schedule.Date = request.Date ?? schedule.Date.Date;
             schedule.StartTime = request.StartTime ?? schedule.StartTime;
             schedule.EndTime = request.EndTime ?? schedule.EndTime;
             
