@@ -86,5 +86,55 @@ namespace SEP490_BE.Controllers
                 Data = pagination
             });
         }
+        [HttpGet("{roomID}/patients")]
+        public async Task<IActionResult> GetPatientsInRoom(string roomID)
+        {
+            var patients = await _examinationRoomService.GetPatientsInRoomAsync(roomID);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = patients
+            });
+        }
+
+        [HttpGet("{roomID}/patients-and-doctor")]
+        public async Task<IActionResult> GetPatientsAndDoctorInRoom(string roomID)
+        {
+            var (patients, doctor) = await _examinationRoomService.GetPatientsAndDoctorInRoomAsync(roomID);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new { Patients = patients, Doctor = doctor }
+            });
+        }
+
+        [HttpGet("{roomID}/doctor")]
+        public async Task<IActionResult> GetDoctorInRoom(string roomID, [FromQuery] DateTime? date = null)
+        {
+            var doctor = await _examinationRoomService.GetDoctorInRoomAsync(roomID, date);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = doctor
+            });
+        }
+        [HttpGet("all-doctors/{roomID}/{date}")]
+        public async Task<IActionResult> GetAllDoctorsInRoom(string roomID,  DateTime date )
+        {
+            var doctors = await _examinationRoomService.GetAllDoctorsInRoomAsync(roomID, date);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = doctors
+            });
+        }
     }
 }

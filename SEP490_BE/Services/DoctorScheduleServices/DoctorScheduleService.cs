@@ -26,7 +26,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             int pageNumber,
             int pageSize)
         {
-            var (schedules, totalItems) = await _doctorScheduleRepository.FindAll(doctorId, date, isAvailable, pageNumber, pageSize);
+            var (schedules, totalItems) = await _doctorScheduleRepository.FindAll(doctorId, date, pageNumber, pageSize);
             return new Pagination<DoctorScheduleResponseDTO>
             {
                 Items = schedules.Select(ds => new DoctorScheduleResponseDTO
@@ -37,7 +37,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                     Date = ds.Date,
                     StartTime = ds.StartTime,
                     EndTime = ds.EndTime,
-                    IsAvailable = ds.IsAvailable
+                    
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -60,7 +60,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = schedule.Date,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
-                IsAvailable = schedule.IsAvailable
+              
             };
         }
 
@@ -71,7 +71,22 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             {
                 throw new ConflictDataException("Doctor already has a schedule for this date.");
             }
-
+            //var roomSchedule = await _doctorScheduleRepository.FindByRoomAndDateAsync(request.ExaminationRoomId, request.Date);
+            //if (roomSchedule != null)
+            //{
+            //    throw new ConflictDataException("This examination room is already scheduled for another doctor on this date.");
+            //}
+            var roomSchedules = await _doctorScheduleRepository.GetSchedulesByRoomAndDateAsync(request.ExaminationRoomId, request.Date);
+            if (roomSchedules.Any())
+            {
+                foreach (var schedule in roomSchedules)
+                {
+                    if (request.StartTime < schedule.EndTime && request.EndTime > schedule.StartTime)
+                    {
+                        throw new ConflictDataException($"This examination room is already scheduled from {schedule.StartTime} to {schedule.EndTime} on this date.");
+                    }
+                }
+            }
             var doctor = await _context.Users.FindAsync(request.DoctorId);
             if (doctor == null)
             {
@@ -94,10 +109,10 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Id = Guid.NewGuid().ToString(),
                 DoctorId = request.DoctorId,
                 ExaminationRoomId = request.ExaminationRoomId,
-                Date = request.Date,
+                Date = request.Date.Date,
                 StartTime = request.StartTime,
                 EndTime = request.EndTime,
-                IsAvailable = request.IsAvailable
+                
             };
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -121,7 +136,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = doctorSchedule.Date,
                 StartTime = doctorSchedule.StartTime,
                 EndTime = doctorSchedule.EndTime,
-                IsAvailable = doctorSchedule.IsAvailable
+                
             };
         }
 
@@ -151,10 +166,10 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             }
 
             schedule.ExaminationRoomId = request.ExaminationRoomId ?? schedule.ExaminationRoomId;
-            schedule.Date = request.Date ?? schedule.Date;
+            schedule.Date = request.Date ?? schedule.Date.Date;
             schedule.StartTime = request.StartTime ?? schedule.StartTime;
             schedule.EndTime = request.EndTime ?? schedule.EndTime;
-            schedule.IsAvailable = request.IsAvailable ?? schedule.IsAvailable;
+            
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -177,7 +192,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
                 Date = schedule.Date,
                 StartTime = schedule.StartTime,
                 EndTime = schedule.EndTime,
-                IsAvailable = schedule.IsAvailable
+              
             };
         }
 

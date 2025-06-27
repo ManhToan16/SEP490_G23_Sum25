@@ -49,6 +49,7 @@
         public const string INVALID_EMAIL = "The email address is in wrong format.";
 
         public const string INVALID_LOGIN = "Invalid email or password.";
+        public const string WRONG_OLD_PASSWORD = "The old password is wrong.";
         public const string INVALID_PASSWORD = "The password must has at least 8 characters";
         public const string INVALID_REPASSWORD = "The repassword has to be the same with the password";
         public const string INVALID_TOKEN = "Invalid Token";

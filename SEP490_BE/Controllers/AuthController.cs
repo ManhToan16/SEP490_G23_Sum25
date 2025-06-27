@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
@@ -23,7 +24,7 @@ namespace SEP490_BE.Controllers
         }
 
 
-        [HttpPost("Login")]
+        [HttpPost("login")]
         public async Task<ActionResult<ApiResponse>> Login(LoginRequestDTO request)
         {
             var response = await _authService.Login(request);
@@ -37,7 +38,7 @@ namespace SEP490_BE.Controllers
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }
 
-        [HttpPost("RefreshToken")]
+        [HttpPost("refresh-token")]
         public async Task<ActionResult<ApiResponse>> RefreshToken(TokenRequestDTO model)
         {
             var response = await _authService.RefreshToken(model);
@@ -51,7 +52,7 @@ namespace SEP490_BE.Controllers
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }
 
-        [HttpPost("Logout")]
+        [HttpPost("logout")]
         public async Task<ActionResult<ApiResponse>> Logout(TokenRequestDTO request)
         {
             await _authService.Logout(request);
@@ -65,7 +66,7 @@ namespace SEP490_BE.Controllers
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }
 
-        [HttpPost("ForgotPassword")]
+        [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDTO request)
         {
             await _authService.ForgotPassword(request);
@@ -73,13 +74,13 @@ namespace SEP490_BE.Controllers
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
-                Message = "Check your email for reset password requirement.",
+                Message = "Check your email to reset password.",
                 Data = null
             };
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }
 
-        [HttpGet("ResetPassword")]
+        [HttpGet("reset-password")]
         public IActionResult ResetPasswordForm([FromQuery] string token)
         {
             var filePath = Path.Combine(_env.ContentRootPath, "Templates", "reset-password-form.html");
@@ -88,7 +89,7 @@ namespace SEP490_BE.Controllers
             return Content(html, "text/html");
         }
 
-        [HttpPost("ResetPassword")]
+        [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromForm] string token, [FromForm] string newPassword)
         {
             await _authService.ResetPassword(token, newPassword);
@@ -97,5 +98,18 @@ namespace SEP490_BE.Controllers
             return Content(html, "text/html");
         }
 
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDTO request)
+        {
+            await _authService.ChangePassword(request);
+            var apiResponse = new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = null
+            };
+            return StatusCode(apiResponse.StatusCode, apiResponse);
+        }
     }
 }

@@ -55,6 +55,9 @@ namespace SEP490_BE.Services.AuthServices
             {
                 throw new UnauthenticatedException(MessageConstants.INVALID_LOGIN);
             }
+            if (user.IsActive == false) { 
+                throw new UnauthorizedAccessException(MessageConstants.FORBIDDEN);
+            }
             return await GenerateToken(user, request.DeviceId);
         }
 
@@ -237,7 +240,7 @@ namespace SEP490_BE.Services.AuthServices
             var key = $"forgot:{token}";
             await _redis.StringSetAsync(key, user.Id, TimeSpan.FromMinutes(15));
 
-            var link = $"{_configuration["App:BackendUrl"]}/api/Auth/ResetPassword?token={token}";
+            var link = $"{_configuration["App:BackendUrl"]}/api/Auth/reset-password?token={token}";
             var templatePath = Path.Combine(_env.ContentRootPath, "Templates", "reset-password-email.html");
             var htmlTemplate = await File.ReadAllTextAsync(templatePath);
 
@@ -263,9 +266,16 @@ namespace SEP490_BE.Services.AuthServices
             await _redis.KeyDeleteAsync(key);
         }
 
-        public Task ChangePassword()
+        public async Task ChangePassword(ChangePasswordDTO request)
         {
-            throw new NotImplementedException();
+            var user = await GetAuthenticatedUser();
+            if (!BCrypt.Net.BCrypt.Verify(request.OldPassword, user.Password))
+            {
+                throw new Exceptions.ArgumentException(MessageConstants.WRONG_OLD_PASSWORD);
+            }
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            await _userRepository.Update(user);
+            await _context.SaveChangesAsync();
         }
 
     }

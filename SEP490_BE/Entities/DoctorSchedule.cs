@@ -11,7 +11,6 @@ namespace SEP490_BE.Entities
         public DateTime Date { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
-        public bool? IsAvailable { get; set; }
 
         public virtual User Doctor { get; set; } = null!;
         public virtual ExaminationRoom ExaminationRoom { get; set; } = null!;

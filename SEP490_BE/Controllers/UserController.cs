@@ -6,6 +6,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.UserServices;
 using Microsoft.AspNetCore.Authorization;
+using BackendProject.Utils;
 
 namespace SEP490_BE.Controllers
 {
@@ -35,6 +36,7 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll(
                 [FromQuery] string? role,
@@ -54,10 +56,11 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ApiResponse>> GetById(string id)
+        [Authorize]
+        [HttpGet("{userId}")]
+        public async Task<ActionResult<ApiResponse>> GetById(string userId)
         {
-            var result = await _userService.GetUserById(id);
+            var result = await _userService.GetUserById(userId);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -67,11 +70,11 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize(Roles = RoleConstants.Admin)]
-        [HttpPut("{id}")]
-        public async Task<ActionResult<ApiResponse>> Update(string id, [FromBody] UpdateUserDTO request)
+        [RequiredOwner]
+        [HttpPut("{userId}")]
+        public async Task<ActionResult<ApiResponse>> Update(string userId, [FromBody] UpdateUserDTO request)
         {
-            var result = await _userService.Update(id, request);
+            var result = await _userService.Update(userId, request);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -82,10 +85,10 @@ namespace SEP490_BE.Controllers
         }
 
         [Authorize(Roles = RoleConstants.Admin)]
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<ApiResponse>> Delete(string id)
+        [HttpDelete("{userId}")]
+        public async Task<ActionResult<ApiResponse>> Delete(string userId)
         {
-            await _userService.Delete(id);
+            await _userService.Delete(userId);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -94,7 +97,34 @@ namespace SEP490_BE.Controllers
                 Data = null
             });
         }
+        
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("active/{userId}")]
+        public async Task<ActionResult<ApiResponse>> Activate(string userId)
+        {
+            await _userService.Activate(userId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = null
+            });
+        }
 
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("deactive/{userId}")]
+        public async Task<ActionResult<ApiResponse>> Deactivate(string userId)
+        {
+            await _userService.Deactivate(userId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = null
+            });
+        }
 
     }
 }
