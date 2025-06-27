@@ -70,21 +70,36 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllDoctorSchedules(
-            string? doctorId = null,
-            DateTime? date = null,
-            bool? isAvailable = null,
-            int pageNumber = 1,
-            int pageSize = 10)
-        {
-            var pagination = await _doctorScheduleService.GetAll(doctorId, date, isAvailable, pageNumber, pageSize);
+        [HttpGet("doctor/{doctorId}")]
+        public async Task<IActionResult> GetDoctorSchedulesByDoctorId(
+            string doctorId,
+            DateTime fromDate,
+            DateTime toDate)
+        {         
+
+            var schedules = await _doctorScheduleService.GetDoctorSchedulesByDoctorId(doctorId, fromDate, toDate);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = pagination
+                Data = schedules
+            });
+        }
+
+        [HttpGet("range")]
+        public async Task<IActionResult> GetDoctorSchedulesByRange(
+            DateTime fromDate,
+            DateTime toDate)
+        {
+
+            var schedules = await _doctorScheduleService.GetDoctorSchedulesByRange(fromDate, toDate);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = schedules
             });
         }
     }

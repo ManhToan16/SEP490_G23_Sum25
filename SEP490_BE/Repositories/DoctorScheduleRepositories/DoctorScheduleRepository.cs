@@ -85,5 +85,47 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
                 .Where(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date.Date == date.Date)
                 .ToListAsync();
         }
+        public async Task<List<DoctorSchedule>> FindByDoctorIdAndDateRangeAsync(
+           string doctorId,
+           DateTime fromDate,
+           DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var query = _context.DoctorSchedules
+                .Include(ds => ds.Doctor)
+                .Include(ds => ds.ExaminationRoom)
+                .Where(ds => ds.DoctorId == doctorId && ds.Date.Date >= fromDate.Date && ds.Date.Date <= toDate.Date)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var schedules = await query.ToListAsync();
+
+            return (schedules);
+        }
+
+        public async Task<List<DoctorSchedule> > FindByDateRangeAsync(
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var query = _context.DoctorSchedules
+                .Include(ds => ds.Doctor)
+                .Include(ds => ds.ExaminationRoom)
+                .Where(ds => ds.Date.Date >= fromDate.Date && ds.Date.Date <= toDate.Date)
+                .AsQueryable();
+            var totalItems = await query.CountAsync();
+            var schedules = await query.ToListAsync();
+
+            return (schedules);
+
+        }
     }
 }

@@ -17,5 +17,12 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         Task DeleteAsync(DoctorSchedule schedule);
         Task<DoctorSchedule> FindByRoomAndDateAsync(string examinationRoomId, DateTime date);
         Task<List<DoctorSchedule>> GetSchedulesByRoomAndDateAsync(string examinationRoomId, DateTime date);
+        Task<List<DoctorSchedule>> FindByDoctorIdAndDateRangeAsync(
+            string doctorId,
+            DateTime fromDate,
+            DateTime toDate);
+        Task<List<DoctorSchedule>> FindByDateRangeAsync(
+            DateTime fromDate,
+            DateTime toDate);
     }
 }
