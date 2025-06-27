@@ -13,6 +13,7 @@ using SEP490_BE.Repositories.DoctorScheduleRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
+using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.TechinicianScheduleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuthServices;
@@ -21,6 +22,7 @@ using SEP490_BE.Services.DoctorScheduleServices;
 using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
+using SEP490_BE.Services.ServiceServices;
 using SEP490_BE.Services.TechnicianScheduleServices;
 using SEP490_BE.Services.UserServices;
 using StackExchange.Redis;
@@ -117,6 +119,7 @@ builder.Services.AddScoped<IDoctorScheduleService, DoctorScheduleService>();
 builder.Services.AddScoped<IExaminationRoomService, ExaminationRoomService>();
 builder.Services.AddScoped<ITechnicianScheduleService, TechnicianScheduleService>();
 builder.Services.AddScoped<ILaboratoryRoomService, LaboratoryRoomService>();
+builder.Services.AddScoped<IServiceService, ServiceService>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -127,6 +130,7 @@ builder.Services.AddScoped<IDoctorScheduleRepository, DoctorScheduleRepository>(
 builder.Services.AddScoped<IExaminationRoomRepository, ExaminationRoomRepository>();
 builder.Services.AddScoped<ITechnicianScheduleRepository, TechnicianScheduleRepository>();
 builder.Services.AddScoped<ILaboratoryRoomRepository, LaboratoryRoomRepository>();
+builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 
 
 #endregion
