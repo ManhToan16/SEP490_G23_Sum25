@@ -22,21 +22,3 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-
-# Environment files
-.env
-.env.example
-
-# Docker files
-docker-compose.dev.yml
-docker-compose.prod.yml
-Dockerfile
-Dockerfile.dev
-
-# Configuration files
-eslint.config.js
-nginx.prod.conf
-nginx.dev.conf
-
-# Documentation
-/docs
