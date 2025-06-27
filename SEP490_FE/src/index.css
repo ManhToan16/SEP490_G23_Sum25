@@ -2,16 +2,186 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+
+@layer base {
+  :root {
+    --background: 245 247 250; /* #F5F7FA */
+    --foreground: 44 62 80; /* #2C3E50 */
+
+    --card: 255 255 255; /* White cards */
+    --card-foreground: 44 62 80;
+
+    --popover: 255 255 255;
+    --popover-foreground: 44 62 80;
+
+    --primary: 44 62 80; /* #2C3E50 - Navy Blue */
+    --primary-foreground: 255 255 255;
+
+    --secondary: 169 198 232; /* #A9C6E8 - Light Blue */
+    --secondary-foreground: 44 62 80;
+
+    --muted: 248 250 252; /* #F8FAFC - Very light gray */
+    --muted-foreground: 100 116 139; /* #64748B - Medium gray */
+
+    --accent: 178 196 177; /* #B2C4B1 - Light Green */
+    --accent-foreground: 44 62 80;
+
+    --destructive: 220 38 38; /* #DC2626 - Red */
+    --destructive-foreground: 255 255 255;
+
+    --border: 226 232 240; /* #E2E8F0 - Light border */
+    --input: 226 232 240; /* #E2E8F0 - Input border */
+    --ring: 59 130 246; /* #3B82F6 - Blue focus ring */
+
+    --radius: 0.5rem;
+
+    /* Sidebar variables */
+    --sidebar-background: 255 255 255;
+    --sidebar-foreground: 44 62 80;
+    --sidebar-primary: 44 62 80;
+    --sidebar-primary-foreground: 255 255 255;
+    --sidebar-accent: 248 250 252;
+    --sidebar-accent-foreground: 44 62 80;
+    --sidebar-border: 226 232 240;
+    --sidebar-ring: 59 130 246;
+
+    /* Clinic Brand Colors */
+    --clinic-navy: 44 62 80; /* #2C3E50 - Primary Navy */
+    --clinic-blue: 169 198 232; /* #A9C6E8 - Light Blue */
+    --clinic-gray: 245 247 250; /* #F5F7FA - Background Gray */
+    --clinic-green: 134 185 147; /* #86B993 - Softer Green */
+    --clinic-slate: 100 116 139; /* #64748B - Slate Gray */
+  }
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+@layer base {
+  html,
+  body,
+  #root {
+    background-color: #f8fafc !important;
+  }
+}
+
+@layer components {
+  /* Clinic UI Components */
+  .clinic-card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow;
+  }
+
+  .clinic-button-primary {
+    @apply bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors font-medium;
+  }
+
+  .clinic-button-secondary {
+    @apply bg-[#A9C6E8] text-[#2C3E50] px-4 py-2 rounded-lg hover:bg-opacity-80 transition-colors font-medium;
+  }
+
+  .clinic-input {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A9C6E8] focus:border-transparent;
+  }
+
+  .clinic-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .clinic-badge-success {
+    @apply bg-green-100 text-green-800;
+  }
+
+  .clinic-badge-warning {
+    @apply bg-orange-100 text-orange-800;
+  }
+
+  .clinic-badge-error {
+    @apply bg-red-100 text-red-800;
+  }
+
+  .clinic-badge-info {
+    @apply bg-blue-100 text-blue-800;
+  }
+
+  /* Layout helpers */
+  .clinic-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .clinic-section {
+    @apply py-8 space-y-6;
+  }
+
+  .clinic-header {
+    @apply border-b border-gray-200 pb-4 mb-6;
+  }
+}
+
+/* Role-based themes - Clean professional colors */
+.patient-theme {
+  --theme-primary: #3b82f6;
+  --theme-primary-dark: #2563eb;
+  --theme-background: #ffffff;
+  --theme-sidebar-bg: #f8fafc;
+  --theme-accent: #eff6ff;
+}
+
+.doctor-theme {
+  --theme-primary: #2c3e50;
+  --theme-primary-dark: #1a252f;
+  --theme-background: #ffffff;
+  --theme-sidebar-bg: #f8fafc;
+  --theme-accent: #f1f5f9;
+}
+
+.receptionist-theme {
+  --theme-primary: #10b981;
+  --theme-primary-dark: #059669;
+  --theme-background: #ffffff;
+  --theme-sidebar-bg: #f0fdf4;
+  --theme-accent: #dcfce7;
+}
+
+.admin-theme {
+  --theme-primary: #374151;
+  --theme-primary-dark: #1f2937;
+  --theme-background: #ffffff;
+  --theme-sidebar-bg: #f9fafb;
+  --theme-accent: #f3f4f6;
+}
+
+/* Loading animations */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive utilities */
+@layer utilities {
+  .clinic-hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .clinic-hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .clinic-grid-responsive {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+  }
+
+  .clinic-flex-center {
+    @apply flex items-center justify-center;
+  }
+
+  .clinic-flex-between {
+    @apply flex items-center justify-between;
+  }
 }
