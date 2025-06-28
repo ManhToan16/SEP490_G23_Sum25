@@ -16,5 +16,9 @@ namespace SEP490_BE.Services.DoctorScheduleServices
         Task<List<DoctorScheduleResponseDTO>> GetDoctorSchedulesByRange(
             DateTime fromDate,
             DateTime toDate);
+        Task<List<DoctorScheduleResponseDTO>> GetDoctorSchedulesByExaminationRoom(
+            string examinationRoomId,
+            DateTime fromDate,
+            DateTime toDate);
     }
 }

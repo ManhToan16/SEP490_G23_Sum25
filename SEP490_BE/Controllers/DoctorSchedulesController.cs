@@ -87,13 +87,29 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpGet("range")]
+        [HttpGet("Range")]
         public async Task<IActionResult> GetDoctorSchedulesByRange(
             DateTime fromDate,
             DateTime toDate)
         {
 
             var schedules = await _doctorScheduleService.GetDoctorSchedulesByRange(fromDate, toDate);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = schedules
+            });
+        }
+        [HttpGet("room/{examinationRoomId}")]
+        public async Task<IActionResult> GetDoctorSchedulesByExaminationRoom(
+           string examinationRoomId,
+           DateTime fromDate,
+           DateTime toDate)
+        {         
+
+            var schedules = await _doctorScheduleService.GetDoctorSchedulesByExaminationRoom(examinationRoomId, fromDate, toDate);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

@@ -191,7 +191,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
         {
             if (fromDate > toDate)
             {
-                throw new SEP490_BE.Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
             }
 
             var schedules = await _doctorScheduleRepository.FindByDoctorIdAndDateRangeAsync(
@@ -216,10 +216,35 @@ namespace SEP490_BE.Services.DoctorScheduleServices
         {
             if (fromDate > toDate)
             {
-                throw new SEP490_BE.Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
             }
 
             var schedules = await _doctorScheduleRepository.FindByDateRangeAsync(
+                fromDate,
+                toDate);
+
+            return schedules.Select(ds => new DoctorScheduleResponseDTO
+            {
+                Id = ds.Id,
+                DoctorId = ds.DoctorId,
+                ExaminationRoomId = ds.ExaminationRoomId,
+                Date = ds.Date,
+                StartTime = ds.StartTime,
+                EndTime = ds.EndTime
+            }).ToList();
+        }
+        public async Task<List<DoctorScheduleResponseDTO>> GetDoctorSchedulesByExaminationRoom(
+            string examinationRoomId,
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _doctorScheduleRepository.FindByExaminationRoomAndDateRangeAsync(
+                examinationRoomId,
                 fromDate,
                 toDate);
 

@@ -24,5 +24,9 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
         Task<List<DoctorSchedule>> FindByDateRangeAsync(
             DateTime fromDate,
             DateTime toDate);
+        Task<List<DoctorSchedule>> FindByExaminationRoomAndDateRangeAsync(
+            string examinationRoomId,
+            DateTime fromDate,
+            DateTime toDate);
     }
 }
