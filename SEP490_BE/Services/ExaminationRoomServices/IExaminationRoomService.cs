@@ -15,7 +15,10 @@ namespace SEP490_BE.Services.ExaminationRoomServices
         Task<ExaminationRoomResponseDTO> Create(CreateExaminationRoomDTO request);
         Task<ExaminationRoomResponseDTO> Update(string id, UpdateExaminationRoomDTO request);
         Task Delete(string id);
-        Task<DoctorProfileResponseDTO> GetDoctorInRoomAsync(string roomId,DateTime? date);
-        
+        Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId);
+        Task<List<ExaminationRoomWithDoctorDTO>> GetExaminationRoomsByDate(
+            TimeSpan time,
+            DateTime date);
+
     }
 }

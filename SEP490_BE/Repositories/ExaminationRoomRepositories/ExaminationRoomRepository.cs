@@ -68,33 +68,15 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             _context.ExaminationRooms.Remove(room);
             await _context.SaveChangesAsync();
         }
-       
-
-        public async Task<DoctorProfile> GetDoctorInRoomAsync(string roomId, DateTime date)
+        public async Task<List<Queue>> GetPatientsInRoomAsync(string roomId)
         {
-            var room = await _context.ExaminationRooms
-                .Include(er => er.DoctorSchedules)
-                .FirstOrDefaultAsync(er => er.Id == roomId);
-
-            if (room == null)
-            {
-                return null;
-            }
-
-            var doctorSchedule = room.DoctorSchedules
-                .Where(ds => ds.Date.Date == date.Date)
-                .OrderBy(ds => ds.StartTime)
-                .FirstOrDefault();
-
-            if (doctorSchedule == null)
-            {
-                return null;
-            }
-
-            return await _context.DoctorProfiles
-                .Include(dp => dp.Doctor)
-                .FirstOrDefaultAsync(dp => dp.DoctorId == doctorSchedule.DoctorId);
+            return await _context.Queues
+                .Include(q => q.Appointment)
+                .Where(q => q.ExaminationRoomId == roomId &&
+                           (q.Status == "InProgress" ))
+                .ToListAsync();
         }
-      
+
+       
     }
 }

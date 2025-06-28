@@ -13,6 +13,7 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
         Task InsertAsync(ExaminationRoom room);
         Task UpdateAsync(ExaminationRoom room);
         Task DeleteAsync(ExaminationRoom room);
-        Task<DoctorProfile> GetDoctorInRoomAsync(string roomId, DateTime date);
+        Task<List<Queue>> GetPatientsInRoomAsync(string roomId);
+       
     }
 }

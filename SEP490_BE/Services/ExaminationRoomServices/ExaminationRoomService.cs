@@ -62,7 +62,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
         public async Task<ExaminationRoomResponseDTO> Create(CreateExaminationRoomDTO request)
         {
-            var existingRoom = await _examinationRoomRepository.FindByIdAsync(request.Id);
+            var existingRoom = await _examinationRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingRoom != null)
             {
                 throw new ConflictDataException("Examination room already exists.");
@@ -70,7 +70,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
             var room = new ExaminationRoom
             {
-                Id = request.Id,
+                Id = Guid.NewGuid().ToString(),
                 Name = request.Name,
                 Description = request.Description
             };
@@ -143,30 +143,60 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             await _examinationRoomRepository.DeleteAsync(room);
             await _context.SaveChangesAsync();
         }
-
-        public async Task<DoctorProfileResponseDTO> GetDoctorInRoomAsync(string roomId, DateTime? date = null)
+        public async Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId)
         {
-            var effectiveDate = date ?? DateTime.Today; 
-            var doctor = await _examinationRoomRepository.GetDoctorInRoomAsync(roomId, effectiveDate.Date);
-            if (doctor == null)
+            var queues  = await _examinationRoomRepository.GetPatientsInRoomAsync(roomId);
+            if (queues == null || !queues.Any())
             {
-                return null;
+                return new List<PatientInRoomDTO>();
             }
 
-            return new DoctorProfileResponseDTO
+            return queues.Select(q => new PatientInRoomDTO
             {
-                Id = doctor.Id,
-                DoctorId = doctor.DoctorId,
-                Qualifications = doctor.Qualifications,
-                YearsOfExperience = doctor.YearsOfExperience,
-                Biography = doctor.Biography,
-                Avatar = doctor.Avatar,
-                Name = doctor.Doctor?.Name,
-                PhoneNumber = doctor.Doctor?.PhoneNumber,
-                Email = doctor.Doctor?.Email,
-                DateOfBirth = doctor.Doctor?.DateOfBirth
-            };
+                AppointmentId = q.AppointmentId,
+                Name = q.Appointment.Name,
+                PhoneNumber = q.Appointment.PhoneNumber,
+                CreateAt = q.CreateAt
+            }).ToList();
         }
-       
+
+        public async Task<List<ExaminationRoomWithDoctorDTO>> GetExaminationRoomsByDate(TimeSpan time, DateTime date)
+        {
+            var rooms = await _examinationRoomRepository.FindAll(null, null, 1, int.MaxValue).ContinueWith(t => t.Result.Rooms);
+            var result = new List<ExaminationRoomWithDoctorDTO>();
+
+            foreach (var room in rooms)
+            {
+                var schedules = room.DoctorSchedules
+                    ?.Where(ds => ds.Date.Date == date.Date && ds.StartTime <= time && ds.EndTime >= time)
+                    .OrderBy(ds => ds.StartTime)
+                    .ToList();
+
+                string doctorName = "Not Available";
+                if (schedules != null && schedules.Any())
+                {
+                    var firstSchedule = schedules.First();
+                    var doctor = await _context.Users.FindAsync(firstSchedule.DoctorId);
+                    doctorName = doctor?.Name ?? "Not Available";
+                }
+
+                result.Add(new ExaminationRoomWithDoctorDTO
+                {
+                    Room = new ExaminationRoomResponseDTO
+                    {
+                        Id = room.Id,
+                        Name = room.Name,
+                        Description = room.Description,
+                        DoctorScheduleCount = room.DoctorSchedules?.Count ?? 0,
+                        QueueCount = room.Queues?.Count ?? 0
+                    },
+                    DoctorName = doctorName
+                });
+            }
+
+            return result;
+        }
+
+
     }
 }

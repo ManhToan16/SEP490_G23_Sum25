@@ -85,20 +85,25 @@ namespace SEP490_BE.Controllers
                 Message = MessageConstants.GET_SUCCESS,
                 Data = pagination
             });
-        }    
+        }
 
-        [HttpGet("{roomID}/doctor")]
-        public async Task<IActionResult> GetDoctorInRoom(string roomID, [FromQuery] DateTime? date = null)
+        [HttpGet("ByDate")]
+        public async Task<IActionResult> GetExaminationRoomsByDate(
+             [FromQuery] TimeSpan time ,
+             [FromQuery] DateTime date )
         {
-            var doctor = await _examinationRoomService.GetDoctorInRoomAsync(roomID, date);
+            if (time == default) time = DateTime.Now.TimeOfDay;
+            if (date == default) date = DateTime.Today;
+
+            var rooms = await _examinationRoomService.GetExaminationRoomsByDate(time, date);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = doctor
+                Data = rooms
             });
         }
-       
+
     }
 }
