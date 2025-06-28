@@ -18,31 +18,7 @@ namespace SEP490_BE.Services.TechnicianScheduleServices
             _context = context;
             _technicianScheduleRepository = technicianScheduleRepository;
         }
-
-        public async Task<Pagination<TechnicianScheduleResponseDTO>> GetAll(
-            string? technicianId,
-            DateTime? date,
-            int pageNumber,
-            int pageSize)
-        {
-            var (schedules, totalItems) = await _technicianScheduleRepository.FindAll(technicianId, date, pageNumber, pageSize);
-            return new Pagination<TechnicianScheduleResponseDTO>
-            {
-                Items = schedules.Select(ts => new TechnicianScheduleResponseDTO
-                {
-                    Id = ts.Id,
-                    TechnicianId = ts.TechnicianId,
-                    LaboratoryRoomId = ts.LaboratoryRoomId,
-                    Date = ts.Date,
-                    StartTime = ts.StartTime,
-                    EndTime = ts.EndTime
-                }).ToList(),
-                TotalItems = totalItems,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-        }
-
+    
         public async Task<TechnicianScheduleResponseDTO> GetById(string id)
         {
             var schedule = await _technicianScheduleRepository.FindByIdAsync(id);
@@ -196,6 +172,81 @@ namespace SEP490_BE.Services.TechnicianScheduleServices
 
             await _technicianScheduleRepository.DeleteAsync(schedule);
             await _context.SaveChangesAsync();
+        }
+        public async Task<List<TechnicianScheduleResponseDTO>> GetTechnicianSchedulesByTechnicianId(
+          string technicianId,
+          DateTime fromDate,
+          DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _technicianScheduleRepository.FindByTechnicianIdAndDateRangeAsync(
+                technicianId,
+                fromDate,
+                toDate);
+
+            return schedules.Select(ts => new TechnicianScheduleResponseDTO
+            {
+                Id = ts.Id,
+                TechnicianId = ts.TechnicianId,
+                LaboratoryRoomId = ts.LaboratoryRoomId,
+                Date = ts.Date,
+                StartTime = ts.StartTime,
+                EndTime = ts.EndTime
+            }).ToList();
+        }
+
+        public async Task<List<TechnicianScheduleResponseDTO>> GetTechnicianSchedulesByRange(
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _technicianScheduleRepository.FindByDateRangeAsync(
+                fromDate,
+                toDate);
+
+            return schedules.Select(ts => new TechnicianScheduleResponseDTO
+            {
+                Id = ts.Id,
+                TechnicianId = ts.TechnicianId,
+                LaboratoryRoomId = ts.LaboratoryRoomId,
+                Date = ts.Date,
+                StartTime = ts.StartTime,
+                EndTime = ts.EndTime
+            }).ToList();
+        }
+
+        public async Task<List<TechnicianScheduleResponseDTO>> GetTechnicianSchedulesByLaboratoryRoom(
+            string laboratoryRoomId,
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _technicianScheduleRepository.FindByLaboratoryRoomAndDateRangeAsync(
+                laboratoryRoomId,
+                fromDate,
+                toDate);
+
+            return schedules.Select(ts => new TechnicianScheduleResponseDTO
+            {
+                Id = ts.Id,
+                TechnicianId = ts.TechnicianId,
+                LaboratoryRoomId = ts.LaboratoryRoomId,
+                Date = ts.Date,
+                StartTime = ts.StartTime,
+                EndTime = ts.EndTime
+            }).ToList();
         }
     }
 }

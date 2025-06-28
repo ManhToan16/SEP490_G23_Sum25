@@ -14,6 +14,17 @@ namespace SEP490_BE.Repositories.TechinicianScheduleRepositories
         Task InsertAsync(TechnicianSchedule schedule);
         Task UpdateAsync(TechnicianSchedule schedule);
         Task DeleteAsync(TechnicianSchedule schedule);
-        Task<TechnicianSchedule> FindByRoomAndDateAsync(string laboratoryRoomId, DateTime date); 
+        Task<TechnicianSchedule> FindByRoomAndDateAsync(string laboratoryRoomId, DateTime date);
+        Task<List<TechnicianSchedule>> FindByTechnicianIdAndDateRangeAsync(
+            string technicianId,
+            DateTime fromDate,
+            DateTime toDate);
+        Task<List<TechnicianSchedule>> FindByDateRangeAsync(
+            DateTime fromDate,
+            DateTime toDate);
+        Task<List<TechnicianSchedule>> FindByLaboratoryRoomAndDateRangeAsync(
+            string laboratoryRoomId,
+            DateTime fromDate,
+            DateTime toDate);
     }
 }
