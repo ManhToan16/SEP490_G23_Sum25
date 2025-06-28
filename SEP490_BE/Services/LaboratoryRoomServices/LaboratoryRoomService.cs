@@ -57,7 +57,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
         public async Task<LaboratoryRoomResponseDTO> Create(CreateLaboratoryRoomDTO request)
         {
-            var existingRoom = await _laboratoryRoomRepository.FindByIdAsync(request.Id);
+            var existingRoom = await _laboratoryRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingRoom != null)
             {
                 throw new ConflictDataException("Laboratory room already exists.");
@@ -65,7 +65,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
             var room = new LaboratoryRoom
             {
-                Id = request.Id,
+                Id = Guid.NewGuid().ToString(),
                 Name = request.Name,
                 Description = request.Description
             };
