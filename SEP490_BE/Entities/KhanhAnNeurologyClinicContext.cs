@@ -45,8 +45,13 @@ namespace SEP490_BE.Entities
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=70.153.24.53;Database=KhanhAnNeurologyClinic;User Id=sa;Password=Quangtung1526.;");
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory) // base path đến thư mục chứa file cấu hình
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .Build();
+
+                var connectionString = config.GetConnectionString("MyDB");
+                optionsBuilder.UseSqlServer(connectionString);
             }
         }
 
