@@ -4,6 +4,7 @@ using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Constants;
+using SEP490_BE.DTO.ExaminationRoomDTO;
 
 namespace SEP490_BE.Controllers
 {
@@ -22,12 +23,14 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> GetLaboratoryRoom(string id)
         {
             var dto = await _laboratoryRoomService.GetById(id);
+            var data = dto != null ? new List<LaboratoryRoomResponseDTO> { dto } : new List<LaboratoryRoomResponseDTO>();
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = dto
+                Data = data
             });
         }
 
@@ -35,12 +38,14 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateLaboratoryRoom([FromBody] CreateLaboratoryRoomDTO dto)
         {
             var createdDto = await _laboratoryRoomService.Create(dto);
+            var data = createdDto != null ? new List<LaboratoryRoomResponseDTO> { createdDto } : new List<LaboratoryRoomResponseDTO>();
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = createdDto
+                Data = data
             });
         }
 
@@ -48,12 +53,14 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> UpdateLaboratoryRoom(string id, [FromBody] UpdateLaboratoryRoomDTO dto)
         {
             var updatedDto = await _laboratoryRoomService.Update(id, dto);
+            var data = updatedDto != null ? new List<LaboratoryRoomResponseDTO> { updatedDto } : new List<LaboratoryRoomResponseDTO>();
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = updatedDto
+                Data = data
             });
         }
 
@@ -66,7 +73,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.DELETE_SUCCESS,
-                Data = null
+                Data = new List<object>()
             });
         }
 
