@@ -19,31 +19,7 @@ namespace SEP490_BE.Services.DoctorScheduleServices
             _doctorScheduleRepository = doctorScheduleRepository;
         }
 
-        public async Task<Pagination<DoctorScheduleResponseDTO>> GetAll(
-            string? doctorId,
-            DateTime? date,
-            bool? isAvailable,
-            int pageNumber,
-            int pageSize)
-        {
-            var (schedules, totalItems) = await _doctorScheduleRepository.FindAll(doctorId, date, pageNumber, pageSize);
-            return new Pagination<DoctorScheduleResponseDTO>
-            {
-                Items = schedules.Select(ds => new DoctorScheduleResponseDTO
-                {
-                    Id = ds.Id,
-                    DoctorId = ds.DoctorId,
-                    ExaminationRoomId = ds.ExaminationRoomId,
-                    Date = ds.Date,
-                    StartTime = ds.StartTime,
-                    EndTime = ds.EndTime,
-                    
-                }).ToList(),
-                TotalItems = totalItems,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
-        }
+     
 
         public async Task<DoctorScheduleResponseDTO> GetById(string id)
         {
@@ -206,6 +182,81 @@ namespace SEP490_BE.Services.DoctorScheduleServices
 
             await _doctorScheduleRepository.DeleteAsync(schedule);
             await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<DoctorScheduleResponseDTO>> GetDoctorSchedulesByDoctorId(
+              string doctorId,
+              DateTime fromDate,
+              DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _doctorScheduleRepository.FindByDoctorIdAndDateRangeAsync(
+                doctorId,
+                fromDate,
+                toDate);
+
+            return schedules.Select(ds => new DoctorScheduleResponseDTO
+            {
+                Id = ds.Id,
+                DoctorId = ds.DoctorId,
+                ExaminationRoomId = ds.ExaminationRoomId,
+                Date = ds.Date,
+                StartTime = ds.StartTime,
+                EndTime = ds.EndTime            
+            }).ToList();
+        }
+
+        public async Task<List<DoctorScheduleResponseDTO>> GetDoctorSchedulesByRange(
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _doctorScheduleRepository.FindByDateRangeAsync(
+                fromDate,
+                toDate);
+
+            return schedules.Select(ds => new DoctorScheduleResponseDTO
+            {
+                Id = ds.Id,
+                DoctorId = ds.DoctorId,
+                ExaminationRoomId = ds.ExaminationRoomId,
+                Date = ds.Date,
+                StartTime = ds.StartTime,
+                EndTime = ds.EndTime
+            }).ToList();
+        }
+        public async Task<List<DoctorScheduleResponseDTO>> GetDoctorSchedulesByExaminationRoom(
+            string examinationRoomId,
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("FromDate must be before or equal to ToDate.");
+            }
+
+            var schedules = await _doctorScheduleRepository.FindByExaminationRoomAndDateRangeAsync(
+                examinationRoomId,
+                fromDate,
+                toDate);
+
+            return schedules.Select(ds => new DoctorScheduleResponseDTO
+            {
+                Id = ds.Id,
+                DoctorId = ds.DoctorId,
+                ExaminationRoomId = ds.ExaminationRoomId,
+                Date = ds.Date,
+                StartTime = ds.StartTime,
+                EndTime = ds.EndTime
+            }).ToList();
         }
     }
 }

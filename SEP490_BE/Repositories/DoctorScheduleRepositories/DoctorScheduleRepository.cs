@@ -85,5 +85,52 @@ namespace SEP490_BE.Repositories.DoctorScheduleRepositories
                 .Where(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date.Date == date.Date)
                 .ToListAsync();
         }
+        public async Task<List<DoctorSchedule>> FindByDoctorIdAndDateRangeAsync(
+           string doctorId,
+           DateTime fromDate,
+           DateTime toDate)
+        {
+           
+
+            var query = _context.DoctorSchedules
+                .Include(ds => ds.Doctor)
+                .Include(ds => ds.ExaminationRoom)
+                .Where(ds => ds.DoctorId == doctorId && ds.Date.Date >= fromDate.Date && ds.Date.Date <= toDate.Date)
+                .AsQueryable();
+
+            var totalItems = await query.CountAsync();
+            var schedules = await query.ToListAsync();
+
+            return (schedules);
+        }
+
+        public async Task<List<DoctorSchedule> > FindByDateRangeAsync(
+            DateTime fromDate,
+            DateTime toDate)
+        {        
+
+            var query = _context.DoctorSchedules
+                .Include(ds => ds.Doctor)
+                .Include(ds => ds.ExaminationRoom)
+                .Where(ds => ds.Date.Date >= fromDate.Date && ds.Date.Date <= toDate.Date)
+                .AsQueryable();
+            var totalItems = await query.CountAsync();
+            var schedules = await query.ToListAsync();
+
+            return (schedules);
+
+        }
+        public async Task<List<DoctorSchedule>> FindByExaminationRoomAndDateRangeAsync(
+           string examinationRoomId,
+           DateTime fromDate,
+           DateTime toDate)
+        {     
+
+            return await _context.DoctorSchedules
+                .Include(ds => ds.Doctor)
+                .Include(ds => ds.ExaminationRoom)
+                .Where(ds => ds.ExaminationRoomId == examinationRoomId && ds.Date.Date >= fromDate.Date && ds.Date.Date <= toDate.Date)
+                .ToListAsync();
+        }
     }
 }

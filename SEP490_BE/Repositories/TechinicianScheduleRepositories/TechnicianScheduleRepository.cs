@@ -78,5 +78,42 @@ namespace SEP490_BE.Repositories.TechinicianScheduleRepositories
             return await _context.TechnicianSchedules
                 .FirstOrDefaultAsync(ts => ts.LaboratoryRoomId == laboratoryRoomId && ts.Date.Date == date.Date);
         }
+        public async Task<List<TechnicianSchedule>> FindByTechnicianIdAndDateRangeAsync(
+          string technicianId,
+          DateTime fromDate,
+          DateTime toDate)
+        {
+            
+            return await _context.TechnicianSchedules
+                .Include(ts => ts.Technician)
+                .Include(ts => ts.LaboratoryRoom)
+                .Where(ts => ts.TechnicianId == technicianId && ts.Date.Date >= fromDate.Date && ts.Date.Date <= toDate.Date)
+                .ToListAsync();
+        }
+
+        public async Task<List<TechnicianSchedule>> FindByDateRangeAsync(
+            DateTime fromDate,
+            DateTime toDate)
+        {
+          
+            return await _context.TechnicianSchedules
+                .Include(ts => ts.Technician)
+                .Include(ts => ts.LaboratoryRoom)
+                .Where(ts => ts.Date.Date >= fromDate.Date && ts.Date.Date <= toDate.Date)
+                .ToListAsync();
+        }
+
+        public async Task<List<TechnicianSchedule>> FindByLaboratoryRoomAndDateRangeAsync(
+            string laboratoryRoomId,
+            DateTime fromDate,
+            DateTime toDate)
+        {
+           
+            return await _context.TechnicianSchedules
+                .Include(ts => ts.Technician)
+                .Include(ts => ts.LaboratoryRoom)
+                .Where(ts => ts.LaboratoryRoomId == laboratoryRoomId && ts.Date.Date >= fromDate.Date && ts.Date.Date <= toDate.Date)
+                .ToListAsync();
+        }
     }
 }

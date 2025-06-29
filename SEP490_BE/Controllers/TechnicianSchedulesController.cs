@@ -70,20 +70,50 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllTechnicianSchedules(
-            string? technicianId = null,
-            DateTime? date = null,
-            int pageNumber = 1,
-            int pageSize = 10)
+        [HttpGet("technician/{technicianId}")]
+        public async Task<IActionResult> GetTechnicianSchedulesByTechnicianId(
+             string technicianId,
+             DateTime fromDate,
+             DateTime toDate)
         {
-            var pagination = await _technicianScheduleService.GetAll(technicianId, date, pageNumber, pageSize);
+            var schedules = await _technicianScheduleService.GetTechnicianSchedulesByTechnicianId(technicianId, fromDate, toDate);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = pagination
+                Data = schedules
+            });
+        }
+
+        [HttpGet("Range")]
+        public async Task<IActionResult> GetTechnicianSchedulesByRange(
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            var schedules = await _technicianScheduleService.GetTechnicianSchedulesByRange(fromDate, toDate);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = schedules
+            });
+        }
+
+        [HttpGet("room/{laboratoryRoomId}")]
+        public async Task<IActionResult> GetTechnicianSchedulesByLaboratoryRoom(
+            string laboratoryRoomId,
+            DateTime fromDate,
+            DateTime toDate)
+        {
+            var schedules = await _technicianScheduleService.GetTechnicianSchedulesByLaboratoryRoom(laboratoryRoomId, fromDate, toDate);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = schedules
             });
         }
     }

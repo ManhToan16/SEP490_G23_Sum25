@@ -62,7 +62,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
         public async Task<ExaminationRoomResponseDTO> Create(CreateExaminationRoomDTO request)
         {
-            var existingRoom = await _examinationRoomRepository.FindByIdAsync(request.Id);
+            var existingRoom = await _examinationRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingRoom != null)
             {
                 throw new ConflictDataException("Examination room already exists.");
@@ -70,7 +70,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
             var room = new ExaminationRoom
             {
-                Id = request.Id,
+                Id = Guid.NewGuid().ToString(),
                 Name = request.Name,
                 Description = request.Description
             };
@@ -145,7 +145,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
         }
         public async Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId)
         {
-            var (queues, _) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
+            var queues  = await _examinationRoomRepository.GetPatientsInRoomAsync(roomId);
             if (queues == null || !queues.Any())
             {
                 return new List<PatientInRoomDTO>();
@@ -160,83 +160,43 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             }).ToList();
         }
 
-        public async Task<(List<PatientInRoomDTO> Patients, DoctorProfileResponseDTO Doctor)> GetPatientsAndDoctorInRoomAsync(string roomId)
+        public async Task<List<ExaminationRoomWithDoctorDTO>> GetExaminationRoomsByDate(TimeSpan time, DateTime date)
         {
-            var (queues, doctor) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
-            if (queues == null || !queues.Any())
-            {
-                return (new List<PatientInRoomDTO>(), null);
-            }
+            var rooms = await _examinationRoomRepository.FindAll(null, null, 1, int.MaxValue).ContinueWith(t => t.Result.Rooms);
+            var result = new List<ExaminationRoomWithDoctorDTO>();
 
-            var patients = queues.Select(q => new PatientInRoomDTO
+            foreach (var room in rooms)
             {
-                AppointmentId = q.AppointmentId,
-                Name = q.Appointment.Name,
-                PhoneNumber = q.Appointment.PhoneNumber,
-                CreateAt = q.CreateAt
-            }).ToList();
+                var schedules = room.DoctorSchedules
+                    ?.Where(ds => ds.Date.Date == date.Date && ds.StartTime <= time && ds.EndTime >= time)
+                    .OrderBy(ds => ds.StartTime)
+                    .ToList();
 
-            DoctorProfileResponseDTO doctorDto = null;
-            if (doctor != null)
-            {
-                doctorDto = new DoctorProfileResponseDTO
+                string doctorName = "Not Available";
+                if (schedules != null && schedules.Any())
                 {
-                    Id = doctor.Id,
-                    DoctorId = doctor.DoctorId,
-                    Qualifications = doctor.Qualifications,
-                    YearsOfExperience = doctor.YearsOfExperience,
-                    Biography = doctor.Biography,
-                    Avatar = doctor.Avatar,
-                    Name = doctor.Doctor?.Name,
-                    PhoneNumber = doctor.Doctor?.PhoneNumber,
-                    Email = doctor.Doctor?.Email,
-                    DateOfBirth = doctor.Doctor?.DateOfBirth
-                };
+                    var firstSchedule = schedules.First();
+                    var doctor = await _context.Users.FindAsync(firstSchedule.DoctorId);
+                    doctorName = doctor?.Name ?? "Not Available";
+                }
+
+                result.Add(new ExaminationRoomWithDoctorDTO
+                {
+                    Room = new ExaminationRoomResponseDTO
+                    {
+                        Id = room.Id,
+                        Name = room.Name,
+                        Description = room.Description,
+                        DoctorScheduleCount = room.DoctorSchedules?.Count ?? 0,
+                        QueueCount = room.Queues?.Count ?? 0
+                    },
+                    DoctorName = doctorName
+                });
             }
 
-            return (patients, doctorDto);
+            return result;
         }
 
-        public async Task<DoctorProfileResponseDTO> GetDoctorInRoomAsync(string roomId, DateTime? date = null)
-        {
-            var effectiveDate = date ?? DateTime.Today; 
-            var doctor = await _examinationRoomRepository.GetDoctorInRoomAsync(roomId, effectiveDate.Date);
-            if (doctor == null)
-            {
-                return null;
-            }
 
-            return new DoctorProfileResponseDTO
-            {
-                Id = doctor.Id,
-                DoctorId = doctor.DoctorId,
-                Qualifications = doctor.Qualifications,
-                YearsOfExperience = doctor.YearsOfExperience,
-                Biography = doctor.Biography,
-                Avatar = doctor.Avatar,
-                Name = doctor.Doctor?.Name,
-                PhoneNumber = doctor.Doctor?.PhoneNumber,
-                Email = doctor.Doctor?.Email,
-                DateOfBirth = doctor.Doctor?.DateOfBirth
-            };
-        }
-        public async Task<List<DoctorProfileResponseDTO>> GetAllDoctorsInRoomAsync(string roomId, DateTime? date = null)
-        {
-            var effectiveDate = date ?? DateTime.Today;
-            var doctors = await _examinationRoomRepository.GetAllDoctorsInRoomAsync(roomId, effectiveDate.Date);
-            return doctors.Select(d => new DoctorProfileResponseDTO
-            {
-                Id = d.Id,
-                DoctorId = d.DoctorId,
-                Qualifications = d.Qualifications,
-                YearsOfExperience = d.YearsOfExperience,
-                Biography = d.Biography,
-                Avatar = d.Avatar,
-                Name = d.Doctor?.Name,
-                PhoneNumber = d.Doctor?.PhoneNumber,
-                Email = d.Doctor?.Email,
-                DateOfBirth = d.Doctor?.DateOfBirth
-            }).ToList();
-        }
     }
 }
