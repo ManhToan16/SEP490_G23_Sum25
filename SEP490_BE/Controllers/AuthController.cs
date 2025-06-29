@@ -93,9 +93,14 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> ResetPassword([FromForm] string token, [FromForm] string newPassword)
         {
             await _authService.ResetPassword(token, newPassword);
-            var filePath = Path.Combine(_env.ContentRootPath, "Templates", "reset-password-success.html");
-            var html = await System.IO.File.ReadAllTextAsync(filePath);
-            return Content(html, "text/html");
+            var apiResponse = new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.CHANGE_PASSWORD_SUCCESS,
+                Data = null
+            };
+            return StatusCode(apiResponse.StatusCode, apiResponse);
         }
 
         [HttpPut("change-password")]

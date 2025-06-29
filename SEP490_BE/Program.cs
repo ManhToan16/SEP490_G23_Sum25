@@ -158,6 +158,8 @@ app.UseCors("AllowAllOrigins");
 
 app.UseAuthentication();
 
+app.UseMiddleware<ActiveUserMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
