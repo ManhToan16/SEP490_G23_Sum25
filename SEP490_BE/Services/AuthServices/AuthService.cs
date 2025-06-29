@@ -262,7 +262,6 @@ namespace SEP490_BE.Services.AuthServices
             user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
             await _userRepository.Update(user);
             await _context.SaveChangesAsync();
-
             await _redis.KeyDeleteAsync(key);
         }
 
