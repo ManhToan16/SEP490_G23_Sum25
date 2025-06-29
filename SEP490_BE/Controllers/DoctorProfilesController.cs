@@ -24,12 +24,13 @@ namespace SEP490_BE.Controllers
         {
 
             var dto = await _doctorProfileService.GetById(id);
+            var data = dto != null ? new List<object> { dto } : new List<object>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = dto
+                Data = data
             });
 
 
@@ -40,12 +41,13 @@ namespace SEP490_BE.Controllers
         {
 
             var createdDto = await _doctorProfileService.Create(dto);
+            var data = createdDto != null ? new List<object> { createdDto } : new List<object>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = createdDto
+                Data = data
             });
         }
         [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
@@ -54,12 +56,13 @@ namespace SEP490_BE.Controllers
         {
 
             var updatedDto = await _doctorProfileService.Update(id, dto);
+            var data = updatedDto != null ? new List<object> { updatedDto } : new List<object>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = updatedDto
+                Data = data
             });
 
         }
@@ -74,7 +77,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.DELETE_SUCCESS,
-                Data = null
+                Data = new List<object>()
             });
 
         }

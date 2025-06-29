@@ -22,12 +22,13 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> GetDoctorSchedule(string id)
         {
             var dto = await _doctorScheduleService.GetById(id);
+            var data = dto != null ? new List<object> { dto } : new List<object>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = dto
+                Data = data
             });
         }
 
@@ -35,12 +36,13 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateDoctorSchedule([FromBody] CreateDoctorScheduleDTO dto)
         {
             var createdDto = await _doctorScheduleService.Create(dto);
+            var data = createdDto != null ? new List<object> { createdDto } : new List<object>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = createdDto
+                Data = data
             });
         }
 
@@ -48,12 +50,13 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> UpdateDoctorSchedule(string id, [FromBody] UpdateDoctorScheduleDTO dto)
         {
             var updatedDto = await _doctorScheduleService.Update(id, dto);
+            var data = updatedDto != null ? new List<object> { updatedDto } : new List<object>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = updatedDto
+                Data = data
             });
         }
 
@@ -66,24 +69,24 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.DELETE_SUCCESS,
-                Data = null
+                Data = new List<object>()
             });
         }
 
         [HttpGet("doctor/{doctorId}")]
         public async Task<IActionResult> GetDoctorSchedulesByDoctorId(
-            string doctorId,
-            DateTime fromDate,
-            DateTime toDate)
-        {         
-
+             string doctorId,
+             DateTime fromDate,
+             DateTime toDate)
+        {
             var schedules = await _doctorScheduleService.GetDoctorSchedulesByDoctorId(doctorId, fromDate, toDate);
+            var data = schedules?.ToList() ?? new List<DoctorScheduleResponseDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = schedules
+                Data = data 
             });
         }
 
@@ -92,30 +95,31 @@ namespace SEP490_BE.Controllers
             DateTime fromDate,
             DateTime toDate)
         {
-
             var schedules = await _doctorScheduleService.GetDoctorSchedulesByRange(fromDate, toDate);
+            var data = schedules?.ToList() ?? new List<DoctorScheduleResponseDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = schedules
+                Data = data 
             });
         }
+
         [HttpGet("room/{examinationRoomId}")]
         public async Task<IActionResult> GetDoctorSchedulesByExaminationRoom(
-           string examinationRoomId,
-           DateTime fromDate,
-           DateTime toDate)
-        {         
-
+            string examinationRoomId,
+            DateTime fromDate,
+            DateTime toDate)
+        {
             var schedules = await _doctorScheduleService.GetDoctorSchedulesByExaminationRoom(examinationRoomId, fromDate, toDate);
+            var data = schedules?.ToList() ?? new List<DoctorScheduleResponseDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = schedules
+                Data = data 
             });
         }
     }
