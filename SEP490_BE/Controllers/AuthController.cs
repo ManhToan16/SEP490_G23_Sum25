@@ -33,7 +33,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.LOGIN_SUCCESS,
-                Data = response
+                Data = new[] { response }
             };
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }
@@ -47,7 +47,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = 200,
                 Success = true,
                 Message = MessageConstants.REFRESH_TOKEN_SUCCESS,
-                Data = response
+                Data = new[] { response }
             };
             return StatusCode(apiResponse.StatusCode, apiResponse);
         }

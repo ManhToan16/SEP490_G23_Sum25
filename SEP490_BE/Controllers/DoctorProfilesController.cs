@@ -29,11 +29,12 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = dto
+                Data = new[] { dto }
             });
 
 
         }
+
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateDoctorProfile([FromBody] CreateDoctorProfileDTO dto)
@@ -45,7 +46,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status201Created,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = createdDto
+                Data = new [] { createdDto }
             });
         }
         [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
@@ -59,7 +60,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = updatedDto
+                Data = new[] { updatedDto }
             });
 
         }
@@ -93,7 +94,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = pagination
+                Data = new[] { pagination }
             });
         }
     }
