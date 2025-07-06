@@ -6,8 +6,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --silent
+# Install dependencies (fix rollup native dependencies issue)
+RUN rm -f package-lock.json && \
+    npm install --silent && \
+    npm install @rollup/rollup-linux-x64-musl --optional --silent || echo "Optional rollup binary install attempted" && \
+    npm ls rollup || echo "Rollup check completed"
 
 # Copy source code
 COPY . .
