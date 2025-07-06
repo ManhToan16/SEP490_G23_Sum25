@@ -28,7 +28,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = data
+                Data = new[] { dto }
             });
         }
 
@@ -42,7 +42,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status201Created,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = data
+                Data = new[] { createdDto }
             });
         }
 
@@ -56,7 +56,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = data
+                Data = new[] { updatedDto }
             });
         }
 
@@ -86,7 +86,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = data 
+                Data = schedules 
             });
         }
 
