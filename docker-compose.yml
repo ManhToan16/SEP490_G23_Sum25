@@ -1,0 +1,98 @@
+version: '3.8'
+
+# ===================================================================
+# DOCKER COMPOSE CHO CLINIC MANAGEMENT SYSTEM
+# ===================================================================
+# Dự án: Hệ thống quản lý phòng khám thần kinh Khánh An
+# Components: React Frontend + .NET Backend
+# Network: clinic-network
+# Ports: 3000 (FE), 5050 (BE)
+# ===================================================================
+
+services:
+  # ===============================================
+  # FRONTEND SERVICE - REACT APP
+  # ===============================================
+  clinic-frontend:
+    image: quanghd/fe:latest
+    container_name: clinic-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://localhost:5050
+    networks:
+      - clinic-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      - clinic-backend
+    labels:
+      - "com.clinic.service=frontend"
+      - "com.clinic.description=React Frontend cho hệ thống quản lý phòng khám"
+
+  # ===============================================  
+  # BACKEND SERVICE - .NET API
+  # ===============================================
+  clinic-backend:
+    image: quanghd/be:latest
+    container_name: clinic-backend
+    ports:
+      - "5050:5050"
+    restart: unless-stopped
+    environment:
+      # ASP.NET Core Configuration
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5050
+      - TZ=Asia/Ho_Chi_Minh
+      
+      # Database Configuration (update these as needed)
+      - ConnectionStrings__DefaultConnection=Server=host.docker.internal,1433;Database=ClinicDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;
+      
+      # JWT Configuration (update these in production)
+      - JwtSettings__SecretKey=your-super-secret-jwt-key-here-at-least-32-chars
+      - JwtSettings__Issuer=SEP490_BE
+      - JwtSettings__Audience=SEP490_FE
+      - JwtSettings__ExpirationHours=24
+      
+      # Redis Configuration (optional)
+      - Redis__ConnectionString=host.docker.internal:6379
+      
+      # CORS Configuration
+      - CORS__AllowedOrigins=http://localhost:3000,http://host.docker.internal:3000
+      
+    networks:
+      - clinic-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5050/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "com.clinic.service=backend"
+      - "com.clinic.description=.NET API cho hệ thống quản lý phòng khám"
+
+# ===============================================
+# NETWORKS
+# ===============================================
+networks:
+  clinic-network:
+    name: clinic-network
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ===============================================
+# VOLUMES (for future use)
+# ===============================================
+volumes:
+  clinic-data:
+    name: clinic-data
+    driver: local 
