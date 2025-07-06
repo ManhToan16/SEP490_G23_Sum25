@@ -158,7 +158,6 @@ jobs:
           
           # Copy docker-compose và scripts từ repo
           cat > docker-compose.yml << 'COMPOSE_EOF'
-        version: '3.8'
         services:
           clinic-frontend:
             image: quanghd/fe:latest
@@ -194,6 +193,7 @@ jobs:
         networks:
           default:
             name: clinic-network
+            external: true
         COMPOSE_EOF
           
           echo "🔄 Starting deployment process..."
@@ -210,25 +210,37 @@ jobs:
           docker pull quanghd/fe:latest
           docker pull quanghd/be:latest
           
-          # 3. Stop và REMOVE containers cũ
+          # 3. Setup network
+          echo "🌐 Setting up network..."
+          docker network create clinic-network 2>/dev/null || echo "Network already exists"
+          
+          # 4. Stop và REMOVE containers cũ
           echo "⏹️ Stopping and removing old containers..."
           docker-compose down --remove-orphans || true
           
-          # 4. Force remove containers nếu còn tồn tại
+          # 5. Force remove containers nếu còn tồn tại
           docker rm -f clinic-frontend clinic-backend 2>/dev/null || true
           
-          # 5. Remove old images để tiết kiệm disk space
+          # 6. Remove old images để tiết kiệm disk space
           echo "🧹 Cleaning up old images..."
           docker image prune -f || true
           
-          # 6. Start containers mới
+          # 7. Start containers mới
           echo "🚀 Starting new containers..."
           docker-compose up -d
           
-          # 7. Verify containers started successfully
+          # 8. Wait for containers to start
+          echo "⏳ Waiting for containers to start..."
+          sleep 15
+          
+          # 9. Verify containers started successfully
           echo "🔍 Verifying containers..."
-          sleep 10
           docker ps --filter "name=clinic-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+          
+          # 10. Check container logs nếu có vấn đề
+          echo "📋 Container logs:"
+          docker logs clinic-frontend --tail=5 || echo "Frontend container not found"
+          docker logs clinic-backend --tail=5 || echo "Backend container not found"
           
           echo "✅ Deployment completed successfully!"
         EOF
@@ -236,23 +248,53 @@ jobs:
     - name: 🏥 Health Check
       run: |
         echo "⏳ Waiting for services to start..."
-        sleep 30
+        sleep 45
         
-        # Check Frontend
-        if curl -f "${{ secrets.HOST }}:3000" > /dev/null 2>&1; then
-          echo "✅ Frontend is healthy"
-        else
-          echo "❌ Frontend health check failed"
+        # Check if containers are running first
+        echo "🔍 Checking container status..."
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "docker ps --filter 'name=clinic-' --format 'table {{.Names}}\t{{.Status}}'"
+        
+        # Check Frontend with retry
+        echo "🏥 Checking Frontend health..."
+        for i in {1..5}; do
+          if curl -f "${{ secrets.HOST }}:3000/health" > /dev/null 2>&1; then
+            echo "✅ Frontend is healthy (attempt $i/5)"
+            break
+          else
+            echo "⏳ Frontend check attempt $i/5..."
+            sleep 10
+          fi
+        done
+        
+        # Final Frontend check
+        if ! curl -f "${{ secrets.HOST }}:3000/health" > /dev/null 2>&1; then
+          echo "❌ Frontend health check failed after 5 attempts"
+          echo "📋 Frontend logs:"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "docker logs clinic-frontend --tail=10"
           exit 1
         fi
         
-        # Check Backend
-        if curl -f "${{ secrets.HOST }}:5050/health" > /dev/null 2>&1; then
-          echo "✅ Backend is healthy"
-        else
-          echo "❌ Backend health check failed"
+        # Check Backend with retry
+        echo "🏥 Checking Backend health..."
+        for i in {1..5}; do
+          if curl -f "${{ secrets.HOST }}:5050/health" > /dev/null 2>&1; then
+            echo "✅ Backend is healthy (attempt $i/5)"
+            break
+          else
+            echo "⏳ Backend check attempt $i/5..."
+            sleep 10
+          fi
+        done
+        
+        # Final Backend check
+        if ! curl -f "${{ secrets.HOST }}:5050/health" > /dev/null 2>&1; then
+          echo "❌ Backend health check failed after 5 attempts"
+          echo "📋 Backend logs:"
+          ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "docker logs clinic-backend --tail=10"
           exit 1
         fi
+        
+        echo "🎉 All services are healthy!"
         
   # ===============================================
   # JOB 5: NOTIFY DEPLOYMENT
