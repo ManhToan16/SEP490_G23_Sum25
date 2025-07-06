@@ -32,7 +32,12 @@ jobs:
         
     - name: 📦 Install dependencies
       working-directory: ./SEP490_FE
-      run: npm install --silent
+      run: |
+        # Clean install to fix rollup native dependencies issue
+        rm -rf node_modules package-lock.json
+        npm install --silent
+        # Verify rollup is properly installed
+        npx rollup --version
       
     - name: 🔍 Lint code (Temporarily disabled)
       working-directory: ./SEP490_FE
