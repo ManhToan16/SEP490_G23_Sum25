@@ -33,9 +33,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 {
                     Id = er.Id,
                     Name = er.Name,
-                    Description = er.Description,
-                    DoctorScheduleCount = er.DoctorSchedules?.Count ?? 0,
-                    QueueCount = er.Queues?.Count ?? 0
+                    Description = er.Description
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -54,9 +52,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description,
-                DoctorScheduleCount = room.DoctorSchedules?.Count ?? 0,
-                QueueCount = room.Queues?.Count ?? 0
+                Description = room.Description
             };
         }
 
@@ -92,9 +88,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description,
-                DoctorScheduleCount = 0,
-                QueueCount = 0
+                Description = room.Description
             };
         }
 
@@ -126,9 +120,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description,
-                DoctorScheduleCount = room.DoctorSchedules?.Count ?? 0,
-                QueueCount = room.Queues?.Count ?? 0
+                Description = room.Description
             };
         }
 
@@ -145,7 +137,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
         }
         public async Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId)
         {
-            var queues  = await _examinationRoomRepository.GetPatientsInRoomAsync(roomId);
+            var (queues, _) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
             if (queues == null || !queues.Any())
             {
                 return new List<PatientInRoomDTO>();
@@ -160,38 +152,89 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             }).ToList();
         }
 
-        public async Task<List<ExaminationRoomWithDoctorDTO>> GetExaminationRoomsByDate(TimeSpan time, DateTime date)
+        public async Task<(List<PatientInRoomDTO> Patients, DoctorProfileResponseDTO Doctor)> GetPatientsAndDoctorInRoomAsync(string roomId)
         {
+            var (queues, doctor) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
+            if (queues == null || !queues.Any())
+            {
+                return (new List<PatientInRoomDTO>(), null);
+            }
+
+            var patients = queues.Select(q => new PatientInRoomDTO
+            {
+                AppointmentId = q.AppointmentId,
+                Name = q.Appointment.Name,
+                PhoneNumber = q.Appointment.PhoneNumber,
+                CreateAt = q.CreateAt
+            }).ToList();
+
+            DoctorProfileResponseDTO doctorDto = null;
+            if (doctor != null)
+            {
+                doctorDto = new DoctorProfileResponseDTO
+                {
+                    Id = doctor.Id,
+                    DoctorId = doctor.DoctorId,
+                    Qualifications = doctor.Qualifications,
+                    YearsOfExperience = doctor.YearsOfExperience,
+                    Biography = doctor.Biography,
+                    Avatar = doctor.Avatar,
+                    Name = doctor.Doctor?.Name,
+                    PhoneNumber = doctor.Doctor?.PhoneNumber,
+                    Email = doctor.Doctor?.Email,
+                    DateOfBirth = doctor.Doctor?.DateOfBirth
+                };
+            }
+
+            return (patients, doctorDto);
+        }
+
+        public async Task<List<ExaminationRoomWithDoctorDTO>> GetExaminationRoomsByDate(
+             TimeSpan time,
+             DateTime date)
+        {
+            if (time == default) time = DateTime.Now.TimeOfDay; // 11:30 PM +07
+            if (date == default) date = DateTime.Today; // 06/07/2025
+
             var rooms = await _examinationRoomRepository.FindAll(null, null, 1, int.MaxValue).ContinueWith(t => t.Result.Rooms);
             var result = new List<ExaminationRoomWithDoctorDTO>();
 
             foreach (var room in rooms)
             {
-                var schedules = room.DoctorSchedules
-                    ?.Where(ds => ds.Date.Date == date.Date && ds.StartTime <= time && ds.EndTime >= time)
-                    .OrderBy(ds => ds.StartTime)
-                    .ToList();
+         
+                var schedules = await _examinationRoomRepository.GetSchedulesByRoomAndDateAsync(room.Id, date);
 
-                string doctorName = "Not Available";
-                if (schedules != null && schedules.Any())
-                {
-                    var firstSchedule = schedules.First();
-                    var doctor = await _context.Users.FindAsync(firstSchedule.DoctorId);
-                    doctorName = doctor?.Name ?? "Not Available";
-                }
-
-                result.Add(new ExaminationRoomWithDoctorDTO
+                ExaminationRoomWithDoctorDTO dto = new ExaminationRoomWithDoctorDTO
                 {
                     Room = new ExaminationRoomResponseDTO
                     {
                         Id = room.Id,
-                        Name = room.Name,
-                        Description = room.Description,
-                        DoctorScheduleCount = room.DoctorSchedules?.Count ?? 0,
-                        QueueCount = room.Queues?.Count ?? 0
-                    },
-                    DoctorName = doctorName
+                        Name = room.Name ?? "Unknown Room",
+                        Description = room.Description ?? "No description"
+                    }
+                };
+
+              
+                var matchingSchedule = schedules?.FirstOrDefault(s =>
+                {
+                    var timeSlot = _context.TimeSlots.Find(s.TimeSlotId);
+                    return timeSlot != null &&
+                          timeSlot.StartTime <= time &&
+                           time < timeSlot.EndTime;
+
                 });
+
+                if (matchingSchedule != null)
+                {
+                    var doctor = await _context.Users.FindAsync(matchingSchedule.UserId);
+                    if (doctor != null)
+                    {
+                        dto.DoctorId = doctor.Id;
+                        dto.DoctorName = doctor.Name;
+                    }
+                }
+
+                result.Add(dto);
             }
 
             return result;

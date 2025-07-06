@@ -3,6 +3,7 @@
     public class ExaminationRoomWithDoctorDTO
     {
         public ExaminationRoomResponseDTO Room { get; set; }
+        public string DoctorId { get; set; }
         public string DoctorName { get; set; }
     }
 }

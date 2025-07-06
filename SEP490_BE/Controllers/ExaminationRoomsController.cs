@@ -4,7 +4,7 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Constants;
-using SEP490_BE.DTO.DoctorScheduleDTO;
+
 
 namespace SEP490_BE.Controllers
 {
