@@ -4,6 +4,7 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Constants;
+using SEP490_BE.DTO.DoctorScheduleDTO;
 
 namespace SEP490_BE.Controllers
 {
@@ -22,6 +23,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> GetExaminationRoom(string id)
         {
             var dto = await _examinationRoomService.GetById(id);
+            var data = dto != null ? new List<ExaminationRoomResponseDTO> { dto } : new List<ExaminationRoomResponseDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -35,6 +37,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateExaminationRoom([FromBody] CreateExaminationRoomDTO dto)
         {
             var createdDto = await _examinationRoomService.Create(dto);
+            var data = createdDto != null ? new List<ExaminationRoomResponseDTO> { createdDto } : new List<ExaminationRoomResponseDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -48,6 +51,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> UpdateExaminationRoom(string id, [FromBody] UpdateExaminationRoomDTO dto)
         {
             var updatedDto = await _examinationRoomService.Update(id, dto);
+            var data = updatedDto != null ? new List<ExaminationRoomResponseDTO> { updatedDto } : new List<ExaminationRoomResponseDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -66,7 +70,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.DELETE_SUCCESS,
-                Data = null
+                Data = new List<object>() 
             });
         }
 
@@ -78,6 +82,7 @@ namespace SEP490_BE.Controllers
             int pageSize = 10)
         {
             var pagination = await _examinationRoomService.GetAll(name, description, pageNumber, pageSize);
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -96,6 +101,7 @@ namespace SEP490_BE.Controllers
             if (date == default) date = DateTime.Today;
 
             var rooms = await _examinationRoomService.GetExaminationRoomsByDate(time, date);
+            var data = rooms?.ToList() ?? new List<ExaminationRoomWithDoctorDTO>();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
