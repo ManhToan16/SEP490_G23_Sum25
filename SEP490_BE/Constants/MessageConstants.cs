@@ -21,6 +21,7 @@
         public const string NOT_FOUND = "Resource not found.";
         public const string ENDPOINT_NOT_FOUND = "Endpoint not found.";
         public const string METHOD_NOT_FOUND = "Method not found.";
+        public const string UNSUPPORTED_MEDIA_TYPE = "Unsupported media type.";
         #endregion
 
         #region CRUD Common
@@ -66,6 +67,12 @@
         #region Role
         public const string ROLE_NOT_FOUND = "Role not found.";
 
+
+        #endregion
+
+        #region Patient Profile
+        public const string PATIENT_PROTILE_NOT_FOUND = "Patient profile not found.";
+        public const string PATIENT_PROTILE_EXISTS = "This citizen Id has been registered.";
 
         #endregion
     }
