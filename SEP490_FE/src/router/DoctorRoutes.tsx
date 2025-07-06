@@ -12,6 +12,7 @@ const AppointmentQueue = React.lazy(
 const CreateMedicalRecord = React.lazy(
   () => import("@/pages/doctor/CreateMedicalRecord")
 );
+const TestNavigation = React.lazy(() => import("@/pages/doctor/TestNavigation"));
 
 const DoctorRoutes: React.FC = () => {
   return (
@@ -19,9 +20,11 @@ const DoctorRoutes: React.FC = () => {
       <Routes>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="my-info" element={<MyInfo />} />
+        <Route path="profile" element={<MyInfo />} />
         <Route path="schedule" element={<MySchedule />} />
         <Route path="queue" element={<AppointmentQueue />} />
         <Route path="create-record" element={<CreateMedicalRecord />} />
+        <Route path="test-nav" element={<TestNavigation />} />
       </Routes>
     </Suspense>
   );

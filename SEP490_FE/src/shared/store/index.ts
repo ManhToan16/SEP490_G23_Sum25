@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import authSlice from "./slices/authSlice";
 import uiSlice from "./slices/uiSlice";
 import dataSlice from "./slices/dataSlice";
+import doctorProfileSlice from "./slices/doctorProfileSlice";
 
 // Simple store configuration
 export const store = configureStore({
@@ -12,6 +13,7 @@ export const store = configureStore({
     auth: authSlice,
     ui: uiSlice,
     data: dataSlice,
+    doctorProfile: doctorProfileSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

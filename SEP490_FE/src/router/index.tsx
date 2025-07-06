@@ -14,6 +14,7 @@ const AdminRoutes = React.lazy(() => import("./AdminRoutes"));
 // Common pages
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const HomePage = React.lazy(() => import("@/pages/patient/Home"));
+const Health = React.lazy(() => import("@/pages/Health"));
 
 interface AppRouterProps {
   className?: string;
@@ -30,6 +31,9 @@ const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
               path={ROUTES.ROOT}
               element={<Navigate to={ROUTES.HOME} replace />}
             />
+
+            {/* Health check route */}
+            <Route path="/health" element={<Health />} />
 
             {/* Home route */}
             <Route path={ROUTES.HOME} element={<HomePage />} />
