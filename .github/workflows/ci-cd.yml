@@ -196,29 +196,39 @@ jobs:
             name: clinic-network
         COMPOSE_EOF
           
-          # Backup containers hiện tại
+          echo "🔄 Starting deployment process..."
+          
+          # 1. Backup current containers (nếu có)
           if docker ps -q --filter "name=clinic-frontend" | grep -q .; then
-            echo "🔄 Backing up current containers..."
+            echo "📦 Backing up current containers..."
             docker tag quanghd/fe:latest quanghd/fe:backup-$(date +%Y%m%d-%H%M%S) || true
             docker tag quanghd/be:latest quanghd/be:backup-$(date +%Y%m%d-%H%M%S) || true
           fi
           
-          # Pull images mới nhất
+          # 2. Pull latest images
           echo "📥 Pulling latest images..."
           docker pull quanghd/fe:latest
           docker pull quanghd/be:latest
           
-          # Stop containers cũ
-          echo "⏹️ Stopping old containers..."
-          docker-compose down || true
+          # 3. Stop và REMOVE containers cũ
+          echo "⏹️ Stopping and removing old containers..."
+          docker-compose down --remove-orphans || true
           
-          # Start containers mới
+          # 4. Force remove containers nếu còn tồn tại
+          docker rm -f clinic-frontend clinic-backend 2>/dev/null || true
+          
+          # 5. Remove old images để tiết kiệm disk space
+          echo "🧹 Cleaning up old images..."
+          docker image prune -f || true
+          
+          # 6. Start containers mới
           echo "🚀 Starting new containers..."
           docker-compose up -d
           
-          # Cleanup old images
-          echo "🧹 Cleaning up old images..."
-          docker image prune -f || true
+          # 7. Verify containers started successfully
+          echo "🔍 Verifying containers..."
+          sleep 10
+          docker ps --filter "name=clinic-" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
           
           echo "✅ Deployment completed successfully!"
         EOF
