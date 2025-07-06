@@ -46,7 +46,7 @@ namespace SEP490_BE.Entities
             if (!optionsBuilder.IsConfigured)
             {
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(AppContext.BaseDirectory) // base path đến thư mục chứa file cấu hình
+                    .SetBasePath(AppContext.BaseDirectory) 
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
                     .Build();
 
