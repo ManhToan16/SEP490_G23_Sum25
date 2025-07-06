@@ -1,4 +1,5 @@
-﻿using SEP490_BE.DTO;
+﻿using Microsoft.EntityFrameworkCore;
+using SEP490_BE.DTO;
 using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Entities;
@@ -193,8 +194,6 @@ namespace SEP490_BE.Services.ExaminationRoomServices
              TimeSpan time,
              DateTime date)
         {
-            if (time == default) time = DateTime.Now.TimeOfDay; // 11:30 PM +07
-            if (date == default) date = DateTime.Today; // 06/07/2025
 
             var rooms = await _examinationRoomRepository.FindAll(null, null, 1, int.MaxValue).ContinueWith(t => t.Result.Rooms);
             var result = new List<ExaminationRoomWithDoctorDTO>();
@@ -215,24 +214,29 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 };
 
               
-                var matchingSchedule = schedules?.FirstOrDefault(s =>
-                {
-                    var timeSlot = _context.TimeSlots.Find(s.TimeSlotId);
-                    return timeSlot != null &&
-                          timeSlot.StartTime <= time &&
-                           time < timeSlot.EndTime;
+       
 
-                });
-
-                if (matchingSchedule != null)
+                foreach (var s in schedules)
                 {
-                    var doctor = await _context.Users.FindAsync(matchingSchedule.UserId);
-                    if (doctor != null)
+                    var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == s.TimeSlotId);
+                    Console.WriteLine($"ScheduleId: {s.Id}, Role: {s.Role}, TimeSlotId: {s.TimeSlotId}, " +
+    $"Slot: {timeSlot?.StartTime} - {timeSlot?.EndTime}, " +
+    $"Condition: {timeSlot?.StartTime <= time && time < timeSlot?.EndTime}");
+                    if (timeSlot != null &&
+                        timeSlot.StartTime <= time &&
+                        time < timeSlot.EndTime) 
+
                     {
-                        dto.DoctorId = doctor.Id;
-                        dto.DoctorName = doctor.Name;
+                        var doctor = await _context.Users.FindAsync(s.UserId);
+                        if (doctor != null)
+                        {
+                            dto.DoctorId = doctor.Id;
+                            dto.DoctorName = doctor.Name;
+                            break; 
+                        }
                     }
                 }
+
 
                 result.Add(dto);
             }

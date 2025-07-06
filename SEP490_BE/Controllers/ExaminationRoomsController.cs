@@ -97,9 +97,6 @@ namespace SEP490_BE.Controllers
              [FromQuery] TimeSpan time ,
              [FromQuery] DateTime date )
         {
-            if (time == default) time = DateTime.Now.TimeOfDay;
-            if (date == default) date = DateTime.Today;
-
             var rooms = await _examinationRoomService.GetExaminationRoomsByDate(time, date);
             var data = rooms?.ToList() ?? new List<ExaminationRoomWithDoctorDTO>();
             return Ok(new ApiResponse
