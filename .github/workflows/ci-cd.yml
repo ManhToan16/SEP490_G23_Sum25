@@ -32,7 +32,7 @@ jobs:
         
     - name: 📦 Install dependencies
       working-directory: ./SEP490_FE
-      run: npm ci --silent
+      run: npm install --silent
       
     - name: 🔍 Lint code (Temporarily disabled)
       working-directory: ./SEP490_FE
