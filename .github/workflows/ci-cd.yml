@@ -1,0 +1,260 @@
+name: 🚀 CI/CD Pipeline - Clinic Management System
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  DOCKER_HUB_USERNAME: quanghd
+  FRONTEND_IMAGE: quanghd/fe
+  BACKEND_IMAGE: quanghd/be
+  
+jobs:
+  # ===============================================
+  # JOB 1: BUILD & TEST FRONTEND
+  # ===============================================
+  build-frontend:
+    name: 🎨 Build Frontend (React + TypeScript)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: ⚡ Setup Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'SEP490_FE/package-lock.json'
+        
+    - name: 📦 Install dependencies
+      working-directory: ./SEP490_FE
+      run: npm ci --silent
+      
+    - name: 🔍 Lint code
+      working-directory: ./SEP490_FE
+      run: npm run lint
+      
+    - name: 🔨 Build application
+      working-directory: ./SEP490_FE
+      run: npm run build
+      
+    - name: 📁 Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: frontend-build
+        path: SEP490_FE/dist/
+        retention-days: 1
+
+  # ===============================================
+  # JOB 2: BUILD & TEST BACKEND  
+  # ===============================================
+  build-backend:
+    name: 🔧 Build Backend (.NET 6.0)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: ⚡ Setup .NET 6.0
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '6.0.x'
+        
+    - name: 📦 Restore dependencies
+      working-directory: ./SEP490_BE
+      run: dotnet restore
+      
+    - name: 🔨 Build application
+      working-directory: ./SEP490_BE
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: 🧪 Run tests
+      working-directory: ./SEP490_BE
+      run: dotnet test --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+  # ===============================================
+  # JOB 3: BUILD & PUSH DOCKER IMAGES
+  # ===============================================
+  docker-build:
+    name: 🐳 Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [build-frontend, build-backend]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: 🔑 Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        
+    - name: 🎨 Build & Push Frontend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./SEP490_FE
+        file: ./SEP490_FE/Dockerfile
+        push: true
+        tags: |
+          ${{ env.FRONTEND_IMAGE }}:latest
+          ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: 🔧 Build & Push Backend Image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./SEP490_BE
+        file: ./SEP490_BE/Dockerfile
+        push: true
+        tags: |
+          ${{ env.BACKEND_IMAGE }}:latest
+          ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # ===============================================
+  # JOB 4: DEPLOY TO PRODUCTION
+  # ===============================================
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [docker-build]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      
+    - name: 🔑 Setup SSH Key
+      uses: webfactory/ssh-agent@v0.9.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_KEY }}
+        
+    - name: 🚀 Deploy to Server
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
+          # Tạo thư mục project nếu chưa có
+          mkdir -p ~/clinic-management
+          cd ~/clinic-management
+          
+          # Copy docker-compose và scripts từ repo
+          cat > docker-compose.yml << 'COMPOSE_EOF'
+        version: '3.8'
+        services:
+          clinic-frontend:
+            image: quanghd/fe:latest
+            container_name: clinic-frontend
+            ports:
+              - "3000:80"
+            restart: unless-stopped
+            environment:
+              - NODE_ENV=production
+            healthcheck:
+              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+              start_period: 30s
+
+          clinic-backend:
+            image: quanghd/be:latest
+            container_name: clinic-backend
+            ports:
+              - "5050:5050"
+            restart: unless-stopped
+            environment:
+              - ASPNETCORE_ENVIRONMENT=Production
+              - ASPNETCORE_URLS=http://+:5050
+            healthcheck:
+              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5050/health"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+              start_period: 30s
+
+        networks:
+          default:
+            name: clinic-network
+        COMPOSE_EOF
+          
+          # Backup containers hiện tại
+          if docker ps -q --filter "name=clinic-frontend" | grep -q .; then
+            echo "🔄 Backing up current containers..."
+            docker tag quanghd/fe:latest quanghd/fe:backup-$(date +%Y%m%d-%H%M%S) || true
+            docker tag quanghd/be:latest quanghd/be:backup-$(date +%Y%m%d-%H%M%S) || true
+          fi
+          
+          # Pull images mới nhất
+          echo "📥 Pulling latest images..."
+          docker pull quanghd/fe:latest
+          docker pull quanghd/be:latest
+          
+          # Stop containers cũ
+          echo "⏹️ Stopping old containers..."
+          docker-compose down || true
+          
+          # Start containers mới
+          echo "🚀 Starting new containers..."
+          docker-compose up -d
+          
+          # Cleanup old images
+          echo "🧹 Cleaning up old images..."
+          docker image prune -f || true
+          
+          echo "✅ Deployment completed successfully!"
+        EOF
+        
+    - name: 🏥 Health Check
+      run: |
+        echo "⏳ Waiting for services to start..."
+        sleep 30
+        
+        # Check Frontend
+        if curl -f "${{ secrets.HOST }}:3000" > /dev/null 2>&1; then
+          echo "✅ Frontend is healthy"
+        else
+          echo "❌ Frontend health check failed"
+          exit 1
+        fi
+        
+        # Check Backend
+        if curl -f "${{ secrets.HOST }}:5050/health" > /dev/null 2>&1; then
+          echo "✅ Backend is healthy"
+        else
+          echo "❌ Backend health check failed"
+          exit 1
+        fi
+        
+  # ===============================================
+  # JOB 5: NOTIFY DEPLOYMENT
+  # ===============================================
+  notify:
+    name: 📢 Notification
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: always()
+    
+    steps:
+    - name: 📧 Send Notification
+      if: always()
+      run: |
+        if [ "${{ needs.deploy.result }}" == "success" ]; then
+          echo "✅ Deployment thành công!"
+          echo "🌐 Frontend: http://${{ secrets.HOST }}:3000"
+          echo "🔧 Backend: http://${{ secrets.HOST }}:5050"
+          echo "📚 API Docs: http://${{ secrets.HOST }}:5050/swagger"
+        else
+          echo "❌ Deployment thất bại!"
+          echo "📝 Vui lòng kiểm tra logs để tìm nguyên nhân."
+        fi 
