@@ -5,13 +5,26 @@ namespace SEP490_BE.Entities
 {
     public partial class Material
     {
+        public Material()
+        {
+            TransactionHistories = new HashSet<TransactionHistory>();
+            Transactions = new HashSet<Transaction>();
+        }
+
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;
-        public string? Code { get; set; }
-        public string? Category { get; set; }
+        public string CategoryId { get; set; } = null!;
+        public string SupplierId { get; set; } = null!;
         public string Unit { get; set; } = null!;
         public int QuantityInStock { get; set; }
+        public int? MaxQuantity { get; set; }
+        public int? MinQuantity { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CreatedAt { get; set; }
+
+        public virtual Category Category { get; set; } = null!;
+        public virtual Supplier Supplier { get; set; } = null!;
+        public virtual ICollection<TransactionHistory> TransactionHistories { get; set; }
+        public virtual ICollection<Transaction> Transactions { get; set; }
     }
 }

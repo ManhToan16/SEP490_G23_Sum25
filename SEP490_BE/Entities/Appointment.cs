@@ -9,7 +9,7 @@ namespace SEP490_BE.Entities
         {
             Assignments = new HashSet<Assignment>();
             ExaminationResults = new HashSet<ExaminationResult>();
-            Queues = new HashSet<Queue>();
+            Visits = new HashSet<Visit>();
         }
 
         public string Id { get; set; } = null!;
@@ -22,19 +22,18 @@ namespace SEP490_BE.Entities
         public string? Address { get; set; }
         public string? Symptom { get; set; }
         public string? RequiredDoctorId { get; set; }
-        public string AssignedDoctorId { get; set; } = null!;
         public DateTime Date { get; set; }
-        public TimeSpan Time { get; set; }
+        public string TimeSlotId { get; set; } = null!;
         public string? Status { get; set; }
         public decimal? TotalPrice { get; set; }
         public DateTime? ExpiredAt { get; set; }
         public DateTime? CreatedAt { get; set; }
 
-        public virtual User AssignedDoctor { get; set; } = null!;
         public virtual PatientProfile? PatientProfile { get; set; }
         public virtual User? RequiredDoctor { get; set; }
+        public virtual TimeSlot TimeSlot { get; set; } = null!;
         public virtual ICollection<Assignment> Assignments { get; set; }
         public virtual ICollection<ExaminationResult> ExaminationResults { get; set; }
-        public virtual ICollection<Queue> Queues { get; set; }
+        public virtual ICollection<Visit> Visits { get; set; }
     }
 }
