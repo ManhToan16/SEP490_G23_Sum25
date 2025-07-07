@@ -3,11 +3,13 @@
     public class CreateScheduleRangeDTO
     {
         public string UserId { get; set; } = null!;
-        public string Role { get; set; } = null!;
+        public List<ScheduleAssignment> ScheduleAssignments { get; set; } = null!;
+    }
+
+    public class ScheduleAssignment
+    {
+        public DateTime Date { get; set; }
         public string RoomId { get; set; } = null!;
-        public string RoomType { get; set; } = null!;
         public string TimeSlotId { get; set; } = null!;
-        public DateTime FromDate { get; set; }
-        public DateTime ToDate { get; set; }
     }
 }

@@ -85,40 +85,72 @@ namespace SEP490_BE.Services.ScheduleServices
         public async Task<List<ScheduleResponseDTO>> CreateScheduleRange(CreateScheduleRangeDTO request)
         {
       
-            // Kiểm tra user tồn tại và role khớp
             var user = await _context.Users
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Id == request.UserId);
-            if (user == null || !user.UserRoles.Any(ur => ur.RoleName == request.Role))
+            if (user == null )
             {
-                throw new ResourceNotFoundException("User or role not found.");
+                throw new ResourceNotFoundException("User  not found.");
             }
 
-            var room = await DetectRoomTypeAsync(request.RoomId);
-            if (room == null)
+            var userRole = user.UserRoles.First().RoleName;
+
+            if (request.ScheduleAssignments == null || !request.ScheduleAssignments.Any())
             {
-                throw new ResourceNotFoundException("Room not found.");
+                throw new Exceptions.ArgumentException("ScheduleAssignments is required and must contain at least one assignment.");
             }
 
-            // Kiểm tra TimeSlot tồn tại
-            var timeSlot = await _context.TimeSlots.FindAsync(request.TimeSlotId);
-            if (timeSlot == null)
+            var assignments = request.ScheduleAssignments.OrderBy(a => a.Date).ToList();
+            if (assignments.Any() && assignments.First().Date > assignments.Last().Date)
             {
-                throw new ResourceNotFoundException("Time slot not found.");
+                throw new Exceptions.ArgumentException("Schedule assignments must be in chronological order.");
             }
-
             var schedules = new List<Schedule>();
-            var currentDate = request.FromDate.Date;
-            while (currentDate <= request.ToDate.Date)
+            var currentDate = assignments.First().Date.Date;
+            var assignmentIndex = 0;
+
+            while (currentDate <= assignments.Last().Date.Date)
             {
                 if (await _scheduleRepository.CheckScheduleConflictAsync(request.UserId, currentDate))
                 {
                     currentDate = currentDate.AddDays(1);
                     continue;
                 }
-                var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(request.RoomId, currentDate, currentDate);
-                var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == request.TimeSlotId).ToList();
-                if (room == "EXAMINATION")
+
+                string roomId, timeSlotId;
+                if (assignmentIndex < assignments.Count && assignments[assignmentIndex].Date.Date == currentDate)
+                {
+                    roomId = assignments[assignmentIndex].RoomId;
+                    timeSlotId = assignments[assignmentIndex].TimeSlotId;
+                    assignmentIndex++;
+                }
+                else
+                {
+                   
+                        throw new Exceptions.ArgumentException($"No assignment for date {currentDate}.");
+                  
+                }
+
+                var roomType = await DetectRoomTypeAsync(roomId);
+                if (roomType == null)
+                {
+                    throw new ResourceNotFoundException("Room not found.");
+                }
+
+                if (!IsValidRoleForRoomType(roomType, userRole))
+                {
+                    throw new UnauthorizedAccessException($"Role {userRole} is not allowed for {roomType} room.");
+                }
+
+                var timeSlot = await _context.TimeSlots.FindAsync(timeSlotId);
+                if (timeSlot == null)
+                {
+                    throw new ResourceNotFoundException("Time slot not found.");
+                }
+
+                var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(roomId, currentDate, currentDate);
+                var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == timeSlotId).ToList();
+                if (roomType == "EXAMINATION")
                 {
                     var doctorCount = existingSlotSchedules.Count(s => s.Role == "DOCTOR");
                     var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
@@ -126,13 +158,13 @@ namespace SEP490_BE.Services.ScheduleServices
                     {
                         throw new ConflictDataException("Examination room can only have one DOCTOR and one NURSE per TimeSlot.");
                     }
-                    if (doctorCount > 0 && user.UserRoles.First().RoleName == "DOCTOR" ||
-                        nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
+                    if (doctorCount > 0 && userRole == "DOCTOR" ||
+                        nurseCount > 0 && userRole == "NURSE")
                     {
-                        throw new ConflictDataException($"Examination room already has a {user.UserRoles.First().RoleName} for this TimeSlot on {currentDate}.");
+                        throw new ConflictDataException($"Examination room already has a {userRole} for this TimeSlot on {currentDate}.");
                     }
                 }
-                else if (room == "LABORATORY")
+                else if (roomType == "LABORATORY")
                 {
                     var techCount = existingSlotSchedules.Count(s => s.Role == "TECHNICIAN");
                     var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
@@ -140,21 +172,22 @@ namespace SEP490_BE.Services.ScheduleServices
                     {
                         throw new ConflictDataException("Laboratory room can only have one TECHNICIAN and one NURSE per TimeSlot.");
                     }
-                    if (techCount > 0 && user.UserRoles.First().RoleName == "TECHNICIAN" ||
-                        nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
+                    if (techCount > 0 && userRole == "TECHNICIAN" ||
+                        nurseCount > 0 && userRole == "NURSE")
                     {
-                        throw new ConflictDataException($"Laboratory room already has a {user.UserRoles.First().RoleName} for this TimeSlot on {currentDate}.");
+                        throw new ConflictDataException($"Laboratory room already has a {userRole} for this TimeSlot on {currentDate}.");
                     }
                 }
+
                 var schedule = new Schedule
                 {
                     Id = Guid.NewGuid().ToString(),
                     UserId = request.UserId,
-                    Role = request.Role,
-                    RoomId = request.RoomId,
-                    RoomType = request.RoomType,
+                    Role = userRole,
+                    RoomId = roomId,
+                    RoomType = roomType,
                     Date = currentDate,
-                    TimeSlotId = request.TimeSlotId,
+                    TimeSlotId = timeSlotId,
                     Status = "SCHEDULED"
                 };
                 schedules.Add(schedule);
@@ -194,7 +227,6 @@ namespace SEP490_BE.Services.ScheduleServices
         public async Task<ScheduleResponseDTO> CreateSchedule(CreateScheduleDTO request)
         {
            
-   
 
             if (string.IsNullOrEmpty(request.UserId))
             {
@@ -213,7 +245,11 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 throw new ResourceNotFoundException("Room not found.");
             }
-
+            var userRole = user.UserRoles.First().RoleName;
+            if (!IsValidRoleForRoomType(room, userRole))
+            {
+                throw new UnauthorizedAccessException($"Role {userRole} is not allowed for {room} room.");
+            }
             if (string.IsNullOrEmpty(request.TimeSlotId))
             {
                 throw new Exceptions.ArgumentException("TimeSlotId is required.");
@@ -390,7 +426,18 @@ namespace SEP490_BE.Services.ScheduleServices
 
             throw new ResourceNotFoundException("Room not found.");
         }
-
+        private bool IsValidRoleForRoomType(string roomType, string role)
+        {
+            if (roomType == "EXAMINATION")
+            {
+                return role == "DOCTOR" || role == "NURSE";
+            }
+            else if (roomType == "LABORATORY")
+            {
+                return role == "TECHNICIAN" || role == "NURSE";
+            }
+            return false;
+        }
     }
     public enum ScheduleStatus
     {
