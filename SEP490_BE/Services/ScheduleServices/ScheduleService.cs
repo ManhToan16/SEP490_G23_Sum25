@@ -116,7 +116,36 @@ namespace SEP490_BE.Services.ScheduleServices
                     currentDate = currentDate.AddDays(1);
                     continue;
                 }
-
+                var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(request.RoomId, currentDate, currentDate);
+                var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == request.TimeSlotId).ToList();
+                if (room == "EXAMINATION")
+                {
+                    var doctorCount = existingSlotSchedules.Count(s => s.Role == "DOCTOR");
+                    var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
+                    if (doctorCount > 0 && nurseCount > 0)
+                    {
+                        throw new ConflictDataException("Examination room can only have one DOCTOR and one NURSE per TimeSlot.");
+                    }
+                    if (doctorCount > 0 && user.UserRoles.First().RoleName == "DOCTOR" ||
+                        nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
+                    {
+                        throw new ConflictDataException($"Examination room already has a {user.UserRoles.First().RoleName} for this TimeSlot on {currentDate}.");
+                    }
+                }
+                else if (room == "LABORATORY")
+                {
+                    var techCount = existingSlotSchedules.Count(s => s.Role == "TECHNICIAN");
+                    var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
+                    if (techCount > 0 && nurseCount > 0)
+                    {
+                        throw new ConflictDataException("Laboratory room can only have one TECHNICIAN and one NURSE per TimeSlot.");
+                    }
+                    if (techCount > 0 && user.UserRoles.First().RoleName == "TECHNICIAN" ||
+                        nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
+                    {
+                        throw new ConflictDataException($"Laboratory room already has a {user.UserRoles.First().RoleName} for this TimeSlot on {currentDate}.");
+                    }
+                }
                 var schedule = new Schedule
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -199,7 +228,36 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 throw new ResourceNotFoundException("Schedule conflict detected for this user on the specified date.");
             }
-
+            var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(request.RoomId, request.Date, request.Date);
+            var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == request.TimeSlotId).ToList();
+            if (room == "EXAMINATION")
+            {
+                var doctorCount = existingSlotSchedules.Count(s => s.Role == "DOCTOR");
+                var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
+                if (doctorCount > 0 && nurseCount > 0)
+                {
+                    throw new ConflictDataException("Examination room can only have one DOCTOR and one NURSE per TimeSlot.");
+                }
+                if (doctorCount > 0 && user.UserRoles.First().RoleName == "DOCTOR" ||
+                    nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
+                {
+                    throw new ConflictDataException($"Examination room already has a {user.UserRoles.First().RoleName} for this TimeSlot on {request.Date}.");
+                }
+            }
+            else if (room == "LABORATORY")
+            {
+                var techCount = existingSlotSchedules.Count(s => s.Role == "TECHNICIAN");
+                var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
+                if (techCount > 0 && nurseCount > 0)
+                {
+                    throw new ConflictDataException("Laboratory room can only have one TECHNICIAN and one NURSE per TimeSlot.");
+                }
+                if (techCount > 0 && user.UserRoles.First().RoleName == "TECHNICIAN" ||
+                    nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
+                {
+                    throw new ConflictDataException($"Laboratory room already has a {user.UserRoles.First().RoleName} for this TimeSlot on {request.Date}.");
+                }
+            }
             var schedule = new Schedule
             {
                 Id = Guid.NewGuid().ToString(),
