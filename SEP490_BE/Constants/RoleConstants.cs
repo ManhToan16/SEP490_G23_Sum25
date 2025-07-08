@@ -6,5 +6,7 @@
         public const string Doctor = "DOCTOR";
         public const string Receptionist = "RECEPTIONIST";
         public const string Technician = "TECHNICIAN";
+        public const string Nurse = "NURSE";
+
     }
 }

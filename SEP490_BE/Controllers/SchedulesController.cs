@@ -5,6 +5,9 @@ using SEP490_BE.Constants;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.ScheduleServices;
+using Microsoft.AspNetCore.SignalR;
+using SEP490_BE.Hubs;
+using SEP490_BE.Entities;
 
 namespace SEP490_BE.Controllers
 {
@@ -13,10 +16,12 @@ namespace SEP490_BE.Controllers
     public class SchedulesController : ControllerBase
     {
         private readonly IScheduleService _scheduleService;
+        private readonly IHubContext<ScheduleHub> _hubContext;
 
-        public SchedulesController(IScheduleService scheduleService)
+        public SchedulesController(IScheduleService scheduleService, IHubContext<ScheduleHub> hubContext)
         {
             _scheduleService = scheduleService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("user/{userId}")]
@@ -50,7 +55,6 @@ namespace SEP490_BE.Controllers
                 Data = schedules
             });
         }
-
         [HttpGet("range")]
         public async Task<IActionResult> GetAllSchedules(
             [FromQuery] DateTime fromDate,
@@ -65,13 +69,16 @@ namespace SEP490_BE.Controllers
                 Data = schedules
             });
         }
-
+        [Authorize(Roles = "ADMIN")]
         [HttpPost("range")]
-        //[Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> CreateScheduleRange(
             [FromBody] CreateScheduleRangeDTO request)
         {          
             var schedules = await _scheduleService.CreateScheduleRange(request);
+            foreach (var schedule in schedules)
+            {
+                await _hubContext.Clients.All.SendAsync("ReceiveScheduleUpdate", schedule);
+            }
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -86,6 +93,7 @@ namespace SEP490_BE.Controllers
            [FromBody] CreateScheduleDTO request)
         {          
             var schedule = await _scheduleService.CreateSchedule(request);
+            await _hubContext.Clients.All.SendAsync("ReceiveScheduleUpdate", schedule);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -113,6 +121,7 @@ namespace SEP490_BE.Controllers
             //}
 
             var schedule = await _scheduleService.UpdateSchedule(id, request);
+            await _hubContext.Clients.All.SendAsync("ReceiveScheduleUpdate", schedule);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -139,6 +148,7 @@ namespace SEP490_BE.Controllers
             //}
 
             await _scheduleService.DeleteSchedule(id);
+            await _hubContext.Clients.All.SendAsync("ReceiveScheduleDelete", id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

@@ -7,12 +7,14 @@ using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Hubs;
 using SEP490_BE.Middleware;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
+using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.UserRepositories;
@@ -22,6 +24,7 @@ using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Services.PatientProfileServices;
+using SEP490_BE.Services.ScheduleChangeServices;
 using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
 using SEP490_BE.Services.UserServices;
@@ -42,7 +45,7 @@ builder.Services.AddCors(options =>
 #endregion
 
 builder.Services.AddControllers();
-
+builder.Services.AddSignalR();
 #region API Validation Config
 builder.Services.Configure<ApiBehaviorOptions>(ValidationConfig.Configure);
 #endregion
@@ -120,6 +123,7 @@ builder.Services.AddScoped<ILaboratoryRoomService, LaboratoryRoomService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>();
 
 
 
@@ -131,6 +135,8 @@ builder.Services.AddScoped<ILaboratoryRoomRepository, LaboratoryRoomRepository>(
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IPatientProfileRepository, PatientProfileRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
+
 
 
 #endregion
@@ -152,17 +158,20 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseMiddleware<NotFoundMiddleware>();
 
 app.UseHttpsRedirection();
-
+app.UseCors("AllowAllOrigins");
 app.UseRouting();
 
-app.UseCors("AllowAllOrigins");
+
 
 app.UseAuthentication();
 
 app.UseMiddleware<ActiveUserMiddleware>();
 
 app.UseAuthorization();
-
+app.UseEndpoints(endpoints =>
+{
+    endpoints.MapHub<ScheduleHub>("/scheduleHub");
+});
 app.MapControllers();
 
 app.Run();
