@@ -9,6 +9,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Middleware;
+using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
@@ -18,6 +19,7 @@ using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Services.AuditLogServices;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.EmailServices;
@@ -123,6 +125,7 @@ builder.Services.AddScoped<ILaboratoryRoomService, LaboratoryRoomService>();
 builder.Services.AddScoped<IServiceService, ServiceService>();
 builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>();
 
 
@@ -135,6 +138,7 @@ builder.Services.AddScoped<ILaboratoryRoomRepository, LaboratoryRoomRepository>(
 builder.Services.AddScoped<IServiceRepository, ServiceRepository>();
 builder.Services.AddScoped<IPatientProfileRepository, PatientProfileRepository>();
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
+builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
 
 
