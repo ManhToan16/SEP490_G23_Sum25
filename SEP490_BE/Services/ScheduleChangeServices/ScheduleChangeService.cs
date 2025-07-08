@@ -28,7 +28,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             var validRoles = new[] { "DOCTOR", "TECHNICIAN", "NURSE" };
            
             var requesterSchedule = await _scheduleRepository.FindByIdAsync(request.RequesterScheduleId);
-            if (requesterSchedule == null)
+            if (requesterSchedule == null || requesterSchedule.UserId != requesterId)
             {
                 throw new ResourceNotFoundException("Requester schedule not found or not owned by requester.");
             }
