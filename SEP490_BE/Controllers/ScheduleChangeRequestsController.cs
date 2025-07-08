@@ -43,7 +43,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { createdRequest }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.Technician + "," + RoleConstants.Nurse)]
         [HttpPut("approve/{requestId}")]
 
         public async Task<IActionResult> ApproveRequest(string requestId)
@@ -61,7 +61,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { changeRequest }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.Technician + "," + RoleConstants.Nurse)]
         [HttpPut("reject/{requestId}")]
         public async Task<IActionResult> RejectRequest(string requestId)
         {
