@@ -28,11 +28,18 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             var validRoles = new[] { "DOCTOR", "TECHNICIAN", "NURSE" };
            
             var requesterSchedule = await _scheduleRepository.FindByIdAsync(request.RequesterScheduleId);
-            if (requesterSchedule == null)
+            var requester = await _context.Users
+                .Include(u => u.UserRoles)
+                .FirstOrDefaultAsync(u => u.Id == requesterId);
+            if (requester == null || !requester.UserRoles.Any(ur => validRoles.Contains(ur.RoleName)))
+            {
+                throw new UnauthorizedAccessException("Only doctors, technicians, or nurses can request schedule changes.");
+            }
+            if (requesterSchedule == null || requesterSchedule.UserId != requesterId)
             {
                 throw new ResourceNotFoundException("Requester schedule not found or not owned by requester.");
             }
-
+            var requesterRole = requester.UserRoles.First().RoleName;
             var targetUser = await _context.Users
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Id == request.TargetUserId);
@@ -40,7 +47,11 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             {
                 throw new ResourceNotFoundException("Target user must be a doctor, technician, or nurse.");
             }
-
+            var targetRole = targetUser.UserRoles.First().RoleName; 
+            if (requesterRole != targetRole)
+            {
+                throw new UnauthorizedAccessException("Only users with the same role can swap schedules.");
+            }
             var targetSchedule = await _scheduleRepository.FindByIdAsync(request.TargetScheduleId);
             if (targetSchedule == null || targetSchedule.UserId != request.TargetUserId)
             {
