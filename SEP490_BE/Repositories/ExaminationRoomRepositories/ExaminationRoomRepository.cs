@@ -15,9 +15,7 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
         public async Task<ExaminationRoom> FindByIdAsync(string id)
         {
             return await _context.ExaminationRooms
-                .Include(er => er.DoctorSchedules)
-                .Include(er => er.Queues)
-                .ThenInclude(q => q.Appointment)
+                .Include(er => er.Visits)
                 .FirstOrDefaultAsync(er => er.Id == id);
         }
 
@@ -28,10 +26,8 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             int pageSize)
         {
             var query = _context.ExaminationRooms
-                 .Include(er => er.DoctorSchedules) 
-                 .Include(er => er.Queues)
-                 .ThenInclude(q => q.Appointment)
-                 .AsQueryable();
+                .Include(er => er.Visits)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(name))
             {
@@ -68,15 +64,31 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
             _context.ExaminationRooms.Remove(room);
             await _context.SaveChangesAsync();
         }
-        public async Task<List<Queue>> GetPatientsInRoomAsync(string roomId)
+
+        public async Task<(List<Visit> Queues, DoctorProfile Doctor)> GetPatientsAndDoctorInRoomAsync(string roomId, DateTime date)
         {
-            return await _context.Queues
+            var query = _context.Visits
                 .Include(q => q.Appointment)
-                .Where(q => q.ExaminationRoomId == roomId &&
-                           (q.Status == "InProgress" ))
-                .ToListAsync();
+                .Where(q => q.ExaminationRoomId == roomId && q.CreateAt == date.Date)
+                .AsQueryable();
+
+            var doctorQuery = _context.DoctorProfiles
+                .Include(dp => dp.Doctor)
+                .Where(dp => dp.Doctor.UserRoles.Any(ur => ur.RoleName == "DOCTOR"));
+
+            var doctor = await doctorQuery.FirstOrDefaultAsync();
+
+            var queues = await query.ToListAsync();
+
+            return (queues, doctor);
         }
 
-       
+        public async Task<List<Schedule>> GetSchedulesByRoomAndDateAsync(string roomId, DateTime date)
+        {
+            return await _context.Schedules
+                .Include(s => s.User)
+                .Where(s => s.RoomId == roomId  && s.Date == date.Date)
+                .ToListAsync();
+        }
     }
 }

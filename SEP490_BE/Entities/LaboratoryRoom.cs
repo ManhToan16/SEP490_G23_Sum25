@@ -9,7 +9,6 @@ namespace SEP490_BE.Entities
         {
             Assignments = new HashSet<Assignment>();
             Services = new HashSet<Service>();
-            TechnicianSchedules = new HashSet<TechnicianSchedule>();
         }
 
         public string Id { get; set; } = null!;
@@ -18,6 +17,5 @@ namespace SEP490_BE.Entities
 
         public virtual ICollection<Assignment> Assignments { get; set; }
         public virtual ICollection<Service> Services { get; set; }
-        public virtual ICollection<TechnicianSchedule> TechnicianSchedules { get; set; }
     }
 }

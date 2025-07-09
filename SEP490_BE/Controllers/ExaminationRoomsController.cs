@@ -4,7 +4,7 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Constants;
-using SEP490_BE.DTO.DoctorScheduleDTO;
+
 
 namespace SEP490_BE.Controllers
 {
@@ -97,9 +97,6 @@ namespace SEP490_BE.Controllers
              [FromQuery] TimeSpan time ,
              [FromQuery] DateTime date )
         {
-            if (time == default) time = DateTime.Now.TimeOfDay;
-            if (date == default) date = DateTime.Today;
-
             var rooms = await _examinationRoomService.GetExaminationRoomsByDate(time, date);
             var data = rooms?.ToList() ?? new List<ExaminationRoomWithDoctorDTO>();
             return Ok(new ApiResponse

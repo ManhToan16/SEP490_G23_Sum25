@@ -5,6 +5,8 @@ using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.DoctorProfileServices;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.SignalR;
+using SEP490_BE.Hubs;
 
 namespace SEP490_BE.Controllers
 {
@@ -13,10 +15,12 @@ namespace SEP490_BE.Controllers
     public class DoctorProfilesController : ControllerBase
     {
         private readonly IDoctorProfileService _doctorProfileService;
+        private readonly IHubContext<ScheduleHub> _hubContext;
 
-        public DoctorProfilesController(IDoctorProfileService doctorProfileService)
+        public DoctorProfilesController(IDoctorProfileService doctorProfileService, IHubContext<ScheduleHub> hubContext)
         {
             _doctorProfileService = doctorProfileService;
+            _hubContext = hubContext;
         }
 
         [HttpGet("{id}")]
@@ -43,6 +47,7 @@ namespace SEP490_BE.Controllers
 
             var createdDto = await _doctorProfileService.Create(dto);
             var data = createdDto != null ? new List<object> { createdDto } : new List<object>();
+            await _hubContext.Clients.All.SendAsync("ReceiveDoctorProfileUpdate", createdDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -58,6 +63,7 @@ namespace SEP490_BE.Controllers
 
             var updatedDto = await _doctorProfileService.Update(id, dto);
             var data = updatedDto != null ? new List<object> { updatedDto } : new List<object>();
+            await _hubContext.Clients.All.SendAsync("ReceiveDoctorProfileUpdate", updatedDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -73,6 +79,7 @@ namespace SEP490_BE.Controllers
         {
 
             await _doctorProfileService.Delete(id);
+            await _hubContext.Clients.All.SendAsync("ReceiveDoctorProfileDelete", id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

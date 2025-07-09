@@ -5,6 +5,7 @@ using SEP490_BE.DTO.AuthDTO;
 using SEP490_BE.DTO.UserDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuthServices;
@@ -17,17 +18,22 @@ namespace SEP490_BE.Services.UserServices
         private readonly IAuthService _authService;
         private readonly IUserRepository _userRepository;
         private readonly IRoleRepository _roleRepository;
+        private readonly IAuditLogRepository _logRepository;
 
         public UserService(
             KhanhAnNeurologyClinicContext context,
             IAuthService authService, 
             IUserRepository userRepository,
-            IRoleRepository roleRepository)
+            IRoleRepository roleRepository,
+            IAuditLogRepository logRepository)
         {
             _context = context;
             _authService = authService;
             _userRepository = userRepository;
             _roleRepository = roleRepository;
+            _logRepository = logRepository;
+
+
         }
 
         public async Task Activate(string id)
@@ -73,21 +79,8 @@ namespace SEP490_BE.Services.UserServices
                 Address = request.Address,
                 IsActive = true,
             };
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                await _userRepository.Insert(user);
-                await _roleRepository.ApplyRole(newUserId, request.Role);
-                await _context.SaveChangesAsync();
 
-                await transaction.CommitAsync();
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
-            return new UserResponseDTO
+            var userResponseDTO = new UserResponseDTO
             {
                 Id = user.Id,
                 Name = user.Name,
@@ -99,6 +92,24 @@ namespace SEP490_BE.Services.UserServices
                 IsActive = user.IsActive,
                 Role = request.Role
             };
+
+            var sessionUser = await _authService.GetAuthenticatedUser();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _userRepository.Insert(user);
+                await _roleRepository.ApplyRole(newUserId, request.Role);
+                await _logRepository.LogAsync(sessionUser.Id, "CREATE", "Users", newUserId, null, userResponseDTO);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            return userResponseDTO;
         }
 
         public async Task Delete(string id)

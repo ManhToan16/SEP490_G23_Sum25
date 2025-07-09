@@ -7,15 +7,13 @@ namespace SEP490_BE.Entities
     {
         public ExaminationRoom()
         {
-            DoctorSchedules = new HashSet<DoctorSchedule>();
-            Queues = new HashSet<Queue>();
+            Visits = new HashSet<Visit>();
         }
 
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;
         public string? Description { get; set; }
 
-        public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; }
-        public virtual ICollection<Queue> Queues { get; set; }
+        public virtual ICollection<Visit> Visits { get; set; }
     }
 }

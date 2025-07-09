@@ -17,7 +17,6 @@ namespace SEP490_BE.Entities
         public string AppointmentId { get; set; } = null!;
         public string? Summary { get; set; }
         public string? Conclusion { get; set; }
-        public bool? IsCompleted { get; set; }
         public string? AccessCode { get; set; }
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CreatedAt { get; set; }

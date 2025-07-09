@@ -7,15 +7,18 @@ namespace SEP490_BE.Entities
     {
         public User()
         {
-            AppointmentAssignedDoctors = new HashSet<Appointment>();
-            AppointmentRequiredDoctors = new HashSet<Appointment>();
+            Appointments = new HashSet<Appointment>();
             AuditLogs = new HashSet<AuditLog>();
             DoctorProfiles = new HashSet<DoctorProfile>();
-            DoctorSchedules = new HashSet<DoctorSchedule>();
             ExaminationResults = new HashSet<ExaminationResult>();
             LaboratoryResults = new HashSet<LaboratoryResult>();
-            TechnicianSchedules = new HashSet<TechnicianSchedule>();
+            ScheduleChangeRequestRequesters = new HashSet<ScheduleChangeRequest>();
+            ScheduleChangeRequestTargetUsers = new HashSet<ScheduleChangeRequest>();
+            Schedules = new HashSet<Schedule>();
+            TransactionHistories = new HashSet<TransactionHistory>();
+            Transactions = new HashSet<Transaction>();
             UserRoles = new HashSet<UserRole>();
+            Visits = new HashSet<Visit>();
         }
 
         public string Id { get; set; } = null!;
@@ -29,14 +32,17 @@ namespace SEP490_BE.Entities
         public bool? IsActive { get; set; }
         public DateTime? CreatedAt { get; set; }
 
-        public virtual ICollection<Appointment> AppointmentAssignedDoctors { get; set; }
-        public virtual ICollection<Appointment> AppointmentRequiredDoctors { get; set; }
+        public virtual ICollection<Appointment> Appointments { get; set; }
         public virtual ICollection<AuditLog> AuditLogs { get; set; }
         public virtual ICollection<DoctorProfile> DoctorProfiles { get; set; }
-        public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; }
         public virtual ICollection<ExaminationResult> ExaminationResults { get; set; }
         public virtual ICollection<LaboratoryResult> LaboratoryResults { get; set; }
-        public virtual ICollection<TechnicianSchedule> TechnicianSchedules { get; set; }
+        public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestRequesters { get; set; }
+        public virtual ICollection<ScheduleChangeRequest> ScheduleChangeRequestTargetUsers { get; set; }
+        public virtual ICollection<Schedule> Schedules { get; set; }
+        public virtual ICollection<TransactionHistory> TransactionHistories { get; set; }
+        public virtual ICollection<Transaction> Transactions { get; set; }
         public virtual ICollection<UserRole> UserRoles { get; set; }
+        public virtual ICollection<Visit> Visits { get; set; }
     }
 }
