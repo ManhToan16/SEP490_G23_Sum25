@@ -50,8 +50,12 @@ builder.Services.Configure<ApiBehaviorOptions>(ValidationConfig.Configure);
 #endregion
 
 #region Redis
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect("localhost:6379"));
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnectionString))
+{
+    builder.Services.AddSingleton<IConnectionMultiplexer>(
+        ConnectionMultiplexer.Connect(redisConnectionString));
+}
 #endregion
 
 #region Database SQL Server
