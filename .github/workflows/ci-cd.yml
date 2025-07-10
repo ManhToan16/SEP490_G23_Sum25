@@ -195,22 +195,8 @@ jobs:
           
           echo "📝 appsettings.Production.json has been uploaded successfully"
           
-          # Generate .env file from GitHub secrets
-          echo "🔧 Creating .env file from secrets..."
-          cat > .env << 'ENV_EOF'
-          DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
-          IMAGE_TAG=${{ secrets.IMAGE_TAG }}
-          FRONTEND_PORT=${{ secrets.FRONTEND_PORT }}
-          BACKEND_PORT=${{ secrets.BACKEND_PORT }}
-          BACKEND_URL=${{ secrets.BACKEND_URL }}
-          DB_CONNECTION_STRING="${{ secrets.DB_CONNECTION_STRING }}"
-          JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}"
-          JWT_ISSUER=${{ secrets.JWT_ISSUER }}
-          JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
-          JWT_EXPIRY_HOURS=${{ secrets.JWT_EXPIRY_HOURS }}
-          TIMEZONE=${{ secrets.TIMEZONE }}
-          REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
-          ENV_EOF
+          # Skip .env file creation - we'll use appsettings.Production.json directly
+          echo "🔧 Configuration ready - using appsettings.Production.json"
           
           # Create docker-compose.yml inline (no template needed)
           echo "🔧 Creating docker-compose.yml..."
