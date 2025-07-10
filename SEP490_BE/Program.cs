@@ -44,6 +44,17 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod()
                         .AllowAnyHeader());
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); 
+    });
+});
+
 #endregion
 
 builder.Services.AddControllers();
@@ -144,6 +155,7 @@ builder.Services.AddScoped<IPatientProfileRepository, PatientProfileRepository>(
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
+builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 
 
 
@@ -165,7 +177,9 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseMiddleware<NotFoundMiddleware>();
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAllOrigins");
+//app.UseCors("AllowAllOrigins");
+app.UseCors("AllowFrontend");
+
 app.UseRouting();
 
 
@@ -177,7 +191,7 @@ app.UseMiddleware<ActiveUserMiddleware>();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapHub<ScheduleHub>("/scheduleHub");
+    endpoints.MapHub<KhanhAnHub>("/khanhanHub");
 });
 app.MapControllers();
 

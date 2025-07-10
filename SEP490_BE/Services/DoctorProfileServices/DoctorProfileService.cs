@@ -54,7 +54,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
             var doctorProfile = await _doctorProfileRepository.GetDoctorProfileWithUserDetailsAsync(id);
             if (doctorProfile == null)
             {
-                throw new ResourceNotFoundException("Doctor profile not found.");
+                throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ");
             }
             return new DoctorProfileResponseDTO
             {
@@ -76,7 +76,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
             var existingProfile = await _doctorProfileRepository.FindByDoctorIdAsync(request.DoctorId);
             if (existingProfile != null)
             {
-                throw new ConflictDataException("Doctor already has a profile.");
+                throw new ConflictDataException("Bác sĩ đã có hồ sơ rồi.");
             }
 
             var userRoles = await _context.UserRoles
@@ -84,13 +84,13 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 .ToListAsync();
             if (userRoles == null || !userRoles.Any(ur => ur.RoleName == "DOCTOR"))
             {
-                throw new UnauthorizedAccessException("Only users with DOCTOR role can have a profile.");
+                throw new UnauthorizedAccessException("Chỉ những người dùng có vai trò BÁC SĨ mới được có hồ sơ.");
             }
 
             var user = await _context.Users.FindAsync(request.DoctorId);
             if (user == null)
             {
-                throw new ResourceNotFoundException("Doctor not found.");
+                throw new ResourceNotFoundException("Không tìm thấy bác sĩ.");
             }
 
             var doctorProfile = new DoctorProfile
@@ -132,7 +132,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
             var doctorProfile = await _doctorProfileRepository.FindByIdAsync(id);
             if (doctorProfile == null)
             {
-                throw new ResourceNotFoundException("Doctor profile not found.");
+                throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ");
             }
 
             var userRoles = await _context.UserRoles
@@ -140,7 +140,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 .ToListAsync();
             if (userRoles == null || !userRoles.Any(ur => ur.RoleName == "DOCTOR"))
             {
-                throw new UnauthorizedAccessException("Only users with DOCTOR role can have a profile updated.");
+                throw new UnauthorizedAccessException("Chỉ những người dùng có vai trò BÁC SĨ mới được cập nhật hồ sơ.");
             }
 
             doctorProfile.Qualifications = request.Qualifications;
@@ -177,7 +177,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
             var doctorProfile = await _doctorProfileRepository.FindByIdAsync(id);
             if (doctorProfile == null)
             {
-                throw new ResourceNotFoundException("Doctor profile not found.");
+                throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ\"");
             }
 
             await _doctorProfileRepository.DeleteAsync(doctorProfile);
