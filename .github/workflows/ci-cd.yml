@@ -156,6 +156,12 @@ jobs:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         BACKEND_URL: ${{ secrets.BACKEND_URL }}
       run: |
+        # Debug log giá trị thực tế của biến môi trường
+        echo "DB_CONNECTION_STRING=$DB_CONNECTION_STRING"
+        echo "REDIS_CONNECTION_STRING=$REDIS_CONNECTION_STRING"
+        echo "JWT_SECRET_KEY=$JWT_SECRET_KEY"
+        echo "BACKEND_URL=$BACKEND_URL"
+
         # Tạo appsettings.Production.json với biến môi trường được expand
         cat > appsettings.Production.json << APPSETTINGS_EOF
         {
