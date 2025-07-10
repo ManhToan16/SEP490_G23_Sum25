@@ -45,7 +45,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             var room = await _laboratoryRoomRepository.FindByIdAsync(id);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Laboratory room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng cận lâm sàng.");
             }
             return new LaboratoryRoomResponseDTO
             {
@@ -60,7 +60,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             var existingRoom = await _laboratoryRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingRoom != null)
             {
-                throw new ConflictDataException("Laboratory room already exists.");
+                throw new ConflictDataException("Phòng cận lâm sàng đã tồn tại");
             }
 
             var room = new LaboratoryRoom
@@ -96,7 +96,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             var room = await _laboratoryRoomRepository.FindByIdAsync(id);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Laboratory room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng cận lâm sàng.");
             }
 
             room.Name = request.Name ?? room.Name;
@@ -128,7 +128,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             var room = await _laboratoryRoomRepository.FindByIdAsync(id);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Laboratory room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng cận lâm sàng.");
             }
 
             await _laboratoryRoomRepository.DeleteAsync(room);

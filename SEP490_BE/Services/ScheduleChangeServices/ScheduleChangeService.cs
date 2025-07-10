@@ -33,11 +33,11 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                 .FirstOrDefaultAsync(u => u.Id == requesterId);
             if (requester == null || !requester.UserRoles.Any(ur => validRoles.Contains(ur.RoleName)))
             {
-                throw new UnauthorizedAccessException("Only doctors, technicians, or nurses can request schedule changes.");
+                throw new UnauthorizedAccessException("Chỉ những người dùng có vai trò là bác sĩ, kỹ thuật viên hoặc y tá mới được phép yêu cầu thay đổi lịch làm việc");
             }
             if (requesterSchedule == null || requesterSchedule.UserId != requesterId)
             {
-                throw new ResourceNotFoundException("Requester schedule not found or not owned by requester.");
+                throw new ResourceNotFoundException("Không tìm thấy lịch làm việc tương ứng, hoặc người yêu cầu không có quyền sở hữu lịch này.");
             }
             var requesterRole = requester.UserRoles.First().RoleName;
             var targetUser = await _context.Users
@@ -45,17 +45,17 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                 .FirstOrDefaultAsync(u => u.Id == request.TargetUserId);
             if (targetUser == null || !targetUser.UserRoles.Any(ur => validRoles.Contains(ur.RoleName)))
             {
-                throw new ResourceNotFoundException("Target user must be a doctor, technician, or nurse.");
+                throw new ResourceNotFoundException("Người dùng được chỉ định phải là bác sĩ, kỹ thuật viên hoặc y tá.");
             }
             var targetRole = targetUser.UserRoles.First().RoleName; 
             if (requesterRole != targetRole)
             {
-                throw new UnauthorizedAccessException("Only users with the same role can swap schedules.");
+                throw new UnauthorizedAccessException("Chỉ người dùng có cùng chức danh mới được phép đổi lịch với nhau.");
             }
             var targetSchedule = await _scheduleRepository.FindByIdAsync(request.TargetScheduleId);
             if (targetSchedule == null || targetSchedule.UserId != request.TargetUserId)
             {
-                throw new ResourceNotFoundException("Target schedule not found or not owned by target user.");
+                throw new ResourceNotFoundException("Không tìm thấy lịch làm việc của người được chỉ định hoặc lịch không thuộc quyền sở hữu của người đó.");
             }
 
             var requestEntity = new ScheduleChangeRequest
@@ -101,11 +101,11 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             var request = await _changeRequestRepository.FindByIdAsync(requestId);
             if (request == null)
             {
-                throw new ResourceNotFoundException("Request not found.");
+                throw new ResourceNotFoundException("Không tìm thấy yêu cầu.");
             }
             if (request.Status != "PENDING")
             {
-                throw new InvalidOperationException("Request is not pending.");
+                throw new InvalidOperationException("Yêu cầu không ở trạng thái chờ.");
             }
 
             var requesterSchedule = await _scheduleRepository.FindByIdAsync(request.RequesterScheduleId);
@@ -113,7 +113,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
 
             if (requesterSchedule == null || targetSchedule == null)
             {
-                throw new ResourceNotFoundException("Associated schedules not found.");
+                throw new ResourceNotFoundException("Không tìm thấy lịch làm việc liên quan.");
             }
 
             var tempUserId = requesterSchedule.UserId;
@@ -156,11 +156,11 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             var request = await _changeRequestRepository.FindByIdAsync(requestId);
             if (request == null)
             {
-                throw new ResourceNotFoundException("Request not found.");
+                throw new ResourceNotFoundException("Không tìm thấy yêu cầu.");
             }
             if (request.Status != "PENDING")
             {
-                throw new InvalidOperationException("Request is not pending.");
+                throw new InvalidOperationException("Yêu cầu không ở trạng thái chờ.");
             }
 
             request.Status = "REJECTED";
@@ -197,7 +197,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             var request = await _changeRequestRepository.FindByIdAsync(requestId);
             if (request == null)
             {
-                throw new ResourceNotFoundException("Request not found.");
+                throw new ResourceNotFoundException("Không tìm thấy yêu cầu.");
             }
 
             return new ScheduleChangeResponseDTO
