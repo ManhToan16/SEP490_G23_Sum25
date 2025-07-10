@@ -29,14 +29,10 @@ namespace SEP490_BE.Repositories.SupplierRepositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(string id)
+        public async Task DeleteAsync(Supplier supplier)
         {
-            var supplier = await FindByIdAsync(id);
-            if (supplier != null)
-            {
                 _context.Suppliers.Remove(supplier);
                 await _context.SaveChangesAsync();
-            }
         }
 
         public async Task<List<Supplier>> GetAllAsync()

@@ -30,16 +30,19 @@ namespace SEP490_BE.Services.SupplierServices
                 Description = request.Description,
                 CreatedAt = DateTime.UtcNow
             };
-
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _supplierRepository.AddAsync(supplier);
-                return await MapToResponseDTO(supplier);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception("Đã xảy ra lỗi khi tạo nhà cung cấp: " + ex.Message);
+                await transaction.RollbackAsync();
+                throw;
             }
+            return await MapToResponseDTO(supplier);
         }
 
         public async Task<SupplierResponseDTO> UpdateSupplier(string id, UpdateSupplierDTO request)
@@ -57,28 +60,32 @@ namespace SEP490_BE.Services.SupplierServices
             supplier.Address = request.Address ?? supplier.Address;
             supplier.Description = request.Description ?? supplier.Description;
             supplier.UpdatedAt = DateTime.UtcNow;
-
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _supplierRepository.UpdateAsync(supplier);
-                return await MapToResponseDTO(supplier);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
             }
-            catch (Exception ex)
+            catch
             {
-                throw new Exception("Đã xảy ra lỗi khi cập nhật nhà cung cấp: " + ex.Message);
+                await transaction.RollbackAsync();
+                throw;
             }
+            return await MapToResponseDTO(supplier);
+
         }
 
         public async Task DeleteSupplier(string id)
         {
-            try
+            var supplier = await _supplierRepository.FindByIdAsync(id);
+            if (supplier == null)
             {
-                await _supplierRepository.DeleteAsync(id);
+                throw new ResourceNotFoundException("Không tìm thấy nhà cung cấp.");
             }
-            catch (Exception ex)
-            {
-                throw new Exception("Đã xảy ra lỗi khi xóa nhà cung cấp: " + ex.Message);
-            }
+
+            await _supplierRepository.DeleteAsync(supplier);
+            await _context.SaveChangesAsync();
         }
 
         public async Task<SupplierResponseDTO> GetSupplierById(string id)
