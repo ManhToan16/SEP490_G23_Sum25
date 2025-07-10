@@ -51,17 +51,29 @@ services:
       - ASPNETCORE_URLS=http://+:5050
       - TZ=Asia/Ho_Chi_Minh
       
-      # Database Configuration (update these as needed)
-      - ConnectionStrings__DefaultConnection=Server=host.docker.internal,1433;Database=ClinicDB;User Id=sa;Password=YourPassword123!;TrustServerCertificate=true;
+      # Database Configuration
+      - DB_SERVER=70.153.24.53
+      - DB_NAME=KhanhAnNeurologyClinic
+      - DB_USER=sa
+      - DB_PASSWORD=Quangtung1526.
       
-      # JWT Configuration (update these in production)
-      - JwtSettings__SecretKey=your-super-secret-jwt-key-here-at-least-32-chars
-      - JwtSettings__Issuer=SEP490_BE
-      - JwtSettings__Audience=SEP490_FE
-      - JwtSettings__ExpirationHours=24
+      # JWT Configuration
+      - JWT_SECRET_KEY=CWY}UMxv3/<?Pq&S!]HK6^2.-9s[RdnA
+      - JWT_ISSUER=SEP490_BE
+      - JWT_AUDIENCE=SEP490_FE
+      - JWT_EXPIRATION_HOURS=24
       
-      # Redis Configuration (optional)
-      - Redis__ConnectionString=host.docker.internal:6379
+      # Redis Configuration
+      - REDIS_CONNECTION_STRING=host.docker.internal:6379,abortConnect=false
+      
+      # App Configuration
+      - BACKEND_URL=http://localhost:5050
+      
+      # SMTP Configuration
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_EMAIL=quangtranminh.work@gmail.com
+      - SMTP_PASSWORD=orke qwel vfzc uyci
       
       # CORS Configuration
       - CORS__AllowedOrigins=http://localhost:3000,http://host.docker.internal:3000
