@@ -140,6 +140,7 @@ builder.Services.AddScoped<IPatientProfileRepository, PatientProfileRepository>(
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
+builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 
 
 
@@ -174,7 +175,7 @@ app.UseMiddleware<ActiveUserMiddleware>();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapHub<ScheduleHub>("/scheduleHub");
+    endpoints.MapHub<KhanhAnHub>("/khanhanHub");
 });
 app.MapControllers();
 

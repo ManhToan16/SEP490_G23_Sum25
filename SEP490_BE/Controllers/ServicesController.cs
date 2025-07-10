@@ -5,6 +5,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.Services.ServiceServices;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
+using SEP490_BE.Hubs;
 
 namespace SEP490_BE.Controllers
 {
@@ -13,11 +14,14 @@ namespace SEP490_BE.Controllers
     public class ServicesController : ControllerBase
     {
         private readonly IServiceService _serviceService;
+        private readonly INotificationHubService _notificationHubService;
 
-        public ServicesController(IServiceService serviceService)
+        public ServicesController(IServiceService serviceService, INotificationHubService notificationHubService)
         {
             _serviceService = serviceService;
+            _notificationHubService = notificationHubService;
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetService(string id)
@@ -39,6 +43,7 @@ namespace SEP490_BE.Controllers
         {
             var createdDto = await _serviceService.Create(dto);
             var data = createdDto != null ? new List<ServiceResponseDTO> { createdDto } : new List<ServiceResponseDTO>();
+            await _notificationHubService.SendServiceUpdate(createdDto);
 
             return Ok(new ApiResponse
             {
@@ -54,6 +59,7 @@ namespace SEP490_BE.Controllers
         {
             var updatedDto = await _serviceService.Update(id, dto);
             var data = updatedDto != null ? new List<ServiceResponseDTO> { updatedDto } : new List<ServiceResponseDTO>();
+            await _notificationHubService.SendServiceUpdate(updatedDto);
 
             return Ok(new ApiResponse
             {
@@ -68,6 +74,8 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> DeleteService(string id)
         {
             await _serviceService.Delete(id);
+            await _notificationHubService.SendServiceDelete(id);
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

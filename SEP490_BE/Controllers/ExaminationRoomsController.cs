@@ -4,6 +4,7 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Constants;
+using SEP490_BE.Hubs;
 
 
 namespace SEP490_BE.Controllers
@@ -13,11 +14,16 @@ namespace SEP490_BE.Controllers
     public class ExaminationRoomsController : ControllerBase
     {
         private readonly IExaminationRoomService _examinationRoomService;
+        private readonly INotificationHubService _notificationHubService;
 
-        public ExaminationRoomsController(IExaminationRoomService examinationRoomService)
+        public ExaminationRoomsController(
+            IExaminationRoomService examinationRoomService,
+            INotificationHubService notificationHubService)
         {
             _examinationRoomService = examinationRoomService;
+            _notificationHubService = notificationHubService;
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetExaminationRoom(string id)
@@ -38,6 +44,7 @@ namespace SEP490_BE.Controllers
         {
             var createdDto = await _examinationRoomService.Create(dto);
             var data = createdDto != null ? new List<ExaminationRoomResponseDTO> { createdDto } : new List<ExaminationRoomResponseDTO>();
+            await _notificationHubService.SendExaminationRoomUpdate(createdDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -52,6 +59,7 @@ namespace SEP490_BE.Controllers
         {
             var updatedDto = await _examinationRoomService.Update(id, dto);
             var data = updatedDto != null ? new List<ExaminationRoomResponseDTO> { updatedDto } : new List<ExaminationRoomResponseDTO>();
+            await _notificationHubService.SendExaminationRoomUpdate(updatedDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -65,6 +73,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> DeleteExaminationRoom(string id)
         {
             await _examinationRoomService.Delete(id);
+            await _notificationHubService.SendExaminationRoomDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
