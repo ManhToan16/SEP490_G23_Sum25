@@ -30,27 +30,27 @@ export default defineConfig(async ({ mode }) => {
   }
 
   return {
-    server: {
-      host: true,
+  server: {
+    host: true,
       port: process.env.PORT ? Number(process.env.PORT) : 8080,
-      hmr: {
+    hmr: {
         overlay: false,
-      },
     },
+  },
     plugins,
-    resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        chunkFileNames: "assets/[name]-[hash].js",
+        entryFileNames: "assets/[name]-[hash].js",
+        assetFileNames: "assets/[name]-[hash].[ext]",
       },
     },
-    build: {
-      rollupOptions: {
-        output: {
-          chunkFileNames: "assets/[name]-[hash].js",
-          entryFileNames: "assets/[name]-[hash].js",
-          assetFileNames: "assets/[name]-[hash].[ext]",
-        },
-      },
-    },
+  },
   };
 });
