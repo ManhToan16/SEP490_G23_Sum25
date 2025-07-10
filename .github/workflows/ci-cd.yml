@@ -195,10 +195,10 @@ jobs:
           
           echo "📝 appsettings.Production.json has been uploaded successfully"
           
-          # Skip .env file creation - we'll use appsettings.Production.json directly
-          echo "🔧 Configuration ready - using appsettings.Production.json"
-          
-          # Create docker-compose.yml inline (no template needed)
+          # Xóa file .env cũ nếu có (để tránh docker-compose đọc nhầm file cũ)
+          rm -f .env
+
+          # Tạo docker-compose.yml inline (không cần .env)
           echo "🔧 Creating docker-compose.yml..."
           cat > docker-compose.yml << 'COMPOSE_EOF'
         version: '3.8'
