@@ -150,15 +150,50 @@ jobs:
         ssh-private-key: ${{ secrets.SSH_KEY }}
         
     - name: 🚀 Deploy to Server
+      env:
+        DB_CONNECTION_STRING: ${{ secrets.DB_CONNECTION_STRING }}
+        REDIS_CONNECTION_STRING: ${{ secrets.REDIS_CONNECTION_STRING }}
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        BACKEND_URL: ${{ secrets.BACKEND_URL }}
       run: |
+        # Create appsettings.Production.json locally first
+        cat > appsettings.Production.json << 'APPSETTINGS_EOF'
+        {
+          "Logging": {
+            "LogLevel": {
+              "Default": "Information",
+              "Microsoft.AspNetCore": "Warning"
+            }
+          },
+          "AllowedHosts": "*",
+          "ConnectionStrings": {
+            "MyDB": "$DB_CONNECTION_STRING",
+            "Redis": "$REDIS_CONNECTION_STRING"
+          },
+          "Jwt": {
+            "SecretKey": "$JWT_SECRET_KEY"
+          },
+          "App": {
+            "BackendUrl": "$BACKEND_URL"
+          },
+          "Smtp": {
+            "Host": "smtp.gmail.com",
+            "Port": 587,
+            "Email": "quangtranminh.work@gmail.com",
+            "Password": "orke qwel vfzc uyci"
+          }
+        }
+        APPSETTINGS_EOF
+
+        # Copy appsettings to server
+        scp -o StrictHostKeyChecking=no appsettings.Production.json ${{ secrets.USERNAME }}@${{ secrets.HOST }}:~/clinic-management/
+
         ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} << 'EOF'
           # Tạo thư mục project nếu chưa có
           mkdir -p ~/clinic-management
           cd ~/clinic-management
           
-          # Generate production appsettings from template
-          echo "📝 Generating production appsettings..."
-          envsubst < appsettings.Production.template.json > appsettings.Production.json
+          echo "📝 appsettings.Production.json has been uploaded successfully"
           
           # Generate .env file from GitHub secrets
           echo "🔧 Creating .env file from secrets..."
@@ -177,9 +212,58 @@ jobs:
           REDIS_CONNECTION_STRING=${{ secrets.REDIS_CONNECTION_STRING }}
           ENV_EOF
           
-          # Generate docker-compose.yml from template
-          echo "🔧 Generating docker-compose.yml from template..."
-          envsubst < docker-compose.template.yml > docker-compose.yml
+          # Create docker-compose.yml inline (no template needed)
+          echo "🔧 Creating docker-compose.yml..."
+          cat > docker-compose.yml << 'COMPOSE_EOF'
+        version: '3.8'
+        
+        services:
+          clinic-frontend:
+            image: quanghd/fe:latest
+            container_name: clinic-frontend
+            ports:
+              - "3000:80"
+            restart: unless-stopped
+            environment:
+              - NODE_ENV=production
+              - REACT_APP_API_URL=http://localhost:5050
+            healthcheck:
+              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+              start_period: 30s
+            depends_on:
+              - clinic-backend
+            networks:
+              - clinic-network
+        
+          clinic-backend:
+            image: quanghd/be:latest
+            container_name: clinic-backend
+            ports:
+              - "5050:5050"
+            restart: unless-stopped
+            environment:
+              - ASPNETCORE_ENVIRONMENT=Production
+              - ASPNETCORE_URLS=http://+:5050
+              - TZ=Asia/Ho_Chi_Minh
+            healthcheck:
+              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5050/health"]
+              interval: 30s
+              timeout: 10s
+              retries: 3
+              start_period: 30s
+            networks:
+              - clinic-network
+            volumes:
+              - ./appsettings.Production.json:/app/appsettings.Production.json:ro
+        
+        networks:
+          clinic-network:
+            driver: bridge
+            name: clinic-network
+        COMPOSE_EOF
           
           echo "🔄 Starting deployment process..."
           
