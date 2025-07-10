@@ -348,7 +348,7 @@ jobs:
         done
         
         # Final Backend check
-        if ! curl -f "${{ secrets.HOST }}:5050/health" > /dev/null 2>&1; then
+        if ! curl -f "${{ secrets.HOST }}:5050/api/health" > /dev/null 2>&1; then
           echo "❌ Backend health check failed after 5 attempts"
           echo "📋 Backend logs:"
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "docker logs clinic-backend --tail=10"
