@@ -64,7 +64,7 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
-            var existingService = await _serviceRepository.FindByIdAsync(request.Id);
+            var existingService = await _serviceRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingService != null)
             {
                 throw new ConflictDataException("Service already exists.");
@@ -78,7 +78,7 @@ namespace SEP490_BE.Services.ServiceServices
 
             var service = new Service
             {
-                Id = request.Id,
+                Id = Guid.NewGuid().ToString(),
                 LaboratoryRoomsId = request.LaboratoryRoomId,
                 Name = request.Name,
                 Price = request.Price,

@@ -44,6 +44,17 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod()
                         .AllowAnyHeader());
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); 
+    });
+});
+
 #endregion
 
 builder.Services.AddControllers();
@@ -167,7 +178,9 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseMiddleware<NotFoundMiddleware>();
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAllOrigins");
+//app.UseCors("AllowAllOrigins");
+app.UseCors("AllowFrontend");
+
 app.UseRouting();
 
 
