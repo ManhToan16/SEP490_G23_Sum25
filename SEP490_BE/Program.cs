@@ -152,11 +152,10 @@ builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>(
 
 
 var app = builder.Build();
-if (app.Environment.IsDevelopment())
-{
+// dể luôn bật kể kả production
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+
 CreateAdmin(app.Services);
 
 app.UseMiddleware<UnsupportedMediaTypeMiddleware>();

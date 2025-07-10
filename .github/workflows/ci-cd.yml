@@ -241,7 +241,7 @@ jobs:
               - ASPNETCORE_URLS=http://+:5050
               - TZ=Asia/Ho_Chi_Minh
             healthcheck:
-              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5050/health"]
+              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5050/api/health"]
               interval: 30s
               timeout: 10s
               retries: 3
@@ -338,7 +338,7 @@ jobs:
         # Check Backend with retry
         echo "🏥 Checking Backend health..."
         for i in {1..5}; do
-          if curl -f "${{ secrets.HOST }}:5050/health" > /dev/null 2>&1; then
+          if curl -f "${{ secrets.HOST }}:5050/api/health" > /dev/null 2>&1; then
             echo "✅ Backend is healthy (attempt $i/5)"
             break
           else
