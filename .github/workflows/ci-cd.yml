@@ -156,45 +156,29 @@ jobs:
           mkdir -p ~/clinic-management
           cd ~/clinic-management
           
-          # Copy docker-compose và scripts từ repo
-          cat > docker-compose.yml << 'COMPOSE_EOF'
-        services:
-          clinic-frontend:
-            image: quanghd/fe:latest
-            container_name: clinic-frontend
-            ports:
-              - "3000:80"
-            restart: unless-stopped
-            environment:
-              - NODE_ENV=production
-            healthcheck:
-              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/"]
-              interval: 30s
-              timeout: 10s
-              retries: 3
-              start_period: 30s
-
-          clinic-backend:
-            image: quanghd/be:latest
-            container_name: clinic-backend
-            ports:
-              - "5050:5050"
-            restart: unless-stopped
-            environment:
-              - ASPNETCORE_ENVIRONMENT=Production
-              - ASPNETCORE_URLS=http://+:5050
-            healthcheck:
-              test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5050/health"]
-              interval: 30s
-              timeout: 10s
-              retries: 3
-              start_period: 30s
-
-        networks:
-          default:
-            name: clinic-network
-            external: true
-        COMPOSE_EOF
+          # Generate production appsettings from template
+          echo "📝 Generating production appsettings..."
+          envsubst < appsettings.Production.template.json > appsettings.Production.json
+          
+          # Generate .env file from GitHub secrets
+          echo "🔧 Creating .env file from secrets..."
+          cat > .env << 'ENV_EOF'
+          DOCKER_REGISTRY=${{ secrets.DOCKER_REGISTRY }}
+          IMAGE_TAG=${{ secrets.IMAGE_TAG }}
+          FRONTEND_PORT=${{ secrets.FRONTEND_PORT }}
+          BACKEND_PORT=${{ secrets.BACKEND_PORT }}
+          BACKEND_URL=${{ secrets.BACKEND_URL }}
+          DB_CONNECTION_STRING="${{ secrets.DB_CONNECTION_STRING }}"
+          JWT_SECRET_KEY="${{ secrets.JWT_SECRET_KEY }}"
+          JWT_ISSUER=${{ secrets.JWT_ISSUER }}
+          JWT_AUDIENCE=${{ secrets.JWT_AUDIENCE }}
+          JWT_EXPIRY_HOURS=${{ secrets.JWT_EXPIRY_HOURS }}
+          TIMEZONE=${{ secrets.TIMEZONE }}
+          ENV_EOF
+          
+          # Generate docker-compose.yml from template
+          echo "🔧 Generating docker-compose.yml from template..."
+          envsubst < docker-compose.template.yml > docker-compose.yml
           
           echo "🔄 Starting deployment process..."
           
