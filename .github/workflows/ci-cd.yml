@@ -168,7 +168,7 @@ jobs:
           "AllowedHosts": "*",
           "ConnectionStrings": {
             "MyDB": "$DB_CONNECTION_STRING",
-            "Redis": "$REDIS_CONNECTION_STRING"
+            "Redis": "my-redis:6379"
           },
           "Jwt": {
             "SecretKey": "$JWT_SECRET_KEY"
