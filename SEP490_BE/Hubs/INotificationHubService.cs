@@ -1,9 +1,11 @@
 ﻿using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
+using SEP490_BE.DTO.MedicineDTO;
 using SEP490_BE.DTO.ScheduleChangeDTO;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.DTO.ServiceDTO;
+using SEP490_BE.DTO.SupplierDTO;
 
 namespace SEP490_BE.Hubs
 {
@@ -27,5 +29,12 @@ namespace SEP490_BE.Hubs
         // Service
         Task SendServiceUpdate(ServiceResponseDTO service);
         Task SendServiceDelete(string serviceId);
+        // Supplier
+        Task SendSupplierUpdate(SupplierResponseDTO supplier);
+        Task SendSupplierDelete(string supplierId);
+        // Medicine
+        Task SendMedicineUpdate(MedicineResponseDTO medicine);
+        Task SendMedicineDelete(string medicineId);
+
     }
 }

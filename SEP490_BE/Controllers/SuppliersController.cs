@@ -15,12 +15,13 @@ namespace SEP490_BE.Controllers
     public class SuppliersController : ControllerBase
     {
         private readonly ISupplierService _supplierService;
-        private readonly IHubContext<KhanhAnHub> _hubContext;
+        private readonly INotificationHubService _notificationHubService;
 
-        public SuppliersController(ISupplierService supplierService, IHubContext<KhanhAnHub> hubContext)
+        public SuppliersController(ISupplierService supplierService, INotificationHubService notificationHubService)
         {
             _supplierService = supplierService;
-            _hubContext = hubContext;
+            _notificationHubService = notificationHubService;
+
         }
 
         [Authorize(Roles = RoleConstants.Admin)]
@@ -28,7 +29,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierDTO request)
         {
             var supplier = await _supplierService.CreateSupplier(request);
-            await _hubContext.Clients.All.SendAsync("ReceiveSupplierUpdate", supplier);
+            await _notificationHubService.SendSupplierUpdate(supplier);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -43,7 +44,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> UpdateSupplier(string id, [FromBody] UpdateSupplierDTO request)
         {
             var supplier = await _supplierService.UpdateSupplier(id, request);
-            await _hubContext.Clients.All.SendAsync("ReceiveSupplierUpdate", supplier);
+            await _notificationHubService.SendSupplierUpdate(supplier);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -58,7 +59,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> DeleteSupplier(string id)
         {
             await _supplierService.DeleteSupplier(id);
-            await _hubContext.Clients.All.SendAsync("ReceiveSupplierDelete", id);
+            await _notificationHubService.SendSupplierDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

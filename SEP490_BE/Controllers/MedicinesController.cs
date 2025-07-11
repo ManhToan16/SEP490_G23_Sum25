@@ -7,6 +7,7 @@ using SEP490_BE.DTO.MedicineDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.MedicineServices;
 using SEP490_BE.Hubs;
+using SEP490_BE.Entities;
 
 namespace SEP490_BE.Controllers
 {
@@ -15,19 +16,19 @@ namespace SEP490_BE.Controllers
     public class MedicinesController : ControllerBase
     {
         private readonly IMedicineService _medicineService;
-        private readonly IHubContext<KhanhAnHub> _hubContext;
+        private readonly INotificationHubService _notificationHubService;
 
-        public MedicinesController(IMedicineService medicineService, IHubContext<KhanhAnHub> hubContext)
+        public MedicinesController(IMedicineService medicineService, INotificationHubService notificationHubService)
         {
             _medicineService = medicineService;
-            _hubContext = hubContext;
+            _notificationHubService = notificationHubService;
         }
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateMedicine([FromBody] CreateMedicineDTO request)
         {          
             var medicine = await _medicineService.CreateMedicine(request);
-            await _hubContext.Clients.All.SendAsync("ReceiveMedicineUpdate", medicine);
+            await _notificationHubService.SendMedicineUpdate(medicine);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -42,7 +43,7 @@ namespace SEP490_BE.Controllers
         {
      
             var medicine = await _medicineService.UpdateMedicine(id, request);
-            await _hubContext.Clients.All.SendAsync("ReceiveMedicineUpdate", medicine);
+            await _notificationHubService.SendMedicineUpdate(medicine);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -57,7 +58,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> DeleteMedicine(string id)
         {     
             await _medicineService.DeleteMedicine(id);
-            await _hubContext.Clients.All.SendAsync("ReceiveMedicineDelete", id);
+            await _notificationHubService.SendMedicineDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
