@@ -35,14 +35,15 @@ namespace SEP490_BE.Services.MedicineServices
             try
             {
                 await _medicineRepository.AddAsync(medicine);
+                await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return MapToResponseDTO(medicine);
             }
-            catch (Exception ex)
+            catch
             {
                 await transaction.RollbackAsync();
-                throw new Exception("Đã xảy ra lỗi khi tạo thuốc: " + ex.Message);
+                throw;
             }
+            return MapToResponseDTO(medicine);
         }
 
         public async Task<MedicineResponseDTO> UpdateMedicine(string id, UpdateMedicineDTO request)
@@ -67,10 +68,10 @@ namespace SEP490_BE.Services.MedicineServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
-            catch (Exception ex)
+            catch 
             {
                 await transaction.RollbackAsync();
-                throw new Exception("Đã xảy ra lỗi khi cập nhật thuốc: " + ex.Message);
+                throw;
             }
             return MapToResponseDTO(medicine);
 
