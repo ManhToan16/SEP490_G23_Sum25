@@ -84,11 +84,10 @@ namespace SEP490_BE.Services.ScheduleServices
 
         public async Task<List<ScheduleResponseDTO>> CreateScheduleRange(CreateScheduleRangeDTO request)
         {
-      
             var user = await _context.Users
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Id == request.UserId);
-            if (user == null )
+            if (user == null)
             {
                 throw new ResourceNotFoundException("Không tìm thấy người dùng.");
             }
@@ -100,38 +99,17 @@ namespace SEP490_BE.Services.ScheduleServices
                 throw new Exceptions.ArgumentException("Phân công lịch làm việc là bắt buộc và phải chứa ít nhất một phân công.");
             }
 
-            var assignments = request.ScheduleAssignments.OrderBy(a => a.Date).ToList();
-            if (assignments.Any() && assignments.First().Date > assignments.Last().Date)
-            {
-                throw new Exceptions.ArgumentException("Các phân công lịch phải được sắp xếp theo trình tự thời gian.");
-            }
             var schedules = new List<Schedule>();
-            var currentDate = assignments.First().Date.Date;
-            var assignmentIndex = 0;
 
-            while (currentDate <= assignments.Last().Date.Date)
+            foreach (var assignment in request.ScheduleAssignments.OrderBy(a => a.Date))
             {
-                if (await _scheduleRepository.CheckScheduleConflictAsync(request.UserId, currentDate))
-                {
-                    currentDate = currentDate.AddDays(1);
-                    continue;
-                }
+                var date = assignment.Date.Date;
 
-                string roomId, timeSlotId;
-                if (assignmentIndex < assignments.Count && assignments[assignmentIndex].Date.Date == currentDate)
+                if (await _scheduleRepository.CheckScheduleConflictAsync(request.UserId, date))
                 {
-                    roomId = assignments[assignmentIndex].RoomId;
-                    timeSlotId = assignments[assignmentIndex].TimeSlotId;
-                    assignmentIndex++;
+                    throw new ConflictDataException($"Người dùng đã có lịch vào ngày {date:yyyy-MM-dd}.");
                 }
-                else
-                {
-                   
-                        throw new Exceptions.ArgumentException($"Chưa có phân công cho ngày {currentDate}.");
-                  
-                }
-
-                var roomType = await DetectRoomTypeAsync(roomId);
+                var roomType = await DetectRoomTypeAsync(assignment.RoomId);
                 if (roomType == null)
                 {
                     throw new ResourceNotFoundException("Không tìm thấy phòng.");
@@ -139,43 +117,45 @@ namespace SEP490_BE.Services.ScheduleServices
 
                 if (!IsValidRoleForRoomType(roomType, userRole))
                 {
-                    throw new UnauthorizedAccessException($"Role {userRole} is not allowed for {roomType} room.");
+                    throw new UnauthorizedAccessException($"Role {userRole} không được phép vào phòng {roomType}.");
                 }
 
-                var timeSlot = await _context.TimeSlots.FindAsync(timeSlotId);
+                var timeSlot = await _context.TimeSlots.FindAsync(assignment.TimeSlotId);
                 if (timeSlot == null)
                 {
                     throw new ResourceNotFoundException("Không tìm thấy khoảng thời gian.");
                 }
 
-                var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(roomId, currentDate, currentDate);
-                var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == timeSlotId).ToList();
+                // Kiểm tra trùng lịch trong phòng
+                var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(assignment.RoomId, date, date);
+                var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == assignment.TimeSlotId).ToList();
+
                 if (roomType == "EXAMINATION")
                 {
                     var doctorCount = existingSlotSchedules.Count(s => s.Role == "DOCTOR");
                     var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
+                    if ((userRole == "DOCTOR" && doctorCount > 0) ||
+                        (userRole == "NURSE" && nurseCount > 0))
+                    {
+                        throw new ConflictDataException($"Phòng khám đã có một {userRole} cho khung giờ này vào ngày {date:yyyy-MM-dd}.");
+                    }
                     if (doctorCount > 0 && nurseCount > 0)
                     {
-                        throw new ConflictDataException("Phòng khám lâm sàng chỉ được phép có một BÁC SĨ và một Y TÁ cho mỗi khung giờ.");
-                    }
-                    if (doctorCount > 0 && userRole == "DOCTOR" ||
-                        nurseCount > 0 && userRole == "NURSE")
-                    {
-                        throw new ConflictDataException($"Phòng khám đã có một {userRole} cho khung giờ này vào ngày {currentDate}.");
+                        throw new ConflictDataException("Phòng khám chỉ được phép có một BÁC SĨ và một Y TÁ cho mỗi khung giờ.");
                     }
                 }
                 else if (roomType == "LABORATORY")
                 {
                     var techCount = existingSlotSchedules.Count(s => s.Role == "TECHNICIAN");
                     var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
+                    if ((userRole == "TECHNICIAN" && techCount > 0) ||
+                        (userRole == "NURSE" && nurseCount > 0))
+                    {
+                        throw new ConflictDataException($"Phòng xét nghiệm đã có một {userRole} cho khung giờ này vào ngày {date:yyyy-MM-dd}.");
+                    }
                     if (techCount > 0 && nurseCount > 0)
                     {
                         throw new ConflictDataException("Phòng xét nghiệm chỉ được phép có một KỸ THUẬT VIÊN và một Y TÁ cho mỗi khung giờ.");
-                    }
-                    if (techCount > 0 && userRole == "TECHNICIAN" ||
-                        nurseCount > 0 && userRole == "NURSE")
-                    {
-                        throw new ConflictDataException($"Phòng xét nghiệm đã có một {userRole} cho khung giờ này vào ngày {currentDate}.");
                     }
                 }
 
@@ -184,19 +164,14 @@ namespace SEP490_BE.Services.ScheduleServices
                     Id = Guid.NewGuid().ToString(),
                     UserId = request.UserId,
                     Role = userRole,
-                    RoomId = roomId,
+                    RoomId = assignment.RoomId,
                     RoomType = roomType,
-                    Date = currentDate,
-                    TimeSlotId = timeSlotId,
+                    Date = date,
+                    TimeSlotId = assignment.TimeSlotId,
                     Status = "SCHEDULED"
                 };
-                schedules.Add(schedule);
-                currentDate = currentDate.AddDays(1);
-            }
 
-            if (!schedules.Any())
-            {
-                return new List<ScheduleResponseDTO>();
+                schedules.Add(schedule);
             }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -224,6 +199,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Status = s.Status
             }).ToList();
         }
+
         public async Task<ScheduleResponseDTO> CreateSchedule(CreateScheduleDTO request)
         {
            

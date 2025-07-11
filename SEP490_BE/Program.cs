@@ -18,6 +18,8 @@ using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
+using SEP490_BE.Repositories.SupplierRepositories;
+using SEP490_BE.Repositories.TimeSlotRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuditLogServices;
 using SEP490_BE.Services.AuthServices;
@@ -29,6 +31,8 @@ using SEP490_BE.Services.PatientProfileServices;
 using SEP490_BE.Services.ScheduleChangeServices;
 using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
+using SEP490_BE.Services.SupplierServices;
+using SEP490_BE.Services.TimeSlotServices;
 using SEP490_BE.Services.UserServices;
 using StackExchange.Redis;
 using System.Text;
@@ -142,6 +146,8 @@ builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 
 
 
@@ -156,6 +162,9 @@ builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
+builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
+
 
 
 
