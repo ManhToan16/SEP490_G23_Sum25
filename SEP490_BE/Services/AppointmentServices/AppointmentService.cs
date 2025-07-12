@@ -12,6 +12,7 @@ using SEP490_BE.Constants;
 using SEP490_BE.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Services.EmailServices;
+using SEP490_BE.Repositories.VisitRepositories;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -25,6 +26,7 @@ namespace SEP490_BE.Services.AppointmentServices
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
+        private readonly IVisitRepository _visitRepository;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
@@ -33,7 +35,8 @@ namespace SEP490_BE.Services.AppointmentServices
             IAuditLogRepository logRepository,
             IAppointmentRepository appointmentRepository,
             IUserRepository userRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            IVisitRepository visitRepository)
         {
             _context = context;
             _authService = authService;
@@ -42,6 +45,7 @@ namespace SEP490_BE.Services.AppointmentServices
             _appointmentRepository = appointmentRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _visitRepository = visitRepository;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -90,6 +94,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
+
         public async Task<AppointmentResponseDTO> Create(AppointmentRequestDTO request)
         {
             string newAppointmentId = Guid.NewGuid().ToString();
@@ -177,6 +182,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             }; 
         }
+
         public async Task<AppointmentResponseDTO> CreatedByReceptionist(AppointmentRequestDTO request)
         {
             string newAppointmentId = Guid.NewGuid().ToString();
@@ -260,6 +266,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
+
         public async Task<AppointmentResponseDTO> Update(string id, AppointmentRequestDTO request)
         {
             var appointment = await _appointmentRepository.FindById(id);
@@ -281,10 +288,7 @@ namespace SEP490_BE.Services.AppointmentServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy ca làm");
             }
-            if (
-                appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION
-                || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN
-                )
+            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
@@ -333,6 +337,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
+
         public async Task<AppointmentResponseDTO> UpdateStatus(string id, string status)
         {
             var appointment = await _appointmentRepository.FindById(id);
@@ -347,10 +352,13 @@ namespace SEP490_BE.Services.AppointmentServices
             }
 
             #region Checkin Validation
-            if (appointment.Status == AppointmentStatus.WAITING_FOR_CONFIRMATION 
-                && status == AppointmentStatus.CHECKED_IN)
+            if (status == AppointmentStatus.CHECKED_IN)
             {
-                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
+                if (appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
+                {
+                    throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
+                }
+                
             }
             #endregion
 
@@ -389,6 +397,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
+
         public async Task Confirm(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
@@ -428,6 +437,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 "Lịch hẹn khám tại Khanh An Neurology Clinic",
                 htmlContent);
         }
+
         public async Task Cancel(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
@@ -468,6 +478,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 "Lịch hẹn khám tại Khanh An Neurology Clinic",
                 htmlContent);
         }
+        
         public async Task MarkAsPaid(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
@@ -475,16 +486,42 @@ namespace SEP490_BE.Services.AppointmentServices
             {
                 throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
             }
-            if (appointment.Status != AppointmentStatus.IN_EXAMINATION_PROGRESS)
+
+            if (appointment.Status != AppointmentStatus.PENDING)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
+
+            var visit = await _context.Visits
+                .FirstOrDefaultAsync(v => v.AppointmentId == appointment.Id);
+
+            if (visit == null)
+            {
+                throw new ResourceNotFoundException("Visit not found.");
+            }
+
+            var assignments = await _context.Assignments
+                .Where(a => a.VisitId == visit.Id)
+                .ToListAsync();
+
             appointment.Status = AppointmentStatus.IN_LABORATORY_PROGRESS;
+            visit.Status = VisitStatus.IN_LABORATORY;
+
+            foreach (var assignment in assignments)
+            {
+                if (assignment.Status == AssignmentStatus.PENDING)
+                {
+                    assignment.Status = AssignmentStatus.WAITING;
+                }
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
-            // Logic chuyển trạng thái của Visit qua InLaboratory và Asm qua Waiting
             try
             {
                 await _appointmentRepository.Update(appointment);
+                await _visitRepository.Update(visit);
+                _context.Assignments.UpdateRange(assignments);
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -494,6 +531,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 throw;
             }
         }
+        
         public Task PrintInvoice(string id)
         {
             throw new NotImplementedException();

@@ -32,7 +32,7 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist + "," + RoleConstants.Doctor)]
         [HttpPost("create/receptionist")]
         public async Task<ActionResult<ApiResponse>> CreatedByReceptionist([FromBody] AppointmentRequestDTO request)
         {

@@ -7,13 +7,11 @@ namespace SEP490_BE.Entities
     {
         public Appointment()
         {
-            Assignments = new HashSet<Assignment>();
             ExaminationResults = new HashSet<ExaminationResult>();
             Visits = new HashSet<Visit>();
         }
 
         public string Id { get; set; } = null!;
-        public string? PatientProfileId { get; set; }
         public string Name { get; set; } = null!;
         public string PhoneNumber { get; set; } = null!;
         public string Email { get; set; } = null!;
@@ -29,10 +27,8 @@ namespace SEP490_BE.Entities
         public DateTime? ExpiredAt { get; set; }
         public DateTime? CreatedAt { get; set; }
 
-        public virtual PatientProfile? PatientProfile { get; set; }
         public virtual User? RequiredDoctor { get; set; }
         public virtual TimeSlot TimeSlot { get; set; } = null!;
-        public virtual ICollection<Assignment> Assignments { get; set; }
         public virtual ICollection<ExaminationResult> ExaminationResults { get; set; }
         public virtual ICollection<Visit> Visits { get; set; }
     }
