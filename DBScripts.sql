@@ -184,8 +184,9 @@ CREATE TABLE Appointments (
        'WAITING_FOR_CONFIRMATION', 
        'WAITING_FOR_CHECK_IN', 
        'CHECKED_IN', 
-       'IN_PROGRESS', 
-       'PENDING', 
+       'IN_EXAMINATION_PROGRESS', 
+       'PENDING',
+	   'IN_LABORATORY_PROGRESS', 
        'COMPLETED', 
        'CANCELLED'
      )),
@@ -211,8 +212,8 @@ CREATE TABLE Visits (
      CHECK (Status IN (
        'WAITING', 
        'IN_EXAMINATION', 
+	   'PENDING', 
        'IN_LABORATORY', 
-       'PENDING', 
        'RETURNING', 
        'COMPLETED'
      )),
