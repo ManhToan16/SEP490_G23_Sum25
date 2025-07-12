@@ -2,9 +2,11 @@
 using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
+using SEP490_BE.DTO.MedicineDTO;
 using SEP490_BE.DTO.ScheduleChangeDTO;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.DTO.ServiceDTO;
+using SEP490_BE.DTO.SupplierDTO;
 
 namespace SEP490_BE.Hubs
 {
@@ -65,6 +67,24 @@ namespace SEP490_BE.Hubs
         public async Task SendServiceDelete(string serviceId)
         {
             await _hubContext.Clients.All.SendAsync("ReceiveServiceDelete", serviceId);
+        }
+        public async Task SendSupplierUpdate(SupplierResponseDTO supplier)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveSupplierUpdate", supplier);
+        }
+
+        public async Task SendSupplierDelete(string supplierId)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveSupplierDelete", supplierId);
+        }
+        public async Task SendMedicineUpdate(MedicineResponseDTO medicine)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveMedicineUpdate", medicine);
+        }
+
+        public async Task SendMedicineDelete(string medicineId)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveMedicineDelete", medicineId);
         }
     }
 }

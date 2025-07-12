@@ -3,63 +3,62 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SEP490_BE.Constants;
-using SEP490_BE.DTO.SupplierDTO;
+using SEP490_BE.DTO.MedicineDTO;
 using SEP490_BE.DTO;
-using SEP490_BE.Services.SupplierServices;
+using SEP490_BE.Services.MedicineServices;
 using SEP490_BE.Hubs;
+using SEP490_BE.Entities;
 
 namespace SEP490_BE.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SuppliersController : ControllerBase
+    public class MedicinesController : ControllerBase
     {
-        private readonly ISupplierService _supplierService;
+        private readonly IMedicineService _medicineService;
         private readonly INotificationHubService _notificationHubService;
 
-        public SuppliersController(ISupplierService supplierService, INotificationHubService notificationHubService)
+        public MedicinesController(IMedicineService medicineService, INotificationHubService notificationHubService)
         {
-            _supplierService = supplierService;
+            _medicineService = medicineService;
             _notificationHubService = notificationHubService;
-
         }
-
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
-        public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierDTO request)
-        {
-            var supplier = await _supplierService.CreateSupplier(request);
-            await _notificationHubService.SendSupplierUpdate(supplier);
+        public async Task<IActionResult> CreateMedicine([FromBody] CreateMedicineDTO request)
+        {          
+            var medicine = await _medicineService.CreateMedicine(request);
+            await _notificationHubService.SendMedicineUpdate(medicine);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = new[] { supplier }
+                Data = new[] { medicine }
             });
         }
-
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateSupplier(string id, [FromBody] UpdateSupplierDTO request)
+        public async Task<IActionResult> UpdateMedicine(string id, [FromBody] UpdateMedicineDTO request)
         {
-            var supplier = await _supplierService.UpdateSupplier(id, request);
-            await _notificationHubService.SendSupplierUpdate(supplier);
+     
+            var medicine = await _medicineService.UpdateMedicine(id, request);
+            await _notificationHubService.SendMedicineUpdate(medicine);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = new[] { supplier }
+                Data = new[] { medicine }
             });
         }
 
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteSupplier(string id)
-        {
-            await _supplierService.DeleteSupplier(id);
-            await _notificationHubService.SendSupplierDelete(id);
+        public async Task<IActionResult> DeleteMedicine(string id)
+        {     
+            await _medicineService.DeleteMedicine(id);
+            await _notificationHubService.SendMedicineDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -70,28 +69,28 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> GetSupplierById(string id)
+        public async Task<IActionResult> GetMedicineById(string id)
         {
-            var supplier = await _supplierService.GetSupplierById(id);
+            var medicine = await _medicineService.GetMedicineById(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = new[] { supplier }
+                Data = new[] { medicine }
             });
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllSuppliers()
+        public async Task<IActionResult> GetAllMedicine([FromQuery] string? name = null, [FromQuery] string? description = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
-            var suppliers = await _supplierService.GetAllSuppliers();
+            var pagination = await _medicineService.GetAllMedicine(name, description, pageNumber, pageSize);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = suppliers
+                Data = new[] { pagination }
             });
         }
     }

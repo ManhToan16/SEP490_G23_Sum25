@@ -14,6 +14,7 @@ using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
@@ -29,6 +30,7 @@ using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
+using SEP490_BE.Services.MedicineServices;
 using SEP490_BE.Services.PatientProfileServices;
 using SEP490_BE.Services.ScheduleChangeServices;
 using SEP490_BE.Services.ScheduleServices;
@@ -151,6 +153,7 @@ builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
+builder.Services.AddScoped<IMedicineService, MedicineService>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -167,6 +170,7 @@ builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
+builder.Services.AddScoped<IMedicineRepository, MedicineRepository>();
 
 
 

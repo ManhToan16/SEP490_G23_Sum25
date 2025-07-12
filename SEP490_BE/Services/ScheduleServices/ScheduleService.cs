@@ -126,7 +126,6 @@ namespace SEP490_BE.Services.ScheduleServices
                     throw new ResourceNotFoundException("Không tìm thấy khoảng thời gian.");
                 }
 
-                // Kiểm tra trùng lịch trong phòng
                 var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(assignment.RoomId, date, date);
                 var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == assignment.TimeSlotId).ToList();
 
