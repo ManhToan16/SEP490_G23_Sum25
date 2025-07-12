@@ -15,13 +15,15 @@ namespace SEP490_BE.Controllers
     public class DoctorProfilesController : ControllerBase
     {
         private readonly IDoctorProfileService _doctorProfileService;
-        private readonly IHubContext<ScheduleHub> _hubContext;
+        private readonly INotificationHubService _notificationHubService;
 
-        public DoctorProfilesController(IDoctorProfileService doctorProfileService, IHubContext<ScheduleHub> hubContext)
+        public DoctorProfilesController(IDoctorProfileService doctorProfileService,
+                                        INotificationHubService notificationHubService)
         {
             _doctorProfileService = doctorProfileService;
-            _hubContext = hubContext;
+            _notificationHubService = notificationHubService;
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetDoctorProfile(string id)
@@ -47,7 +49,7 @@ namespace SEP490_BE.Controllers
 
             var createdDto = await _doctorProfileService.Create(dto);
             var data = createdDto != null ? new List<object> { createdDto } : new List<object>();
-            await _hubContext.Clients.All.SendAsync("ReceiveDoctorProfileUpdate", createdDto);
+            await _notificationHubService.SendDoctorProfileUpdate(createdDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -63,7 +65,7 @@ namespace SEP490_BE.Controllers
 
             var updatedDto = await _doctorProfileService.Update(id, dto);
             var data = updatedDto != null ? new List<object> { updatedDto } : new List<object>();
-            await _hubContext.Clients.All.SendAsync("ReceiveDoctorProfileUpdate", updatedDto);
+            await _notificationHubService.SendDoctorProfileUpdate(updatedDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -79,7 +81,7 @@ namespace SEP490_BE.Controllers
         {
 
             await _doctorProfileService.Delete(id);
-            await _hubContext.Clients.All.SendAsync("ReceiveDoctorProfileDelete", id);
+            await _notificationHubService.SendDoctorProfileDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

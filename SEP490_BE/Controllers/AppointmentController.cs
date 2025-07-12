@@ -32,6 +32,21 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
+        [HttpPost("create/receptionist")]
+        public async Task<ActionResult<ApiResponse>> CreatedByReceptionist([FromBody] AppointmentRequestDTO request)
+        {
+            var result = await _appointmentService.CreatedByReceptionist(request);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status201Created,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = result
+            });
+        }
+
+        [Authorize]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll(
             [FromQuery] string? name,
@@ -54,7 +69,7 @@ namespace SEP490_BE.Controllers
             });
         }
 
-
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse>> GetById(string id)
         {
@@ -68,6 +83,7 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
         [HttpPut("{id}")]
         public async Task<ActionResult<ApiResponse>> Update(string id, [FromBody] AppointmentRequestDTO request)
         {
@@ -81,39 +97,39 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
         [HttpPut("{id}/cancel")]
         public async Task<ActionResult<ApiResponse>> Cancel(string id)
         {
-            var result = await _appointmentService.UpdateStatus
-                (id, new AppointmentStatusRequestDTO { Status = AppointmentStatus.CANCELLED });
+            await _appointmentService.Cancel(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = new[] { result }
+                Data = null
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
         [HttpPut("{id}/confirm")]
         public async Task<ActionResult<ApiResponse>> Confirm(string id)
         {
-            var result = await _appointmentService.UpdateStatus
-                (id, new AppointmentStatusRequestDTO { Status = AppointmentStatus.WAITING_FOR_CHECK_IN});
+            await _appointmentService.Confirm(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = new[] { result }
+                Data = null
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
         [HttpPut("{id}/check-in")]
         public async Task<ActionResult<ApiResponse>> CheckIn(string id)
         {
-            var result = await _appointmentService.UpdateStatus
-                (id, new AppointmentStatusRequestDTO { Status = AppointmentStatus.CHECKED_IN });
+            var result = await _appointmentService.UpdateStatus(id, AppointmentStatus.CHECKED_IN);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -123,17 +139,17 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpPut("{id}/mark-paid")]
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
+        [HttpPut("{id}/mark-as-paid")]
         public async Task<ActionResult<ApiResponse>> MarkAsPaid(string id)
         {
-            var result = await _appointmentService.UpdateStatus
-                (id, new AppointmentStatusRequestDTO { Status = AppointmentStatus.IN_PROGRESS });
+             await _appointmentService.MarkAsPaid(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = new[] { result }
+                Data = null
             });
         }
     }

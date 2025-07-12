@@ -3,77 +3,79 @@
     public class MessageConstants
     {
         #region System Exception
-        public const string UNCATEGORIZED_ERROR = "Oops... Something went wrong!";
-        public const string VALIDATION_ERROR = "Validation Failed.";
-        public const string CONFLICT_ERROR = "Conflict data.";
-        public const string UNAUTHENTICATED_ERROR = "Unauthenticated.";
-        public const string UNAUTHORIZED_ERROR = "You do not have permission.";
-        public const string FORBIDDEN = "Forbidden.";
-        public const string API_KEY_ERROR = "API Key is missing or invalid";
+        public const string UNCATEGORIZED_ERROR = "Đã xảy ra lỗi không xác định.";
+        public const string VALIDATION_ERROR = "Dữ liệu không hợp lệ.";
+        public const string CONFLICT_ERROR = "Dữ liệu bị xung đột.";
+        public const string UNAUTHENTICATED_ERROR = "Chưa xác thực người dùng.";
+        public const string UNAUTHORIZED_ERROR = "Bạn không có quyền truy cập.";
+        public const string FORBIDDEN = "Truy cập bị từ chối.";
+        public const string API_KEY_ERROR = "Thiếu hoặc sai API Key.";
         #endregion
 
         #region DB Exception
-        public const string DB_ERROR = "Database error. Please try again.";
-        public const string DB_CONCURRENCY_ERROR = "Data conflict. Please reload.";
+        public const string DB_ERROR = "Lỗi cơ sở dữ liệu. Vui lòng thử lại sau.";
+        public const string DB_CONCURRENCY_ERROR = "Dữ liệu đã bị thay đổi. Vui lòng tải lại.";
+
         #endregion
 
         #region Not Found
-        public const string NOT_FOUND = "Resource not found.";
-        public const string ENDPOINT_NOT_FOUND = "Endpoint not found.";
-        public const string METHOD_NOT_FOUND = "Method not found.";
-        public const string UNSUPPORTED_MEDIA_TYPE = "Unsupported media type.";
+        public const string NOT_FOUND = "Không tìm thấy dữ liệu.";
+        public const string ENDPOINT_NOT_FOUND = "Không tìm thấy đường dẫn API.";
+        public const string METHOD_NOT_FOUND = "Không tìm thấy phương thức.";
+        public const string UNSUPPORTED_MEDIA_TYPE = "Định dạng nội dung không được hỗ trợ.";
         #endregion
 
         #region CRUD Common
-        public const string GET_SUCCESS = "Get data successful.";
-        public const string POST_SUCCESS = "Create data successful.";
-        public const string PUT_SUCCESS = "Update data successful.";
-        public const string DELETE_SUCCESS = "Delete data successful.";
+        public const string GET_SUCCESS = "Lấy dữ liệu thành công.";
+        public const string POST_SUCCESS = "Tạo dữ liệu thành công.";
+        public const string PUT_SUCCESS = "Cập nhật dữ liệu thành công.";
+        public const string DELETE_SUCCESS = "Xóa dữ liệu thành công.";
         #endregion
 
         #region Auth
-        public const string LOGIN_SUCCESS = "Login successful.";
-        public const string REGISTER_SUCCESS = "Registration successful.";
-        public const string LOGOUT_SUCCESS = "Log out successful.";
-        public const string REFRESH_TOKEN_SUCCESS = "Refresh token successful.";
+        public const string LOGIN_SUCCESS = "Đăng nhập thành công.";
+        public const string REGISTER_SUCCESS = "Đăng ký thành công.";
+        public const string LOGOUT_SUCCESS = "Đăng xuất thành công.";
+        public const string REFRESH_TOKEN_SUCCESS = "Làm mới token thành công.";
 
-        public const string PHONE_NUMBER_VERIFIED_SUCCESS = "Phone number verified successful.";
-        public const string PHONE_NUMBER_EXISTS = "This phone number has been registered.";
-        public const string INVALID_PHONE_NUMBER_CHARACTER = "The phone number is in wrong format.";
-        public const string INVALID_PHONE_NUMBER_LENGTH = "The phone number length must be in 10 characters.";
+        public const string PHONE_NUMBER_VERIFIED_SUCCESS = "Xác thực số điện thoại thành công.";
+        public const string PHONE_NUMBER_EXISTS = "Số điện thoại đã được đăng ký.";
+        public const string INVALID_PHONE_NUMBER_CHARACTER = "Số điện thoại không đúng định dạng.";
+        public const string INVALID_PHONE_NUMBER_LENGTH = "Số điện thoại phải gồm 10 chữ số.";
 
-        public const string NULL_USERNAME = "The name must not be empty.";
-        public const string INVALID_USERNAME_CHARACTER = "The name must not contain special characters.";
-        public const string INVALID_USERNAME_LENGTH = "The name length must be in 2-100 characters.";
+        public const string NULL_USERNAME = "Họ tên không được để trống.";
+        public const string INVALID_USERNAME_CHARACTER = "Họ tên không được chứa ký tự đặc biệt.";
+        public const string INVALID_USERNAME_LENGTH = "Họ tên phải từ 2 đến 100 ký tự.";
 
-        public const string EMAIL_EXISTS = "This email has been registered.";
-        public const string INVALID_EMAIL = "The email address is in wrong format.";
+        public const string EMAIL_EXISTS = "Email đã được đăng ký.";
+        public const string INVALID_EMAIL = "Địa chỉ email không đúng định dạng.";
 
-        public const string INVALID_LOGIN = "Invalid email or password.";
-        public const string WRONG_OLD_PASSWORD = "The old password is wrong.";
-        public const string INVALID_PASSWORD = "The password must has at least 8 characters";
-        public const string INVALID_REPASSWORD = "The repassword has to be the same with the password";
-        public const string INVALID_TOKEN = "Invalid Token";
-        public const string FORGOT_PASSWORD_REQUEST_SUCCESS = "Check your email to change password";
-        public const string CHANGE_PASSWORD_SUCCESS = "Change password successful.";
+        public const string INVALID_LOGIN = "Email hoặc mật khẩu không đúng.";
+        public const string WRONG_OLD_PASSWORD = "Mật khẩu cũ không chính xác.";
+        public const string INVALID_PASSWORD = "Mật khẩu phải có ít nhất 8 ký tự.";
+        public const string INVALID_REPASSWORD = "Mật khẩu nhập lại phải trùng khớp.";
+        public const string INVALID_TOKEN = "Token không hợp lệ.";
+        public const string FORGOT_PASSWORD_REQUEST_SUCCESS = "Vui lòng kiểm tra email để đổi mật khẩu.";
+        public const string CHANGE_PASSWORD_SUCCESS = "Đổi mật khẩu thành công.";
         #endregion
 
         #region User
-        public const string USER_NOT_FOUND = "User not found.";
-
-
+        public const string USER_NOT_FOUND = "Không tìm thấy người dùng.";
+        public const string DOCTOR_NOT_FOUND = "Không tìm thấy bác sĩ.";
         #endregion
 
         #region Role
-        public const string ROLE_NOT_FOUND = "Role not found.";
-
-
+        public const string ROLE_NOT_FOUND = "Không tìm thấy vai trò.";
         #endregion
 
         #region Patient Profile
-        public const string PATIENT_PROTILE_NOT_FOUND = "Patient profile not found.";
-        public const string PATIENT_PROTILE_EXISTS = "This citizen Id has been registered.";
+        public const string PATIENT_PROTILE_NOT_FOUND = "Không tìm thấy hồ sơ bệnh nhân.";
+        public const string PATIENT_PROTILE_EXISTS = "CCCD này đã được đăng ký.";
+        #endregion
 
+        #region Appointment
+        public const string APPOINTMENT_NOT_FOUND = "Không tìm thấy lịch hẹn.";
+        public const string APPOINTMENT_INVALID_UPDATE = "Có lỗi xảy ra khi cập nhật lịch hẹn.";
         #endregion
     }
 }

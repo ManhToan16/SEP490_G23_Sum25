@@ -25,11 +25,11 @@ namespace SEP490_BE.DTO.AppointmentDTO
         [Required]
         public string Gender { get; set; }
 
-        public string Address { get; set; }
+        public string? Address { get; set; }
 
-        public string Symptom { get; set; }
+        public string? Symptom { get; set; }
 
-        public string RequiredDoctorId { get; set; }
+        public string? RequiredDoctorId { get; set; }
 
         [Required]
         public DateTime Date { get; set; }
@@ -37,10 +37,5 @@ namespace SEP490_BE.DTO.AppointmentDTO
         [Required]
         public string TimeSlotId { get; set; }
 
-    }
-
-    public class AppointmentStatusRequestDTO
-    {
-        public string Status { get; set; }
     }
 }

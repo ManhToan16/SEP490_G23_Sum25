@@ -17,8 +17,14 @@ namespace SEP490_BE.Services.AppointmentServices
             int pageSize);
         Task<AppointmentResponseDTO> GetById(string id);
         Task<AppointmentResponseDTO> Create(AppointmentRequestDTO request);
+        Task<AppointmentResponseDTO> CreatedByReceptionist(AppointmentRequestDTO request);
         Task<AppointmentResponseDTO> Update(string id, AppointmentRequestDTO request);
-        Task<AppointmentResponseDTO> UpdateStatus(string id, AppointmentStatusRequestDTO status);
+        Task<AppointmentResponseDTO> UpdateStatus(string id, string status);
+        Task Confirm(string id);
+        Task Cancel(string id);
+        Task PrintInvoice(string id);
+        Task MarkAsPaid(string id);
+
 
     }
 }

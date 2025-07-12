@@ -47,7 +47,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             var room = await _examinationRoomRepository.FindByIdAsync(id);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Examination room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng khám lâm sàng.");
             }
             return new ExaminationRoomResponseDTO
             {
@@ -62,7 +62,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             var existingRoom = await _examinationRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingRoom != null)
             {
-                throw new ConflictDataException("Examination room already exists.");
+                throw new ConflictDataException("Phòng khám lâm sàng đã tồn tại");
             }
 
             var room = new ExaminationRoom
@@ -98,7 +98,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             var room = await _examinationRoomRepository.FindByIdAsync(id);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Examination room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng khám lâm sàng.");
             }
 
             room.Name = request.Name ?? room.Name;
@@ -130,7 +130,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             var room = await _examinationRoomRepository.FindByIdAsync(id);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Examination room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng khám lâm sàng.");
             }
 
             await _examinationRoomRepository.DeleteAsync(room);
@@ -208,8 +208,8 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                     Room = new ExaminationRoomResponseDTO
                     {
                         Id = room.Id,
-                        Name = room.Name ?? "Unknown Room",
-                        Description = room.Description ?? "No description"
+                        Name = room.Name ?? "Không biết phòng",
+                        Description = room.Description ?? "Không có mô tả"
                     }
                 };
 

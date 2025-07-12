@@ -50,7 +50,7 @@ namespace SEP490_BE.Services.ServiceServices
             var service = await _serviceRepository.FindByIdAsync(id);
             if (service == null)
             {
-                throw new ResourceNotFoundException("Service not found.");
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ.");
             }
             return new ServiceResponseDTO
             {
@@ -64,21 +64,21 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
-            var existingService = await _serviceRepository.FindByIdAsync(request.Id);
+            var existingService = await _serviceRepository.FindByIdAsync(Guid.NewGuid().ToString());
             if (existingService != null)
             {
-                throw new ConflictDataException("Service already exists.");
+                throw new ConflictDataException("Dịch vụ đã tồn tại.");
             }
 
             var room = await _context.LaboratoryRooms.FindAsync(request.LaboratoryRoomId);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Laboratory room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm.");
             }
 
             var service = new Service
             {
-                Id = request.Id,
+                Id = Guid.NewGuid().ToString(),
                 LaboratoryRoomsId = request.LaboratoryRoomId,
                 Name = request.Name,
                 Price = request.Price,
@@ -113,13 +113,13 @@ namespace SEP490_BE.Services.ServiceServices
             var service = await _serviceRepository.FindByIdAsync(id);
             if (service == null)
             {
-                throw new ResourceNotFoundException("Service not found.");
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ.");
             }
 
             var room = await _context.LaboratoryRooms.FindAsync(request.LaboratoryRoomId ?? service.LaboratoryRoomsId);
             if (room == null)
             {
-                throw new ResourceNotFoundException("Laboratory room not found.");
+                throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm.");
             }
 
             service.LaboratoryRoomsId = request.LaboratoryRoomId ?? service.LaboratoryRoomsId;
@@ -155,7 +155,7 @@ namespace SEP490_BE.Services.ServiceServices
             var service = await _serviceRepository.FindByIdAsync(id);
             if (service == null)
             {
-                throw new ResourceNotFoundException("Service not found.");
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ.");
             }
 
             await _serviceRepository.DeleteAsync(service);

@@ -11,6 +11,7 @@ using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Constants;
 using SEP490_BE.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Services.EmailServices;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -23,6 +24,7 @@ namespace SEP490_BE.Services.AppointmentServices
         private readonly IAuditLogRepository _logRepository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IEmailService _emailService;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
@@ -30,7 +32,8 @@ namespace SEP490_BE.Services.AppointmentServices
             IRoleRepository roleRepository,
             IAuditLogRepository logRepository,
             IAppointmentRepository appointmentRepository,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IEmailService emailService)
         {
             _context = context;
             _authService = authService;
@@ -38,6 +41,7 @@ namespace SEP490_BE.Services.AppointmentServices
             _logRepository = logRepository;
             _appointmentRepository = appointmentRepository;
             _userRepository = userRepository;
+            _emailService = emailService;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -65,7 +69,7 @@ namespace SEP490_BE.Services.AppointmentServices
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
             {
-                throw new ResourceNotFoundException(MessageConstants.NOT_FOUND);
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
             }
             return new AppointmentResponseDTO
             {
@@ -89,16 +93,23 @@ namespace SEP490_BE.Services.AppointmentServices
         public async Task<AppointmentResponseDTO> Create(AppointmentRequestDTO request)
         {
             string newAppointmentId = Guid.NewGuid().ToString();
-            var requiredDoctor = await _userRepository.FindById(request.RequiredDoctorId);
-            if (requiredDoctor == null)
+
+            var requiredDoctor = new User();
+            if (!string.IsNullOrWhiteSpace(request.RequiredDoctorId))
             {
-                throw new ResourceNotFoundException("Doctor not found");
+                requiredDoctor = await _userRepository.FindById(request.RequiredDoctorId);
+                if (requiredDoctor == null)
+                {
+                throw new ResourceNotFoundException(MessageConstants.DOCTOR_NOT_FOUND);
+                }
             }
+
             var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == request.TimeSlotId);
             if (timeSlot == null)
             {
-                throw new ResourceNotFoundException("Timeslot not found");
+                throw new ResourceNotFoundException("Không tìm thấy ca khám.");
             }
+
             var appointment = new Appointment
             {
                 Id = newAppointmentId,
@@ -109,35 +120,13 @@ namespace SEP490_BE.Services.AppointmentServices
                 Gender = request.Gender,
                 Address = request.Address,
                 Symptom = request.Symptom,
-                RequiredDoctorId = request.RequiredDoctorId,
+                RequiredDoctorId = requiredDoctor.Id,
                 Date = request.Date,
                 TimeSlotId = request.TimeSlotId,
                 Status = AppointmentStatus.WAITING_FOR_CONFIRMATION,
                 CreatedAt = DateTime.UtcNow,
                 ExpiredAt = request.Date.Date.AddDays(1).AddMilliseconds(-1)
             };
-
-            var appointmentResponseDTO = new AppointmentResponseDTO
-            {
-                Id = appointment.Id,
-                Name = appointment.Name,
-                PhoneNumber = appointment.PhoneNumber,
-                Email = appointment.Email,
-                DateOfBirth = appointment.DateOfBirth,
-                Gender = appointment.Gender,
-                Address = appointment.Address,
-                Symptom = appointment.Symptom,
-                RequiredDoctorId = appointment.RequiredDoctorId,
-                RequiredDoctorName = appointment.RequiredDoctor?.Name ?? "",
-                Date = appointment.Date,
-                TimeSlotId = appointment.TimeSlotId,
-                TimeSlotStartTime = appointment.TimeSlot.StartTime,
-                TimeSlotEndTime = appointment.TimeSlot.EndTime,
-                Status = appointment.Status,
-                TotalPrice = appointment.TotalPrice,
-                ExpiredAt = appointment.ExpiredAt,
-                CreatedAt = appointment.CreatedAt
-            };
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -150,15 +139,55 @@ namespace SEP490_BE.Services.AppointmentServices
                 await transaction.RollbackAsync();
                 throw;
             }
-            return appointmentResponseDTO;
+
+            var htmlContent = $@"
+                <h2>Gửi yêu cầu đặt lịch khám thành công</h2>
+                <p>Xin chào <strong>{appointment.Name}</strong>,</p>
+                <p>Bạn đã yêu cầu đặt lịch khám tại <strong>Khanh An Neurology Clinic</strong>.</p>
+                <p><strong>Ngày khám:</strong> {appointment.Date:dd/MM/yyyy}</p>
+                <p><strong>Khung giờ:</strong> {timeSlot.StartTime} - {timeSlot.EndTime}</p>
+                <p><strong>Triệu chứng:</strong> {appointment.Symptom}</p>
+                <p><strong>Bác sĩ mong muốn:</strong> {requiredDoctor?.Name ?? "Không"}</p>
+                <br/>
+                <p>Thông báo sẽ được gửi cho bạn qua email này sau khi lịch hẹn được chúng tôi xác nhận.</p>
+                <p>Trân trọng,<br/>Khanh An Neurology Clinic</p>";
+            await _emailService.SendAsync(
+                appointment.Email,
+                "Lịch hẹn khám tại Khanh An Neurology Clinic",
+                htmlContent);
+            return new AppointmentResponseDTO
+            {
+                Id = appointment.Id,
+                Name = appointment.Name,
+                PhoneNumber = appointment.PhoneNumber,
+                Email = appointment.Email,
+                DateOfBirth = appointment.DateOfBirth,
+                Gender = appointment.Gender,
+                Address = appointment.Address,
+                Symptom = appointment.Symptom,
+                RequiredDoctorId = requiredDoctor.Id ?? "",
+                RequiredDoctorName = requiredDoctor?.Name ?? "",
+                Date = appointment.Date,
+                TimeSlotId = appointment.TimeSlotId,
+                TimeSlotStartTime = appointment.TimeSlot.StartTime,
+                TimeSlotEndTime = appointment.TimeSlot.EndTime,
+                Status = appointment.Status,
+                TotalPrice = appointment.TotalPrice,
+                ExpiredAt = appointment.ExpiredAt,
+                CreatedAt = appointment.CreatedAt
+            }; 
         }
-        public async Task<AppointmentResponseDTO> CreateByReceptionist(AppointmentRequestDTO request)
+        public async Task<AppointmentResponseDTO> CreatedByReceptionist(AppointmentRequestDTO request)
         {
             string newAppointmentId = Guid.NewGuid().ToString();
-            var requiredDoctor = await _userRepository.FindById(request.RequiredDoctorId);
-            if (requiredDoctor == null)
+            var requiredDoctor = new User();
+            if (!string.IsNullOrWhiteSpace(request.RequiredDoctorId))
             {
-                throw new ResourceNotFoundException("Doctor not found");
+                requiredDoctor = await _userRepository.FindById(request.RequiredDoctorId);
+                if (requiredDoctor == null)
+                {
+                    throw new ResourceNotFoundException(MessageConstants.DOCTOR_NOT_FOUND);
+                }
             }
             var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == request.TimeSlotId);
             if (timeSlot == null)
@@ -175,34 +204,12 @@ namespace SEP490_BE.Services.AppointmentServices
                 Gender = request.Gender,
                 Address = request.Address,
                 Symptom = request.Symptom,
-                RequiredDoctorId = request.RequiredDoctorId,
+                RequiredDoctorId = requiredDoctor.Id,
                 Date = request.Date,
                 TimeSlotId = request.TimeSlotId,
                 Status = AppointmentStatus.CHECKED_IN,
                 CreatedAt = DateTime.UtcNow,
                 ExpiredAt = request.Date.Date.AddDays(1).AddMilliseconds(-1)
-            };
-
-            var appointmentResponseDTO = new AppointmentResponseDTO
-            {
-                Id = appointment.Id,
-                Name = appointment.Name,
-                PhoneNumber = appointment.PhoneNumber,
-                Email = appointment.Email,
-                DateOfBirth = appointment.DateOfBirth,
-                Gender = appointment.Gender,
-                Address = appointment.Address,
-                Symptom = appointment.Symptom,
-                RequiredDoctorId = appointment.RequiredDoctorId,
-                RequiredDoctorName = appointment.RequiredDoctor?.Name ?? "",
-                Date = appointment.Date,
-                TimeSlotId = appointment.TimeSlotId,
-                TimeSlotStartTime = appointment.TimeSlot.StartTime,
-                TimeSlotEndTime = appointment.TimeSlot.EndTime,
-                Status = appointment.Status,
-                TotalPrice = appointment.TotalPrice,
-                ExpiredAt = appointment.ExpiredAt,
-                CreatedAt = appointment.CreatedAt
             };
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -216,30 +223,70 @@ namespace SEP490_BE.Services.AppointmentServices
                 await transaction.RollbackAsync();
                 throw;
             }
-            return appointmentResponseDTO;
+            var htmlContent = $@"
+                    <h2>Đặt lịch khám thành công</h2>
+                    <p>Xin chào <strong>{appointment.Name}</strong>,</p>
+                    <p>Bạn đã được Lễ Tân đặt lịch khám tại <strong>Khanh An Neurology Clinic</strong>.</p>
+                    <p><strong>Ngày khám:</strong> {appointment.Date:dd/MM/yyyy}</p>
+                    <p><strong>Khung giờ:</strong> {timeSlot.StartTime} - {timeSlot.EndTime}</p>
+                    <p><strong>Triệu chứng:</strong> {appointment.Symptom}</p>
+                    <p><strong>Bác sĩ mong muốn:</strong> {requiredDoctor.Name}</p>
+                    <br/>
+                    <p>Trân trọng,<br/>Khanh An Neurology Clinic</p>";
+
+            await _emailService.SendAsync(
+                appointment.Email,
+                "Lịch hẹn khám tại Khanh An Neurology Clinic",
+                htmlContent);
+            return new AppointmentResponseDTO
+            {
+                Id = appointment.Id,
+                Name = appointment.Name,
+                PhoneNumber = appointment.PhoneNumber,
+                Email = appointment.Email,
+                DateOfBirth = appointment.DateOfBirth,
+                Gender = appointment.Gender,
+                Address = appointment.Address,
+                Symptom = appointment.Symptom,
+                RequiredDoctorId = requiredDoctor.Id ?? "",
+                RequiredDoctorName = requiredDoctor.Name ?? "",
+                Date = appointment.Date,
+                TimeSlotId = appointment.TimeSlotId,
+                TimeSlotStartTime = appointment.TimeSlot.StartTime,
+                TimeSlotEndTime = appointment.TimeSlot.EndTime,
+                Status = appointment.Status,
+                TotalPrice = appointment.TotalPrice,
+                ExpiredAt = appointment.ExpiredAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
         public async Task<AppointmentResponseDTO> Update(string id, AppointmentRequestDTO request)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
             {
-                throw new ResourceNotFoundException(MessageConstants.NOT_FOUND);
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
             }
-            var requiredDoctor = await _userRepository.FindById(request.RequiredDoctorId);
-            if (requiredDoctor == null) {
-                throw new ResourceNotFoundException("Doctor not found");
+            var requiredDoctor = new User();
+            if (!string.IsNullOrWhiteSpace(request.RequiredDoctorId))
+            {
+                requiredDoctor = await _userRepository.FindById(request.RequiredDoctorId);
+                if (requiredDoctor == null)
+                {
+                    throw new ResourceNotFoundException(MessageConstants.DOCTOR_NOT_FOUND);
+                }
             }
             var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == request.TimeSlotId);
             if (timeSlot == null)
             {
-                throw new ResourceNotFoundException("Timeslot not found");
+                throw new ResourceNotFoundException("Không tìm thấy ca làm");
             }
             if (
-                appointment.Status == AppointmentStatus.COMPLETED
-                || appointment.Status == AppointmentStatus.CANCELLED
+                appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION
+                || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN
                 )
             {
-                throw new System.ArgumentException("This appointment cant be updated anymore.");
+                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
             appointment.Name = request.Name;
             appointment.PhoneNumber = request.PhoneNumber;
@@ -248,7 +295,7 @@ namespace SEP490_BE.Services.AppointmentServices
             appointment.Gender = request.Gender;
             appointment.Address = request.Address;
             appointment.Symptom = request.Symptom;
-            appointment.RequiredDoctorId = request.RequiredDoctorId;
+            appointment.RequiredDoctorId = requiredDoctor.Id;
             appointment.Date = request.Date;
             appointment.TimeSlotId = request.TimeSlotId;
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -274,8 +321,8 @@ namespace SEP490_BE.Services.AppointmentServices
                 Gender = appointment.Gender,
                 Address = appointment.Address,
                 Symptom = appointment.Symptom,
-                RequiredDoctorId = appointment.RequiredDoctorId,
-                RequiredDoctorName = appointment.RequiredDoctor?.Name ?? "",
+                RequiredDoctorId = requiredDoctor.Id ?? "",
+                RequiredDoctorName = requiredDoctor.Name ?? "",
                 Date = appointment.Date,
                 TimeSlotId = appointment.TimeSlotId,
                 TimeSlotStartTime = appointment.TimeSlot.StartTime,
@@ -286,40 +333,28 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
-        public async Task<AppointmentResponseDTO> UpdateStatus(string id, AppointmentStatusRequestDTO request)
+        public async Task<AppointmentResponseDTO> UpdateStatus(string id, string status)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
             {
-                throw new ResourceNotFoundException(MessageConstants.NOT_FOUND);
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
             }
 
             if (appointment.Status == AppointmentStatus.COMPLETED
                 || appointment.Status == AppointmentStatus.CANCELLED){
-                throw new System.ArgumentException("This appointment cant be updated anymore.");
+                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
 
-            if (appointment.Status == AppointmentStatus.WAITING_FOR_CONFIRMATION
-                && request.Status != AppointmentStatus.WAITING_FOR_CHECK_IN
-                && request.Status != AppointmentStatus.CANCELLED) {
-                throw new System.ArgumentException("This appointment havent been confirmed yet.");
-            }
-
-            if (appointment.Status == AppointmentStatus.WAITING_FOR_CHECK_IN
-                && request.Status != AppointmentStatus.CHECKED_IN
-                && request.Status != AppointmentStatus.CANCELLED)
+            #region Checkin Validation
+            if (appointment.Status == AppointmentStatus.WAITING_FOR_CONFIRMATION 
+                && status == AppointmentStatus.CHECKED_IN)
             {
-                throw new System.ArgumentException("This appointment havent been checked in yet.");
+                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
+            #endregion
 
-            if (appointment.Status == AppointmentStatus.PENDING
-                && request.Status != AppointmentStatus.IN_PROGRESS
-                && request.Status != AppointmentStatus.CANCELLED)
-            {
-                throw new System.ArgumentException("This appointment havent been paid yet.");
-            }
-
-            appointment.Status = request.Status;
+            appointment.Status = status;
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -353,6 +388,115 @@ namespace SEP490_BE.Services.AppointmentServices
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
+        }
+        public async Task Confirm(string id)
+        {
+            var appointment = await _appointmentRepository.FindById(id);
+            if (appointment == null)
+            {
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
+            }
+            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION) {
+                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
+            }
+            appointment.Status = AppointmentStatus.WAITING_FOR_CHECK_IN;            
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _appointmentRepository.Update(appointment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            var htmlContent = $@"
+                    <h2>Đặt lịch khám thành công</h2>
+                    <p>Xin chào <strong>{appointment.Name}</strong>,</p>
+                    <p>Bạn đã yêu cầu đặt lịch khám tại <strong>Khanh An Neurology Clinic</strong>.</p>
+                    <p><strong>Ngày khám:</strong> {appointment.Date:dd/MM/yyyy}</p>
+                    <p><strong>Khung giờ:</strong> {appointment.TimeSlot.StartTime} - {appointment.TimeSlot.EndTime}</p>
+                    <p><strong>Triệu chứng:</strong> {appointment.Symptom}</p>
+                    <p><strong>Bác sĩ mong muốn:</strong> {appointment.RequiredDoctor?.Name ?? "Không"}</p>
+                    <br/>
+                    <p>Lịch hẹn khám của bạn đã được chúng tôi xác nhận, vui lòng đến đúng giờ và mang theo giấy tờ cần thiết.</p>
+                    <p>Trân trọng,<br/>Khanh An Neurology Clinic</p>";
+            await _emailService.SendAsync(
+                appointment.Email,
+                "Lịch hẹn khám tại Khanh An Neurology Clinic",
+                htmlContent);
+        }
+        public async Task Cancel(string id)
+        {
+            var appointment = await _appointmentRepository.FindById(id);
+            if (appointment == null)
+            {
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
+            }
+            if (appointment.Status == AppointmentStatus.COMPLETED)
+            {
+                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
+            }
+            appointment.Status = AppointmentStatus.CANCELLED;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _appointmentRepository.Update(appointment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            var htmlContent = $@"
+                    <h2>Lịch hẹn của bạn đã bị huỷ.</h2>
+                    <p>Xin chào <strong>{appointment.Name}</strong>,</p>
+                    <p>Bạn đã yêu cầu đặt lịch khám tại <strong>Khanh An Neurology Clinic</strong>.</p>
+                    <p><strong>Ngày khám:</strong> {appointment.Date:dd/MM/yyyy}</p>
+                    <p><strong>Khung giờ:</strong> {appointment.TimeSlot.StartTime} - {appointment.TimeSlot.EndTime}</p>
+                    <p><strong>Triệu chứng:</strong> {appointment.Symptom}</p>
+                    <p><strong>Bác sĩ mong muốn:</strong> {appointment.RequiredDoctor?.Name ?? "Không"}</p>
+                    <br/>
+                    <p>Lịch hẹn khám của bạn đã bị huỷ.</p>
+                    <p>Trân trọng,<br/>Khanh An Neurology Clinic</p>";
+            await _emailService.SendAsync(
+                appointment.Email,
+                "Lịch hẹn khám tại Khanh An Neurology Clinic",
+                htmlContent);
+        }
+        public async Task MarkAsPaid(string id)
+        {
+            var appointment = await _appointmentRepository.FindById(id);
+            if (appointment == null)
+            {
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
+            }
+            if (appointment.Status != AppointmentStatus.IN_EXAMINATION_PROGRESS)
+            {
+                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
+            }
+            appointment.Status = AppointmentStatus.IN_LABORATORY_PROGRESS;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            // Logic chuyển trạng thái của Visit qua InLaboratory và Asm qua Waiting
+            try
+            {
+                await _appointmentRepository.Update(appointment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+        public Task PrintInvoice(string id)
+        {
+            throw new NotImplementedException();
         }
     }
 }

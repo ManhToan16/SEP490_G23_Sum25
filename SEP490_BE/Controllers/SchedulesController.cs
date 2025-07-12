@@ -16,13 +16,16 @@ namespace SEP490_BE.Controllers
     public class SchedulesController : ControllerBase
     {
         private readonly IScheduleService _scheduleService;
-        private readonly IHubContext<ScheduleHub> _hubContext;
+        private readonly INotificationHubService _notificationHubService;
 
-        public SchedulesController(IScheduleService scheduleService, IHubContext<ScheduleHub> hubContext)
+        public SchedulesController(
+            IScheduleService scheduleService,
+            INotificationHubService notificationHubService)
         {
             _scheduleService = scheduleService;
-            _hubContext = hubContext;
+            _notificationHubService = notificationHubService;
         }
+
 
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetSchedulesByUserId(
@@ -77,7 +80,7 @@ namespace SEP490_BE.Controllers
             var schedules = await _scheduleService.CreateScheduleRange(request);
             foreach (var schedule in schedules)
             {
-                await _hubContext.Clients.All.SendAsync("ReceiveScheduleUpdate", schedule);
+                await _notificationHubService.SendScheduleUpdate(schedule);
             }
             return Ok(new ApiResponse
             {
@@ -87,13 +90,14 @@ namespace SEP490_BE.Controllers
                 Data = schedules
             });
         }
+
+        [Authorize(Roles = "ADMIN")]
         [HttpPost]
-        //[Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> CreateSchedule(
            [FromBody] CreateScheduleDTO request)
         {          
             var schedule = await _scheduleService.CreateSchedule(request);
-            await _hubContext.Clients.All.SendAsync("ReceiveScheduleUpdate", schedule);
+            await _notificationHubService.SendScheduleUpdate(schedule);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -102,26 +106,14 @@ namespace SEP490_BE.Controllers
                 Data = schedule
             });
         }
+        [Authorize(Roles = "ADMIN")]
         [HttpPut("{id}")]
-        //[Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> UpdateSchedule(
             string id,
             [FromBody] UpdateScheduleDTO request)
         {
-            //var adminId = User?.Identity?.Name;
-            //if (string.IsNullOrEmpty(adminId))
-            //{
-            //    return Unauthorized(new ApiResponse
-            //    {
-            //        StatusCode = StatusCodes.Status401Unauthorized,
-            //        Success = false,
-            //        Message = "Admin authentication required.",
-            //        Data = null
-            //    });
-            //}
-
             var schedule = await _scheduleService.UpdateSchedule(id, request);
-            await _hubContext.Clients.All.SendAsync("ReceiveScheduleUpdate", schedule);
+            await _notificationHubService.SendScheduleUpdate(schedule);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -130,9 +122,8 @@ namespace SEP490_BE.Controllers
                 Data = schedule
             });
         }
-
-        [HttpDelete("{id}")]
-        //[Authorize(Roles = "ADMIN")]
+        [Authorize(Roles = "ADMIN")]
+        [HttpDelete("{id}")]        
         public async Task<IActionResult> DeleteSchedule(string id)
         {
             //var adminId = User?.Identity?.Name;
@@ -148,7 +139,7 @@ namespace SEP490_BE.Controllers
             //}
 
             await _scheduleService.DeleteSchedule(id);
-            await _hubContext.Clients.All.SendAsync("ReceiveScheduleDelete", id);
+            await _notificationHubService.SendScheduleDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

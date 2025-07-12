@@ -5,6 +5,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO.ExaminationRoomDTO;
+using SEP490_BE.Hubs;
 
 namespace SEP490_BE.Controllers
 {
@@ -13,10 +14,12 @@ namespace SEP490_BE.Controllers
     public class LaboratoryRoomsController : ControllerBase
     {
         private readonly ILaboratoryRoomService _laboratoryRoomService;
+        private readonly INotificationHubService _notificationHubService;
 
-        public LaboratoryRoomsController(ILaboratoryRoomService laboratoryRoomService)
+        public LaboratoryRoomsController(ILaboratoryRoomService laboratoryRoomService, INotificationHubService notificationHubService)
         {
             _laboratoryRoomService = laboratoryRoomService;
+            _notificationHubService = notificationHubService;
         }
 
         [HttpGet("{id}")]
@@ -39,7 +42,7 @@ namespace SEP490_BE.Controllers
         {
             var createdDto = await _laboratoryRoomService.Create(dto);
             var data = createdDto != null ? new List<LaboratoryRoomResponseDTO> { createdDto } : new List<LaboratoryRoomResponseDTO>();
-
+            await _notificationHubService.SendLaboratoryRoomUpdate(createdDto);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -54,6 +57,7 @@ namespace SEP490_BE.Controllers
         {
             var updatedDto = await _laboratoryRoomService.Update(id, dto);
             var data = updatedDto != null ? new List<LaboratoryRoomResponseDTO> { updatedDto } : new List<LaboratoryRoomResponseDTO>();
+            await _notificationHubService.SendLaboratoryRoomUpdate(updatedDto);
 
             return Ok(new ApiResponse
             {
@@ -68,6 +72,8 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> DeleteLaboratoryRoom(string id)
         {
             await _laboratoryRoomService.Delete(id);
+            await _notificationHubService.SendLaboratoryRoomDelete(id);
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

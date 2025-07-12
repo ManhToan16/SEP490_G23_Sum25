@@ -15,18 +15,19 @@ namespace SEP490_BE.Controllers
     public class ScheduleChangeRequestsController : ControllerBase
     {
         private readonly IScheduleChangeService _scheduleChangeRequestService;
-        private readonly IHubContext<ScheduleHub> _hubContext;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly INotificationHubService _notificationHubService;
 
         public ScheduleChangeRequestsController(
             IScheduleChangeService scheduleChangeRequestService,
-            IHubContext<ScheduleHub> hubContext,
+            INotificationHubService notificationHubService,
             IHttpContextAccessor httpContextAccessor)
         {
             _scheduleChangeRequestService = scheduleChangeRequestService;
-            _hubContext = hubContext;
+            _notificationHubService = notificationHubService;
             _httpContextAccessor = httpContextAccessor;
         }
+
 
         [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.Technician + "," + RoleConstants.Nurse)]
         [HttpPost]
@@ -34,7 +35,7 @@ namespace SEP490_BE.Controllers
         {
             var userId = _httpContextAccessor.HttpContext?.User?.FindFirst("UserId")?.Value;
             var createdRequest = await _scheduleChangeRequestService.CreateRequest(userId, request);
-            await _hubContext.Clients.All.SendAsync("ReceiveScheduleChangeRequest", createdRequest);
+            await _notificationHubService.SendScheduleChangeUpdate(createdRequest);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -51,7 +52,7 @@ namespace SEP490_BE.Controllers
 
       
             var changeRequest = await _scheduleChangeRequestService.ApproveRequest(requestId);
-            await _hubContext.Clients.All.SendAsync("ReceiveScheduleChangeRequest", changeRequest);
+            await _notificationHubService.SendScheduleChangeUpdate(changeRequest);
 
             return Ok(new ApiResponse
             {
@@ -67,7 +68,7 @@ namespace SEP490_BE.Controllers
         {
 
             var changeRequest = await _scheduleChangeRequestService.RejectRequest(requestId);
-            await _hubContext.Clients.All.SendAsync("ReceiveScheduleChangeRequest", changeRequest);
+            await _notificationHubService.SendScheduleChangeUpdate(changeRequest);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

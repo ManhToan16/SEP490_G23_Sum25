@@ -19,6 +19,8 @@ using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
+using SEP490_BE.Repositories.SupplierRepositories;
+using SEP490_BE.Repositories.TimeSlotRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AppointmentServices;
 using SEP490_BE.Services.AuditLogServices;
@@ -31,6 +33,8 @@ using SEP490_BE.Services.PatientProfileServices;
 using SEP490_BE.Services.ScheduleChangeServices;
 using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
+using SEP490_BE.Services.SupplierServices;
+using SEP490_BE.Services.TimeSlotServices;
 using SEP490_BE.Services.UserServices;
 using StackExchange.Redis;
 using System.Text;
@@ -46,6 +50,17 @@ builder.Services.AddCors(options =>
                         .AllowAnyMethod()
                         .AllowAnyHeader());
 });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:8080")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials(); 
+    });
+});
+
 #endregion
 
 builder.Services.AddControllers();
@@ -55,8 +70,12 @@ builder.Services.Configure<ApiBehaviorOptions>(ValidationConfig.Configure);
 #endregion
 
 #region Redis
-builder.Services.AddSingleton<IConnectionMultiplexer>(
-    ConnectionMultiplexer.Connect("localhost:6379"));
+var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+if (!string.IsNullOrEmpty(redisConnectionString))
+{
+    builder.Services.AddSingleton<IConnectionMultiplexer>(
+        ConnectionMultiplexer.Connect(redisConnectionString));
+}
 #endregion
 
 #region Database SQL Server
@@ -130,6 +149,8 @@ builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -143,6 +164,9 @@ builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
 builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
+builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
 
 
 
@@ -151,11 +175,10 @@ builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
 
 var app = builder.Build();
-if (app.Environment.IsDevelopment())
-{
+// dể luôn bật kể kả production
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+
 CreateAdmin(app.Services);
 
 app.UseMiddleware<UnsupportedMediaTypeMiddleware>();
@@ -165,7 +188,9 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseMiddleware<NotFoundMiddleware>();
 
 app.UseHttpsRedirection();
-app.UseCors("AllowAllOrigins");
+//app.UseCors("AllowAllOrigins");
+app.UseCors("AllowFrontend");
+
 app.UseRouting();
 
 
@@ -177,7 +202,7 @@ app.UseMiddleware<ActiveUserMiddleware>();
 app.UseAuthorization();
 app.UseEndpoints(endpoints =>
 {
-    endpoints.MapHub<ScheduleHub>("/scheduleHub");
+    endpoints.MapHub<KhanhAnHub>("/khanhanHub");
 });
 app.MapControllers();
 

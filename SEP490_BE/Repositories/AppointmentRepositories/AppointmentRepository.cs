@@ -30,6 +30,10 @@ namespace SEP490_BE.Repositories.AppointmentRepositories
             {
                 query = query.Where(a => a.PhoneNumber.Contains(phoneNumber));
             }
+            if (!string.IsNullOrWhiteSpace(status))
+            {
+                query = query.Where(a => a.Status.Contains(status));
+            }
             if (dob.HasValue)
             {
                 query = query.Where(a => a.DateOfBirth.Date == dob.Value.Date);
