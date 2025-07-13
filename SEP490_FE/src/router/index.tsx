@@ -13,7 +13,7 @@ const AdminRoutes = React.lazy(() => import("./AdminRoutes"));
 
 // Common pages
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
-const HomePage = React.lazy(() => import("@/pages/patient/Home"));
+const HomePage = React.lazy(() => import("@/pages/Home"));
 const Health = React.lazy(() => import("@/pages/Health"));
 
 interface AppRouterProps {
