@@ -10,6 +10,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Middleware;
 using SEP490_BE.Repositories.AuditLogRepositories;
+using SEP490_BE.Repositories.CategoryRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
@@ -24,6 +25,7 @@ using SEP490_BE.Repositories.TimeSlotRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Services.AuditLogServices;
 using SEP490_BE.Services.AuthServices;
+using SEP490_BE.Services.CategoryServices;
 using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationRoomServices;
@@ -151,6 +153,7 @@ builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 builder.Services.AddScoped<IMedicineService, MedicineService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 
 
@@ -168,6 +171,7 @@ builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
 builder.Services.AddScoped<IMedicineRepository, MedicineRepository>();
+builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 
 
 
