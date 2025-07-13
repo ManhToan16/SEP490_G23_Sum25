@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
@@ -212,20 +213,15 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                         Description = room.Description ?? "Không có mô tả"
                     }
                 };
-
-              
-       
-
                 foreach (var s in schedules)
                 {
                     var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == s.TimeSlotId);
                     Console.WriteLine($"ScheduleId: {s.Id}, Role: {s.Role}, TimeSlotId: {s.TimeSlotId}, " +
-    $"Slot: {timeSlot?.StartTime} - {timeSlot?.EndTime}, " +
-    $"Condition: {timeSlot?.StartTime <= time && time < timeSlot?.EndTime}");
+                                      $"Slot: {timeSlot?.StartTime} - {timeSlot?.EndTime}, " +
+                                      $"Condition: {timeSlot?.StartTime <= time && time < timeSlot?.EndTime}");
                     if (timeSlot != null &&
                         timeSlot.StartTime <= time &&
                         time < timeSlot.EndTime) 
-
                     {
                         var doctor = await _context.Users.FindAsync(s.UserId);
                         if (doctor != null)
@@ -237,7 +233,9 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                     }
                 }
 
-
+                dto.PatientCount = await _context.Visits
+                        .CountAsync(v => v.ExaminationRoomId == room.Id &&
+                                   (v.Status == VisitStatus.WAITING || v.Status == VisitStatus.IN_EXAMINATION));
                 result.Add(dto);
             }
 

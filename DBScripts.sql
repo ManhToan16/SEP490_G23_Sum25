@@ -168,7 +168,6 @@ CREATE TABLE PatientProfiles (
 --15
 CREATE TABLE Appointments (
    Id NVARCHAR(100) PRIMARY KEY,
-   PatientProfileId NVARCHAR(100),
    Name NVARCHAR(100) NOT NULL,
    PhoneNumber NVARCHAR(10) NOT NULL,
    Email NVARCHAR(100) NOT NULL,
@@ -184,15 +183,15 @@ CREATE TABLE Appointments (
        'WAITING_FOR_CONFIRMATION', 
        'WAITING_FOR_CHECK_IN', 
        'CHECKED_IN', 
-       'IN_PROGRESS', 
-       'PENDING', 
+       'IN_EXAMINATION_PROGRESS', 
+       'PENDING',
+	   'IN_LABORATORY_PROGRESS', 
        'COMPLETED', 
        'CANCELLED'
      )),
    TotalPrice DECIMAL(18,2) DEFAULT 0,
    ExpiredAt DATETIME,
    CreatedAt DATETIME DEFAULT GETDATE(),
-   FOREIGN KEY (PatientProfileId) REFERENCES PatientProfiles(Id),
    FOREIGN KEY (RequiredDoctorId) REFERENCES Users(Id),
    FOREIGN KEY (TimeSlotId) REFERENCES TimeSlots(Id)
 );
@@ -202,6 +201,7 @@ CREATE TABLE Visits (
    Id NVARCHAR(100) PRIMARY KEY,
    ExaminationRoomId NVARCHAR(100) NOT NULL,
    AppointmentId NVARCHAR(100) NOT NULL,
+   PatientProfileId NVARCHAR(100) NOT NULL,
    AssignedDoctorId NVARCHAR(100) NOT NULL,
    PatientName NVARCHAR(100) NOT NULL,
    TotalPrice DECIMAL(18,2) DEFAULT 200000,
@@ -211,14 +211,16 @@ CREATE TABLE Visits (
      CHECK (Status IN (
        'WAITING', 
        'IN_EXAMINATION', 
+	   'PENDING', 
        'IN_LABORATORY', 
-       'PENDING', 
        'RETURNING', 
-       'COMPLETED'
+       'COMPLETED',
+	   'CANCELLED'
      )),
    CreateAt DATETIME DEFAULT GETDATE(),
    FOREIGN KEY (ExaminationRoomId) REFERENCES ExaminationRooms(Id),
    FOREIGN KEY (AppointmentId) REFERENCES Appointments(Id),
+   FOREIGN KEY (PatientProfileId) REFERENCES PatientProfiles(Id),
    FOREIGN KEY (AssignedDoctorId) REFERENCES Users(Id)
 );
 
@@ -226,9 +228,8 @@ CREATE TABLE Visits (
 CREATE TABLE Assignments (
    Id NVARCHAR(100) PRIMARY KEY,
    LaboratoryRoomId NVARCHAR(100) NOT NULL,
-   AppointmentId NVARCHAR(100) NOT NULL,
+   VisitId NVARCHAR(100) NOT NULL,
    TotalPrice DECIMAL(18,2),
-   IsPrioritized BIT DEFAULT 0,
    Status NVARCHAR(50) DEFAULT 'PENDING' 
      CHECK (Status IN (
        'PENDING', 
@@ -238,7 +239,7 @@ CREATE TABLE Assignments (
      )),
    CreateAt DATETIME DEFAULT GETDATE(),
    FOREIGN KEY (LaboratoryRoomId) REFERENCES LaboratoryRooms(Id),
-   FOREIGN KEY (AppointmentId) REFERENCES Appointments(Id)
+   FOREIGN KEY (VisitId) REFERENCES Visits(Id)
 );
 
 --18

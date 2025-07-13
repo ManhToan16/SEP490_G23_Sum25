@@ -5,5 +5,6 @@
         public ExaminationRoomResponseDTO Room { get; set; }
         public string DoctorId { get; set; }
         public string DoctorName { get; set; }
+        public int PatientCount { get; set; }
     }
 }
