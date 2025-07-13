@@ -9,6 +9,8 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Middleware;
+using SEP490_BE.Repositories.AppointmentRepositories;
+using SEP490_BE.Repositories.AssignmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
@@ -22,6 +24,8 @@ using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.SupplierRepositories;
 using SEP490_BE.Repositories.TimeSlotRepositories;
 using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Repositories.VisitRepositories;
+using SEP490_BE.Services.AppointmentServices;
 using SEP490_BE.Services.AuditLogServices;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.DoctorProfileServices;
@@ -36,6 +40,7 @@ using SEP490_BE.Services.ServiceServices;
 using SEP490_BE.Services.SupplierServices;
 using SEP490_BE.Services.TimeSlotServices;
 using SEP490_BE.Services.UserServices;
+using SEP490_BE.Services.VisitServices;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
@@ -148,10 +153,12 @@ builder.Services.AddScoped<IPatientProfileService, PatientProfileService>();
 builder.Services.AddScoped<IScheduleService, ScheduleService>();
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
 builder.Services.AddScoped<IScheduleChangeService, ScheduleChangeRequestService>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<ISupplierService, SupplierService>();
 builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 builder.Services.AddScoped<IMedicineService, MedicineService>();
-
+builder.Services.AddScoped<IVisitService, VisitService>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -164,11 +171,13 @@ builder.Services.AddScoped<IPatientProfileRepository, PatientProfileRepository>(
 builder.Services.AddScoped<IScheduleRepository, ScheduleRepository>();
 builder.Services.AddScoped<IAuditLogRepository, AuditLogRepository>();
 builder.Services.AddScoped<IScheduleChangeRepository, ScheduleChangeRepository>();
+builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 builder.Services.AddScoped<INotificationHubService, NotificationHubService>();
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<ITimeSlotRepository, TimeSlotRepository>();
 builder.Services.AddScoped<IMedicineRepository, MedicineRepository>();
-
+builder.Services.AddScoped<IVisitRepository, VisitRepository>();
+builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 
 
 
