@@ -76,6 +76,29 @@
         #region Appointment
         public const string APPOINTMENT_NOT_FOUND = "Không tìm thấy lịch hẹn.";
         public const string APPOINTMENT_INVALID_UPDATE = "Có lỗi xảy ra khi cập nhật lịch hẹn.";
+        public const string APPOINTMENT_EXPIRED = "Lịch hẹn này đã hết hạn, không thể tạo lượt khám.";
+        public const string APPOINTMENT_INVALID_CREATE_VISIT = "Chỉ được tạo lượt khám trong ngày đã hẹn.";
+        #endregion
+
+        #region Visit
+        public const string VISIT_NOT_FOUND = "Không tìm thấy lượt khám.";
+        public const string VISIT_INVALID_COMPLETED = "Không thể hoàn thành lượt khám khi bệnh nhân chưa hoàn thành tất cả chỉ định và quay trở về phòng khám tống quát.";
+        public const string VISIT_INVALID_CALLING = "Lỗi khi gọi bệnh nhân.";
+        #endregion
+
+        #region Assignment
+        public const string ASSIGNMENT_NOT_FOUND = "Không tìm thấy chỉ định.";
+        public const string ASSIGNMENT_SERVICE_INVALID = "Một hoặc vài dịch vụ được chọn cho chỉ định đã gặp lỗi.";
+        public const string ASSIGNMENT_INVALID_CALLING = "Bệnh nhân chưa thanh toán.";
+        #endregion
+
+        #region Timeslot
+        public const string TIMESLOT_NOT_FOUND = "Không tìm thấy ca khám.";
+        #endregion
+
+        #region Room
+        public const string EXAM_ROOM_NOT_FOUND = "Không tìm thấy phòng khám tổng quát.";
+        public const string LABO_ROOM_NOT_FOUND = "Không tìm thấy phòng xét nghiệm.";
         #endregion
     }
 }

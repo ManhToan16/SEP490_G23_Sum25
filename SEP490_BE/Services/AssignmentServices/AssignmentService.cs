@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Constants;
+using SEP490_BE.DTO;
 using SEP490_BE.DTO.AssignmentDTO;
+using SEP490_BE.DTO.VisitDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.AppointmentRepositories;
@@ -8,6 +10,7 @@ using SEP490_BE.Repositories.AssignmentRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
+using System.ComponentModel;
 
 namespace SEP490_BE.Services.AssignmentServices
 {
@@ -36,16 +39,23 @@ namespace SEP490_BE.Services.AssignmentServices
             _context = context;
         }
 
-        public async Task<(List<AssignmentResponseDTO> Assignments, int TotalItems)> GetAssignments(string laboratoryRoomId, string? status, DateTime date, int pageNumber, int pageSize)
+        public async Task<Pagination<AssignmentResponseDTO>> GetAssignments(string laboratoryRoomId, string? status, DateTime date, int pageNumber, int pageSize)
         {
-            return await _assignmentRepository.GetAssignments(laboratoryRoomId, status, date, pageNumber, pageSize);
+            var (assignments, totalItems) = await _assignmentRepository.GetAssignments(laboratoryRoomId, status, date, pageNumber, pageSize);
+            return new Pagination<AssignmentResponseDTO>
+            {
+                Items = assignments,
+                TotalItems = totalItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<AssignmentResponseDTO> GetById(string id)
         {
             var assignment = await _assignmentRepository.FindById(id);
             if (assignment == null)
-                throw new ResourceNotFoundException("Assignment not found");
+                throw new ResourceNotFoundException(MessageConstants.ASSIGNMENT_NOT_FOUND);
 
             return new AssignmentResponseDTO
             {
@@ -67,20 +77,36 @@ namespace SEP490_BE.Services.AssignmentServices
         {
             var results = new List<AssignmentResponseDTO>();
 
+            var duplicateLabRooms = requests
+                .GroupBy(r => r.LaboratoryRoomId)
+                .Where(g => g.Count() > 1)
+                .Select(g => g.Key)s
+                .ToList();
+            if (duplicateLabRooms.Any())
+                throw new Exceptions.ArgumentException("Mỗi phòng xét nghiệm chỉ được tạo 1 chỉ định trong 1 lượt khám.");
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 foreach (var request in requests)
                 {
                     var visit = await _visitRepository.FindById(request.VisitId)
-                        ?? throw new ResourceNotFoundException("Visit not found");
+                        ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
                     var labRoom = await _laboratoryRoomRepository.FindByIdAsync(request.LaboratoryRoomId)
-                        ?? throw new ResourceNotFoundException("Laboratory room not found");
+                        ?? throw new ResourceNotFoundException(MessageConstants.LABO_ROOM_NOT_FOUND);
                     var services = await _context.Services
                         .Where(s => request.ServiceIds.Contains(s.Id))
                         .ToListAsync();
                     if (services.Count != request.ServiceIds.Count)
-                        throw new Exceptions.ArgumentException("One or more service IDs are invalid.");
+                        throw new Exceptions.ArgumentException(MessageConstants.ASSIGNMENT_SERVICE_INVALID);
+
+                    var invalidServices = services.Where(s => s.LaboratoryRoomsId != request.LaboratoryRoomId).ToList();
+                    if (invalidServices.Any())
+                    {
+                        var invalidNames = string.Join(", ", invalidServices.Select(s => s.Name));
+                        throw new Exceptions.ArgumentException($"Các dịch vụ được chọn phải cùng một phòng xét nghiệm '{labRoom.Name}': {invalidNames}");
+                    }
+
                     var totalPrice = CalculateTotalPrice(services);
                     var assignment = new Assignment
                     {
@@ -123,7 +149,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 var visitToUpdate = await _context.Visits
                     .Include(v => v.Appointment)
                     .FirstOrDefaultAsync(v => v.Id == visitId)
-                    ?? throw new ResourceNotFoundException("Visit not found");
+                    ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
                 visitToUpdate.Status = VisitStatus.PENDING;
                 #endregion
@@ -172,38 +198,44 @@ namespace SEP490_BE.Services.AssignmentServices
             }).ToList();
         }
 
-        public async Task UpdateStatus(string id, string status)
+        public async Task<AssignmentResponseDTO> Calling(string id)
         {
             var assignment = await _assignmentRepository.FindById(id) ??
-                throw new ResourceNotFoundException("Assignment not found");
-
-            assignment.Status = status;
-            await _assignmentRepository.Update(assignment);
-            await _context.SaveChangesAsync();
-        }
-
-        public async Task Calling(string id)
-        {
-            var assignment = await _assignmentRepository.FindById(id) ??
-                throw new ResourceNotFoundException("Assignment not found");
+                throw new ResourceNotFoundException(MessageConstants.ASSIGNMENT_NOT_FOUND);
 
             if (assignment.Status != AssignmentStatus.WAITING)
-                throw new Exceptions.ArgumentException("Assignment must be in WAITING state to call.");
+                throw new Exceptions.ArgumentException(MessageConstants.ASSIGNMENT_INVALID_CALLING);
 
             assignment.Status = AssignmentStatus.IN_PROGRESS;
             await _assignmentRepository.Update(assignment);
             await _context.SaveChangesAsync();
+            return new AssignmentResponseDTO
+            {
+                AssignmentId = assignment.Id,
+                VisitId = assignment.VisitId,
+                LaboratoryRoomId = assignment.LaboratoryRoomId,
+                LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
+                TotalPrice = assignment.TotalPrice,
+                AssignmentServices = assignment.AssignmentServices.Select(s => new AssignmentServiceResponseDTO
+                {
+                    ServiceId = s.Service.Id,
+                    ServiceName = s.Service.Name,
+                    Price = s.Service.Price
+                }).ToList()
+            };
         }
 
-        public async Task MarkAsCompleted(string id)
+        public async Task<AssignmentResponseDTO> MarkAsCompleted(string id)
         {
             var assignment = await _assignmentRepository.FindById(id)
-                ?? throw new ResourceNotFoundException("Assignment not found");
+                ?? throw new ResourceNotFoundException(MessageConstants.ASSIGNMENT_NOT_FOUND);
 
             assignment.Status = AssignmentStatus.COMPLETED;
 
             var visit = await _visitRepository.FindById(assignment.VisitId)
-                ?? throw new ResourceNotFoundException("Visit not found for this assignment");
+                ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
+
+            // Logic không thể hoàn thành chỉ định khi chưa có kết quả xn labo result
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -230,6 +262,20 @@ namespace SEP490_BE.Services.AssignmentServices
                 await transaction.RollbackAsync();
                 throw;
             }
+            return new AssignmentResponseDTO
+            {
+                AssignmentId = assignment.Id,
+                VisitId = assignment.VisitId,
+                LaboratoryRoomId = assignment.LaboratoryRoomId,
+                LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
+                TotalPrice = assignment.TotalPrice,
+                AssignmentServices = assignment.AssignmentServices.Select(s => new AssignmentServiceResponseDTO
+                {
+                    ServiceId = s.Service.Id,
+                    ServiceName = s.Service.Name,
+                    Price = s.Service.Price
+                }).ToList()
+            };
         }
 
         private decimal CalculateTotalPrice(List<Service> services)

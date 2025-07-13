@@ -5,8 +5,10 @@ namespace SEP490_BE.DTO.VisitDTO
     public class VisitResponseDTO
     {
         public string ExaminationRoomId { get; set; }
+        public string ExaminationRoomName { get; set; }
         public string AppointmentId { get; set; }
-        public string AssignedDoctortId { get; set; }
+        public string AssignedDoctorId { get; set; }
+        public string AssignedDoctorName { get; set; }
         public string PatientProfileId { get; set; }
         public string PatientName { get; set; }
         public int QueueNumber { get; set; }

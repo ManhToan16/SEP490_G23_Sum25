@@ -214,7 +214,8 @@ CREATE TABLE Visits (
 	   'PENDING', 
        'IN_LABORATORY', 
        'RETURNING', 
-       'COMPLETED'
+       'COMPLETED',
+	   'CANCELLED'
      )),
    CreateAt DATETIME DEFAULT GETDATE(),
    FOREIGN KEY (ExaminationRoomId) REFERENCES ExaminationRooms(Id),

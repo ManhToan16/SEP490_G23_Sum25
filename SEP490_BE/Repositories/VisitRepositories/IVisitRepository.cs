@@ -5,7 +5,6 @@ namespace SEP490_BE.Repositories.VisitRepositories
 {
     public interface IVisitRepository
     {
-        Task<List<Visit>> GetVisitsForCalling(string examinationRoomId, DateTime date);
         Task Insert(Visit visit);
         Task Update(Visit visit);
         Task<Visit?> FindById(string id);
@@ -15,6 +14,9 @@ namespace SEP490_BE.Repositories.VisitRepositories
                 DateTime date,
                 int pageNumber,
                 int pageSize);
+
+        Task<Visit?> FindByAppointmentId(string appointmentId);
+
 
     }
 }

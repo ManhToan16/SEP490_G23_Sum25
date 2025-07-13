@@ -47,26 +47,26 @@ namespace SEP490_BE.Services.VisitServices
         {
             var examinationRoom = await _context.ExaminationRooms.FindAsync(request.ExaminationRoomId);
             if (examinationRoom == null)
-                throw new ResourceNotFoundException("Examination room not found.");
+                throw new ResourceNotFoundException(MessageConstants.EXAM_ROOM_NOT_FOUND);
 
             var patientProfile = await _context.PatientProfiles.FindAsync(request.PatientProfileId);
             if (patientProfile == null)
-                throw new ResourceNotFoundException("Patient profile not found.");
+                throw new ResourceNotFoundException(MessageConstants.PATIENT_PROTILE_NOT_FOUND);
 
             var appointment = await _context.Appointments.FindAsync(request.AppointmentId);
             if (appointment == null)
-                throw new ResourceNotFoundException("Appointment not found.");
+                throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
 
             if (appointment.ExpiredAt.HasValue && appointment.ExpiredAt.Value < DateTime.UtcNow)
-                throw new ArgumentException("Lịch hẹn đã hết hạn, không thể tạo lượt khám.");
+                throw new ArgumentException(MessageConstants.APPOINTMENT_EXPIRED);
 
             var today = DateTime.UtcNow.Date;
             if (appointment.Date.Date != today)
-                throw new ArgumentException("Chỉ được tạo lượt khám trong ngày đã hẹn.");
+                throw new ArgumentException(MessageConstants.APPOINTMENT_INVALID_CREATE_VISIT);
 
-            var assignedDoctor = await _context.Users.FindAsync(request.AssignedDoctortId);
+            var assignedDoctor = await _context.Users.FindAsync(request.AssignedDoctorId);
             if (assignedDoctor == null)
-                throw new ResourceNotFoundException("Assigned doctor not found.");
+                throw new ResourceNotFoundException(MessageConstants.DOCTOR_NOT_FOUND);
 
             var todayVisits = await _context.Visits
                 .Where(v => v.ExaminationRoomId == request.ExaminationRoomId && v.CreateAt.HasValue && v.CreateAt.Value.Date == today)
@@ -80,7 +80,7 @@ namespace SEP490_BE.Services.VisitServices
                 ExaminationRoomId = request.ExaminationRoomId,
                 AppointmentId = request.AppointmentId,
                 PatientProfileId = request.PatientProfileId,
-                AssignedDoctorId = request.AssignedDoctortId,
+                AssignedDoctorId = request.AssignedDoctorId,
                 PatientName = patientProfile.Name,
                 TotalPrice = appointment.TotalPrice,
                 IsPrioritized = request.IsPrioritized,
@@ -104,8 +104,10 @@ namespace SEP490_BE.Services.VisitServices
             return new VisitResponseDTO
             {
                 ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
-                AssignedDoctortId = visit.AssignedDoctorId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor.Name,
                 PatientProfileId = visit.PatientProfileId,
                 PatientName = visit.PatientName,
                 QueueNumber = visit.QueueNumber,
@@ -119,13 +121,15 @@ namespace SEP490_BE.Services.VisitServices
         {
             var visit = await _visitRepository.FindById(id);
             if (visit == null)
-                throw new ResourceNotFoundException("Visit not found");
+                throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
             return new VisitResponseDTO
             {
                 ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
-                AssignedDoctortId = visit.AssignedDoctorId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor.Name,
                 PatientProfileId = visit.PatientProfileId,
                 PatientName = visit.PatientName,
                 QueueNumber = visit.QueueNumber,
@@ -147,24 +151,25 @@ namespace SEP490_BE.Services.VisitServices
             };
         }
 
-        public async Task MarkAsComplete(string id)
+        public async Task<VisitResponseDTO> MarkAsComplete(string id)
         {
             var visit = await _visitRepository.FindById(id);
             if (visit == null)
-                throw new ResourceNotFoundException("Visit not found");
+                throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
             if (visit.Status != VisitStatus.RETURNING)
-                throw new ArgumentException("Only visits with status RETURNING can be COMPLETED.");
+                throw new ArgumentException(MessageConstants.VISIT_INVALID_COMPLETED);
 
             var incompleteAssignments = await _context.Assignments
                 .Where(a => a.VisitId == visit.Id && a.Status != AssignmentStatus.COMPLETED)
                 .ToListAsync();
             if (incompleteAssignments.Any())
-                throw new InvalidOperationException("Not all assignments are completed. Visit cannot be completed.");
+                throw new InvalidOperationException(MessageConstants.VISIT_INVALID_COMPLETED);
 
             visit.Status = VisitStatus.COMPLETED;
             visit.Appointment.Status = AppointmentStatus.COMPLETED;
 
+            // Logic: không thể complete visit khi chưa có phiếu kết quả khám exam result
             string accessCode = "(Sẽ bổ sung access code sau)";
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -192,23 +197,13 @@ namespace SEP490_BE.Services.VisitServices
                 visit.Appointment.Email,
                 "Kết quả khám tại Khanh An Neurology Clinic",
                 htmlContent);
-        }
-
-        public async Task<VisitResponseDTO> UpdateStatus(string id, string status)
-        {
-            var visit = await _visitRepository.FindById(id);
-            if (visit == null)
-                throw new ResourceNotFoundException("Visit not found");
-
-            visit.Status = status;
-            await _visitRepository.Update(visit);
-            await _context.SaveChangesAsync();
-
             return new VisitResponseDTO
             {
                 ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
-                AssignedDoctortId = visit.AssignedDoctorId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor.Name,
                 PatientProfileId = visit.PatientProfileId,
                 PatientName = visit.PatientName,
                 QueueNumber = visit.QueueNumber,
@@ -218,23 +213,20 @@ namespace SEP490_BE.Services.VisitServices
             };
         }
 
-        public async Task Calling(string id)
+        public async Task<VisitResponseDTO> Calling(string id)
         {
             var visit = await _visitRepository.FindById(id);
             if (visit == null)
-                throw new ResourceNotFoundException("Visit not found");
+                throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
             if (visit.Status != VisitStatus.WAITING)
-                throw new ArgumentException("Only visits with status WAITING can be CALLED.");
+                throw new ArgumentException(MessageConstants.VISIT_INVALID_CALLING);
 
             visit.Status = VisitStatus.IN_EXAMINATION;
-            visit.Appointment.Status = AppointmentStatus.IN_EXAMINATION_PROGRESS;
-
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _visitRepository.Update(visit);
-                await _appointmentRepository.Update(visit.Appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -243,7 +235,44 @@ namespace SEP490_BE.Services.VisitServices
                 await transaction.RollbackAsync();
                 throw;
             }
+            return new VisitResponseDTO
+            {
+                ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom.Name,
+                AppointmentId = visit.AppointmentId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor.Name,
+                PatientProfileId = visit.PatientProfileId,
+                PatientName = visit.PatientName,
+                QueueNumber = visit.QueueNumber,
+                TotalPrice = visit.TotalPrice ?? 0,
+                Status = visit.Status ?? "",
+                IsPrioritized = visit.IsPrioritized ?? false
+            };
         }
-             
+
+        public async Task<VisitResponseDTO> GetByAppointmentId(string appointmentId)
+        {
+            var visit = await _visitRepository.FindByAppointmentId(appointmentId);
+            if (visit == null)
+                throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
+
+            return new VisitResponseDTO
+            {
+                ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom.Name,
+                AppointmentId = visit.AppointmentId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor.Name,
+                PatientProfileId = visit.PatientProfileId,
+                PatientName = visit.PatientName,
+                QueueNumber = visit.QueueNumber,
+                TotalPrice = visit.TotalPrice ?? 0,
+                Status = visit.Status ?? "",
+                IsPrioritized = visit.IsPrioritized ?? false
+            };
+        }
+
+
     }
 }

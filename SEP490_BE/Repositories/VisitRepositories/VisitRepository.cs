@@ -14,33 +14,6 @@ namespace SEP490_BE.Repositories.VisitRepositories
             _context = context;
         }
 
-        public async Task<List<Visit>> GetVisitsForCalling(string examinationRoomId, DateTime date)
-        {
-            var targetDate = date.Date;
-
-            var visits = await _context.Visits
-                .Include(v => v.PatientProfile)
-                .Include(v => v.Appointment)
-                .Include(v => v.AssignedDoctor)
-                .Where(v => v.ExaminationRoomId == examinationRoomId
-                         && v.CreateAt.HasValue && v.CreateAt.Value.Date == targetDate)
-                .ToListAsync();
-
-            var sortedVisits = visits.OrderBy(v => v.Status switch
-            {
-                VisitStatus.IN_EXAMINATION => 1,
-                VisitStatus.RETURNING => 2,
-                VisitStatus.WAITING when v.IsPrioritized == true => 3,
-                VisitStatus.WAITING when v.IsPrioritized == false => 4,
-                VisitStatus.IN_LABORATORY => 5,
-                VisitStatus.COMPLETED => 6,
-                _ => 99 // unknown
-            })
-            .ThenBy(v => v.QueueNumber)
-            .ToList();
-            return sortedVisits;
-        }
-
         public async Task Insert(Visit visit)
         {
             await _context.Visits.AddAsync(visit);
@@ -107,7 +80,7 @@ namespace SEP490_BE.Repositories.VisitRepositories
                 {
                     ExaminationRoomId = v.ExaminationRoomId,
                     AppointmentId = v.AppointmentId,
-                    AssignedDoctortId = v.AssignedDoctorId,
+                    AssignedDoctorId = v.AssignedDoctorId,
                     PatientProfileId = v.PatientProfileId,
                     PatientName = v.PatientName,
                     QueueNumber = v.QueueNumber,
@@ -118,6 +91,16 @@ namespace SEP490_BE.Repositories.VisitRepositories
                 .ToList();
 
             return (sortedVisits, totalItems);
+        }
+
+        public async Task<Visit?> FindByAppointmentId(string appointmentId)
+        {
+            return await _context.Visits
+                .Include(v => v.Appointment)
+                .Include(v => v.AssignedDoctor)
+                .Include(v => v.ExaminationRoom)
+                .Include(v => v.PatientProfile)
+                .FirstOrDefaultAsync(v => v.AppointmentId == appointmentId);
         }
 
     }

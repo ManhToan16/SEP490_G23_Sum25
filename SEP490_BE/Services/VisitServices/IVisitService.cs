@@ -14,9 +14,9 @@ namespace SEP490_BE.Services.VisitServices
                 int pageNumber,
                 int pageSize);
         Task<VisitResponseDTO> GetById(string id);
-        Task<VisitResponseDTO> UpdateStatus(string id, string status);
-        Task MarkAsComplete(string id);
-        Task Calling(string id);
+        Task<VisitResponseDTO> MarkAsComplete(string id);
+        Task<VisitResponseDTO> Calling(string id);
+        Task<VisitResponseDTO> GetByAppointmentId(string appointmentId);
 
     }
 }

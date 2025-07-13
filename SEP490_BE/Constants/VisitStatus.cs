@@ -8,5 +8,6 @@
         public const string IN_LABORATORY = "IN_LABORATORY";
         public const string RETURNING = "RETURNING";
         public const string COMPLETED = "COMPLETED";
+        public const string CANCELLED = "CANCELLED";
     }
 }

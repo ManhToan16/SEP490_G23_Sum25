@@ -11,7 +11,7 @@ namespace SEP490_BE.DTO.VisitDTO
         public string AppointmentId { get; set; }
 
         [Required]
-        public string AssignedDoctortId { get; set; }
+        public string AssignedDoctorId { get; set; }
 
         [Required]
         public string PatientProfileId { get; set; }
