@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using SEP490_BE.DTO.CategoryDTO;
 using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
@@ -7,6 +8,7 @@ using SEP490_BE.DTO.ScheduleChangeDTO;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.DTO.ServiceDTO;
 using SEP490_BE.DTO.SupplierDTO;
+using SEP490_BE.Entities;
 
 namespace SEP490_BE.Hubs
 {
@@ -85,6 +87,16 @@ namespace SEP490_BE.Hubs
         public async Task SendMedicineDelete(string medicineId)
         {
             await _hubContext.Clients.All.SendAsync("ReceiveMedicineDelete", medicineId);
+        }
+
+        public async Task SendCategoryUpdate(CategoryResponseDTO category)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveCategoryUpdate", category);
+        }
+
+        public async Task SendCategoryDelete(string cateId)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveCategoryDelete", cateId);
         }
     }
 }

@@ -6,6 +6,7 @@ using SEP490_BE.Constants;
 using SEP490_BE.DTO.CategoryDTO;
 using SEP490_BE.DTO;
 using SEP490_BE.Services.CategoryServices;
+using SEP490_BE.Hubs;
 
 namespace SEP490_BE.Controllers
 {
@@ -14,19 +15,21 @@ namespace SEP490_BE.Controllers
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
-       
+        private readonly INotificationHubService _notificationHubService;
 
-        public CategoriesController(ICategoryService categoryService)
+        public CategoriesController(ICategoryService categoryService, INotificationHubService notificationHubService)
         {
             _categoryService = categoryService;
-        
+            _notificationHubService = notificationHubService;
+
         }
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDTO request)
         {
 
-            var category = await _categoryService.CreateCategory(request);          
+            var category = await _categoryService.CreateCategory(request);
+            await _notificationHubService.SendCategoryUpdate(category);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -42,6 +45,7 @@ namespace SEP490_BE.Controllers
         {
  
             var category = await _categoryService.UpdateCategory(id, request);
+            await _notificationHubService.SendCategoryUpdate(category);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -57,6 +61,7 @@ namespace SEP490_BE.Controllers
         {
 
             await _categoryService.DeleteCategory(id);
+            await _notificationHubService.SendCategoryDelete(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

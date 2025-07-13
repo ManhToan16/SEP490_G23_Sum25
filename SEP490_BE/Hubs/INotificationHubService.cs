@@ -1,4 +1,5 @@
-﻿using SEP490_BE.DTO.DoctorProfileDTO;
+﻿using SEP490_BE.DTO.CategoryDTO;
+using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.DTO.MedicineDTO;
@@ -14,7 +15,6 @@ namespace SEP490_BE.Hubs
         // DoctorProfile
         Task SendDoctorProfileUpdate(DoctorProfileResponseDTO doctorProfile);
         Task SendDoctorProfileDelete(string doctorProfileId);
-
         // Schedule
         Task SendScheduleUpdate(ScheduleResponseDTO schedule);
         Task SendScheduleDelete(string scheduleId);
@@ -35,6 +35,9 @@ namespace SEP490_BE.Hubs
         // Medicine
         Task SendMedicineUpdate(MedicineResponseDTO medicine);
         Task SendMedicineDelete(string medicineId);
+        // Category
+        Task SendCategoryUpdate(CategoryResponseDTO category);
+        Task SendCategoryDelete(string cateId);
 
     }
 }
