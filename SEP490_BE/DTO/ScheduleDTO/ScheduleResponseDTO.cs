@@ -7,7 +7,7 @@
         public string Role { get; set; } = null!;
         public string RoomId { get; set; } = null!;
         public string RoomType { get; set; } = null!;
-        public DateTime Date { get; set; }
+        public string Date { get; set; }
         public string TimeSlotId { get; set; } = null!;
         public string Status { get; set; } = null!;
     }

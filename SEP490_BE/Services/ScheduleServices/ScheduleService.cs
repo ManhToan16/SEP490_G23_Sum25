@@ -34,7 +34,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Role = s.Role,
                 RoomId = s.RoomId,
                 RoomType = s.RoomType,
-                Date = s.Date,
+                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = s.TimeSlotId,
                 Status = s.Status
             }).ToList();
@@ -55,7 +55,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Role = s.Role,
                 RoomId = s.RoomId,
                 RoomType = s.RoomType,
-                Date = s.Date,
+                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = s.TimeSlotId,
                 Status = s.Status
             }).ToList();
@@ -76,7 +76,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Role = s.Role,
                 RoomId = s.RoomId,
                 RoomType = s.RoomType,
-                Date = s.Date,
+                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = s.TimeSlotId,
                 Status = s.Status
             }).ToList();
@@ -193,7 +193,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Role = s.Role,
                 RoomId = s.RoomId,
                 RoomType = s.RoomType,
-                Date = s.Date,
+                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = s.TimeSlotId,
                 Status = s.Status
             }).ToList();
@@ -301,7 +301,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Role = schedule.Role,
                 RoomId = schedule.RoomId,
                 RoomType = schedule.RoomType,
-                Date = schedule.Date,
+                Date = schedule.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = schedule.TimeSlotId,
                 Status = schedule.Status
             };
@@ -362,7 +362,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 Role = schedule.Role,
                 RoomId = schedule.RoomId,
                 RoomType = schedule.RoomType,
-                Date = schedule.Date,
+                Date = schedule.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = schedule.TimeSlotId,
                 Status = schedule.Status
             };

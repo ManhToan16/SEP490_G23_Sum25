@@ -117,8 +117,8 @@ namespace SEP490_BE.Services.SupplierServices
                 Email = supplier.Email,
                 Address = supplier.Address,
                 Description = supplier.Description,
-                CreatedAt = supplier.CreatedAt ?? DateTime.UtcNow,
-                UpdatedAt = supplier.UpdatedAt
+                CreatedAt = supplier.CreatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                UpdatedAt = supplier.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
             };
         }
     }
