@@ -12,6 +12,7 @@ using SEP490_BE.Constants;
 using SEP490_BE.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Services.EmailServices;
+using SEP490_BE.Repositories.VisitRepositories;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -25,6 +26,7 @@ namespace SEP490_BE.Services.AppointmentServices
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
+        private readonly IVisitRepository _visitRepository;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
@@ -33,7 +35,8 @@ namespace SEP490_BE.Services.AppointmentServices
             IAuditLogRepository logRepository,
             IAppointmentRepository appointmentRepository,
             IUserRepository userRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            IVisitRepository visitRepository)
         {
             _context = context;
             _authService = authService;
@@ -42,6 +45,7 @@ namespace SEP490_BE.Services.AppointmentServices
             _appointmentRepository = appointmentRepository;
             _userRepository = userRepository;
             _emailService = emailService;
+            _visitRepository = visitRepository;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -90,6 +94,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
+
         public async Task<AppointmentResponseDTO> Create(AppointmentRequestDTO request)
         {
             string newAppointmentId = Guid.NewGuid().ToString();
@@ -107,7 +112,7 @@ namespace SEP490_BE.Services.AppointmentServices
             var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == request.TimeSlotId);
             if (timeSlot == null)
             {
-                throw new ResourceNotFoundException("Không tìm thấy ca khám.");
+                throw new ResourceNotFoundException(MessageConstants.TIMESLOT_NOT_FOUND);
             }
 
             var appointment = new Appointment
@@ -177,7 +182,8 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             }; 
         }
-        public async Task<AppointmentResponseDTO> CreatedByReceptionist(AppointmentRequestDTO request)
+
+        public async Task<AppointmentResponseDTO> CreatedByClinic(AppointmentRequestDTO request)
         {
             string newAppointmentId = Guid.NewGuid().ToString();
             var requiredDoctor = new User();
@@ -192,7 +198,7 @@ namespace SEP490_BE.Services.AppointmentServices
             var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == request.TimeSlotId);
             if (timeSlot == null)
             {
-                throw new ResourceNotFoundException("Timeslot not found");
+                throw new ResourceNotFoundException(MessageConstants.TIMESLOT_NOT_FOUND);
             }
             var appointment = new Appointment
             {
@@ -226,7 +232,7 @@ namespace SEP490_BE.Services.AppointmentServices
             var htmlContent = $@"
                     <h2>Đặt lịch khám thành công</h2>
                     <p>Xin chào <strong>{appointment.Name}</strong>,</p>
-                    <p>Bạn đã được Lễ Tân đặt lịch khám tại <strong>Khanh An Neurology Clinic</strong>.</p>
+                    <p>Bạn đã được chúng tôi đặt lịch khám tại <strong>Khanh An Neurology Clinic</strong>.</p>
                     <p><strong>Ngày khám:</strong> {appointment.Date:dd/MM/yyyy}</p>
                     <p><strong>Khung giờ:</strong> {timeSlot.StartTime} - {timeSlot.EndTime}</p>
                     <p><strong>Triệu chứng:</strong> {appointment.Symptom}</p>
@@ -260,6 +266,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
+
         public async Task<AppointmentResponseDTO> Update(string id, AppointmentRequestDTO request)
         {
             var appointment = await _appointmentRepository.FindById(id);
@@ -279,12 +286,9 @@ namespace SEP490_BE.Services.AppointmentServices
             var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(ts => ts.Id == request.TimeSlotId);
             if (timeSlot == null)
             {
-                throw new ResourceNotFoundException("Không tìm thấy ca làm");
+                throw new ResourceNotFoundException(MessageConstants.TIMESLOT_NOT_FOUND);
             }
-            if (
-                appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION
-                || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN
-                )
+            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
@@ -333,7 +337,8 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
-        public async Task<AppointmentResponseDTO> UpdateStatus(string id, string status)
+
+        public async Task<AppointmentResponseDTO> CheckIn(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
@@ -341,20 +346,12 @@ namespace SEP490_BE.Services.AppointmentServices
                 throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
             }
 
-            if (appointment.Status == AppointmentStatus.COMPLETED
-                || appointment.Status == AppointmentStatus.CANCELLED){
-                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
-            }
+            if (appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
+                {
+                    throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
+                }
 
-            #region Checkin Validation
-            if (appointment.Status == AppointmentStatus.WAITING_FOR_CONFIRMATION 
-                && status == AppointmentStatus.CHECKED_IN)
-            {
-                throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
-            }
-            #endregion
-
-            appointment.Status = status;
+            appointment.Status = AppointmentStatus.CHECKED_IN;
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -389,7 +386,8 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
-        public async Task Confirm(string id)
+
+        public async Task<AppointmentResponseDTO> Confirm(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
@@ -427,8 +425,30 @@ namespace SEP490_BE.Services.AppointmentServices
                 appointment.Email,
                 "Lịch hẹn khám tại Khanh An Neurology Clinic",
                 htmlContent);
+            return new AppointmentResponseDTO
+            {
+                Id = appointment.Id,
+                Name = appointment.Name,
+                PhoneNumber = appointment.PhoneNumber,
+                Email = appointment.Email,
+                DateOfBirth = appointment.DateOfBirth,
+                Gender = appointment.Gender,
+                Address = appointment.Address ?? "",
+                Symptom = appointment.Symptom ?? "",
+                RequiredDoctorId = appointment.RequiredDoctorId ?? "",
+                RequiredDoctorName = appointment.RequiredDoctor?.Name ?? "",
+                Date = appointment.Date,
+                TimeSlotId = appointment.TimeSlotId,
+                TimeSlotStartTime = appointment.TimeSlot.StartTime,
+                TimeSlotEndTime = appointment.TimeSlot.EndTime,
+                Status = appointment.Status,
+                TotalPrice = appointment.TotalPrice,
+                ExpiredAt = appointment.ExpiredAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
-        public async Task Cancel(string id)
+
+        public async Task<AppointmentResponseDTO> Cancel(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
@@ -440,10 +460,19 @@ namespace SEP490_BE.Services.AppointmentServices
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
             appointment.Status = AppointmentStatus.CANCELLED;
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _appointmentRepository.Update(appointment);
+
+                var visit = await _context.Visits.FirstOrDefaultAsync(v => v.AppointmentId == appointment.Id);
+                if (visit != null)
+                {
+                    visit.Status = VisitStatus.CANCELLED;
+                    await _visitRepository.Update(visit);
+                }
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -467,24 +496,72 @@ namespace SEP490_BE.Services.AppointmentServices
                 appointment.Email,
                 "Lịch hẹn khám tại Khanh An Neurology Clinic",
                 htmlContent);
+            return new AppointmentResponseDTO
+            {
+                Id = appointment.Id,
+                Name = appointment.Name,
+                PhoneNumber = appointment.PhoneNumber,
+                Email = appointment.Email,
+                DateOfBirth = appointment.DateOfBirth,
+                Gender = appointment.Gender,
+                Address = appointment.Address ?? "",
+                Symptom = appointment.Symptom ?? "",
+                RequiredDoctorId = appointment.RequiredDoctorId ?? "",
+                RequiredDoctorName = appointment.RequiredDoctor?.Name ?? "",
+                Date = appointment.Date,
+                TimeSlotId = appointment.TimeSlotId,
+                TimeSlotStartTime = appointment.TimeSlot.StartTime,
+                TimeSlotEndTime = appointment.TimeSlot.EndTime,
+                Status = appointment.Status,
+                TotalPrice = appointment.TotalPrice,
+                ExpiredAt = appointment.ExpiredAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
-        public async Task MarkAsPaid(string id)
+        
+        public async Task<AppointmentResponseDTO> MarkAsPaid(string id)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
             {
                 throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
             }
-            if (appointment.Status != AppointmentStatus.IN_EXAMINATION_PROGRESS)
+
+            if (appointment.Status != AppointmentStatus.PENDING)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
+
+            var visit = await _context.Visits
+                .FirstOrDefaultAsync(v => v.AppointmentId == appointment.Id);
+
+            if (visit == null)
+            {
+                throw new ResourceNotFoundException("Visit not found.");
+            }
+
+            var assignments = await _context.Assignments
+                .Where(a => a.VisitId == visit.Id)
+                .ToListAsync();
+
             appointment.Status = AppointmentStatus.IN_LABORATORY_PROGRESS;
+            visit.Status = VisitStatus.IN_LABORATORY;
+
+            foreach (var assignment in assignments)
+            {
+                if (assignment.Status == AssignmentStatus.PENDING)
+                {
+                    assignment.Status = AssignmentStatus.WAITING;
+                }
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
-            // Logic chuyển trạng thái của Visit qua InLaboratory và Asm qua Waiting
             try
             {
                 await _appointmentRepository.Update(appointment);
+                await _visitRepository.Update(visit);
+                _context.Assignments.UpdateRange(assignments);
+
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
             }
@@ -493,7 +570,29 @@ namespace SEP490_BE.Services.AppointmentServices
                 await transaction.RollbackAsync();
                 throw;
             }
+            return new AppointmentResponseDTO
+            {
+                Id = appointment.Id,
+                Name = appointment.Name,
+                PhoneNumber = appointment.PhoneNumber,
+                Email = appointment.Email,
+                DateOfBirth = appointment.DateOfBirth,
+                Gender = appointment.Gender,
+                Address = appointment.Address ?? "",
+                Symptom = appointment.Symptom ?? "",
+                RequiredDoctorId = appointment.RequiredDoctorId ?? "",
+                RequiredDoctorName = appointment.RequiredDoctor?.Name ?? "",
+                Date = appointment.Date,
+                TimeSlotId = appointment.TimeSlotId,
+                TimeSlotStartTime = appointment.TimeSlot.StartTime,
+                TimeSlotEndTime = appointment.TimeSlot.EndTime,
+                Status = appointment.Status,
+                TotalPrice = appointment.TotalPrice,
+                ExpiredAt = appointment.ExpiredAt,
+                CreatedAt = appointment.CreatedAt
+            };
         }
+        
         public Task PrintInvoice(string id)
         {
             throw new NotImplementedException();

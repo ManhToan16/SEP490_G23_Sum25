@@ -7,8 +7,8 @@ namespace SEP490_BE.Entities
     {
         public PatientProfile()
         {
-            Appointments = new HashSet<Appointment>();
             MedicalRecords = new HashSet<MedicalRecord>();
+            Visits = new HashSet<Visit>();
         }
 
         public string Id { get; set; } = null!;
@@ -21,7 +21,7 @@ namespace SEP490_BE.Entities
         public string? Address { get; set; }
         public DateTime? CreatedAt { get; set; }
 
-        public virtual ICollection<Appointment> Appointments { get; set; }
         public virtual ICollection<MedicalRecord> MedicalRecords { get; set; }
+        public virtual ICollection<Visit> Visits { get; set; }
     }
 }

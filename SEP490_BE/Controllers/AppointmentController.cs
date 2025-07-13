@@ -32,11 +32,11 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
-        [HttpPost("create/receptionist")]
-        public async Task<ActionResult<ApiResponse>> CreatedByReceptionist([FromBody] AppointmentRequestDTO request)
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist + "," + RoleConstants.Doctor)]
+        [HttpPost("created-by-clinic")]
+        public async Task<ActionResult<ApiResponse>> CreatedByClinic([FromBody] AppointmentRequestDTO request)
         {
-            var result = await _appointmentService.CreatedByReceptionist(request);
+            var result = await _appointmentService.CreatedByClinic(request);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -101,13 +101,13 @@ namespace SEP490_BE.Controllers
         [HttpPut("{id}/cancel")]
         public async Task<ActionResult<ApiResponse>> Cancel(string id)
         {
-            await _appointmentService.Cancel(id);
+            var result = await _appointmentService.Cancel(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = null
+                Data = new[] { result }
             });
         }
 
@@ -115,13 +115,13 @@ namespace SEP490_BE.Controllers
         [HttpPut("{id}/confirm")]
         public async Task<ActionResult<ApiResponse>> Confirm(string id)
         {
-            await _appointmentService.Confirm(id);
+            var result = await _appointmentService.Confirm(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = null
+                Data = new[] { result }
             });
         }
 
@@ -129,7 +129,7 @@ namespace SEP490_BE.Controllers
         [HttpPut("{id}/check-in")]
         public async Task<ActionResult<ApiResponse>> CheckIn(string id)
         {
-            var result = await _appointmentService.UpdateStatus(id, AppointmentStatus.CHECKED_IN);
+            var result = await _appointmentService.CheckIn(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -143,13 +143,13 @@ namespace SEP490_BE.Controllers
         [HttpPut("{id}/mark-as-paid")]
         public async Task<ActionResult<ApiResponse>> MarkAsPaid(string id)
         {
-             await _appointmentService.MarkAsPaid(id);
+            var result = await _appointmentService.MarkAsPaid(id);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
-                Data = null
+                Data = new[] { result }
             });
         }
     }

@@ -85,8 +85,6 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.Name).HasMaxLength(100);
 
-                entity.Property(e => e.PatientProfileId).HasMaxLength(100);
-
                 entity.Property(e => e.PhoneNumber).HasMaxLength(10);
 
                 entity.Property(e => e.RequiredDoctorId).HasMaxLength(100);
@@ -101,34 +99,25 @@ namespace SEP490_BE.Entities
                     .HasColumnType("decimal(18, 2)")
                     .HasDefaultValueSql("((0))");
 
-                entity.HasOne(d => d.PatientProfile)
-                    .WithMany(p => p.Appointments)
-                    .HasForeignKey(d => d.PatientProfileId)
-                    .HasConstraintName("FK__Appointme__Patie__6C190EBB");
-
                 entity.HasOne(d => d.RequiredDoctor)
                     .WithMany(p => p.Appointments)
                     .HasForeignKey(d => d.RequiredDoctorId)
-                    .HasConstraintName("FK__Appointme__Requi__6D0D32F4");
+                    .HasConstraintName("FK__Appointme__Requi__6C190EBB");
 
                 entity.HasOne(d => d.TimeSlot)
                     .WithMany(p => p.Appointments)
                     .HasForeignKey(d => d.TimeSlotId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Appointme__TimeS__6E01572D");
+                    .HasConstraintName("FK__Appointme__TimeS__6D0D32F4");
             });
 
             modelBuilder.Entity<Assignment>(entity =>
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
 
-                entity.Property(e => e.AppointmentId).HasMaxLength(100);
-
                 entity.Property(e => e.CreateAt)
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
-
-                entity.Property(e => e.IsPrioritized).HasDefaultValueSql("((0))");
 
                 entity.Property(e => e.LaboratoryRoomId).HasMaxLength(100);
 
@@ -138,17 +127,19 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.TotalPrice).HasColumnType("decimal(18, 2)");
 
-                entity.HasOne(d => d.Appointment)
-                    .WithMany(p => p.Assignments)
-                    .HasForeignKey(d => d.AppointmentId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Assignmen__Appoi__7F2BE32F");
+                entity.Property(e => e.VisitId).HasMaxLength(100);
 
                 entity.HasOne(d => d.LaboratoryRoom)
                     .WithMany(p => p.Assignments)
                     .HasForeignKey(d => d.LaboratoryRoomId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Assignmen__Labor__7E37BEF6");
+                    .HasConstraintName("FK__Assignmen__Labor__7D439ABD");
+
+                entity.HasOne(d => d.Visit)
+                    .WithMany(p => p.Assignments)
+                    .HasForeignKey(d => d.VisitId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__Assignmen__Visit__7E37BEF6");
             });
 
             modelBuilder.Entity<AssignmentService>(entity =>
@@ -160,12 +151,12 @@ namespace SEP490_BE.Entities
                 entity.HasOne(d => d.Assignment)
                     .WithMany(p => p.AssignmentServices)
                     .HasForeignKey(d => d.AssignmentId)
-                    .HasConstraintName("FK__Assignmen__Assig__3E1D39E1");
+                    .HasConstraintName("FK__Assignmen__Assig__3D2915A8");
 
                 entity.HasOne(d => d.Service)
                     .WithMany(p => p.AssignmentServices)
                     .HasForeignKey(d => d.ServiceId)
-                    .HasConstraintName("FK__Assignmen__Servi__3F115E1A");
+                    .HasConstraintName("FK__Assignmen__Servi__3E1D39E1");
             });
 
             modelBuilder.Entity<AuditLog>(entity =>
@@ -220,7 +211,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<ExaminationResult>(entity =>
             {
-                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0C5D5E6AB0")
+                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0CF6F72E12")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -245,19 +236,19 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.ExaminationResults)
                     .HasForeignKey(d => d.AppointmentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Examinati__Appoi__0B91BA14");
+                    .HasConstraintName("FK__Examinati__Appoi__0A9D95DB");
 
                 entity.HasOne(d => d.Doctor)
                     .WithMany(p => p.ExaminationResults)
                     .HasForeignKey(d => d.DoctorId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Examinati__Docto__0A9D95DB");
+                    .HasConstraintName("FK__Examinati__Docto__09A971A2");
 
                 entity.HasOne(d => d.MedicalRecord)
                     .WithMany(p => p.ExaminationResults)
                     .HasForeignKey(d => d.MedicalRecordId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Examinati__Medic__09A971A2");
+                    .HasConstraintName("FK__Examinati__Medic__08B54D69");
             });
 
             modelBuilder.Entity<ExaminationRoom>(entity =>
@@ -279,7 +270,7 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.LaboratoryFiles)
                     .HasForeignKey(d => d.LaboratoryResultId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Laborator__Labor__151B244E");
+                    .HasConstraintName("FK__Laborator__Labor__14270015");
             });
 
             modelBuilder.Entity<LaboratoryResult>(entity =>
@@ -304,19 +295,19 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.LaboratoryResults)
                     .HasForeignKey(d => d.AssignmentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Laborator__Assig__123EB7A3");
+                    .HasConstraintName("FK__Laborator__Assig__114A936A");
 
                 entity.HasOne(d => d.ExaminationResult)
                     .WithMany(p => p.LaboratoryResults)
                     .HasForeignKey(d => d.ExaminationResultId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Laborator__Exami__10566F31");
+                    .HasConstraintName("FK__Laborator__Exami__0F624AF8");
 
                 entity.HasOne(d => d.Technician)
                     .WithMany(p => p.LaboratoryResults)
                     .HasForeignKey(d => d.TechnicianId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Laborator__Techn__114A936A");
+                    .HasConstraintName("FK__Laborator__Techn__10566F31");
             });
 
             modelBuilder.Entity<LaboratoryRoom>(entity =>
@@ -350,13 +341,13 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.Materials)
                     .HasForeignKey(d => d.CategoryId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Materials__Categ__2CF2ADDF");
+                    .HasConstraintName("FK__Materials__Categ__2BFE89A6");
 
                 entity.HasOne(d => d.Supplier)
                     .WithMany(p => p.Materials)
                     .HasForeignKey(d => d.SupplierId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Materials__Suppl__2BFE89A6");
+                    .HasConstraintName("FK__Materials__Suppl__2B0A656D");
             });
 
             modelBuilder.Entity<MedicalRecord>(entity =>
@@ -377,7 +368,7 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.MedicalRecords)
                     .HasForeignKey(d => d.PatientProfileId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__MedicalRe__Patie__03F0984C");
+                    .HasConstraintName("FK__MedicalRe__Patie__02FC7413");
             });
 
             modelBuilder.Entity<Medicine>(entity =>
@@ -393,7 +384,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<PatientProfile>(entity =>
             {
-                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0D997BF085")
+                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0DE4A2D35B")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -420,7 +411,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Permission>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Permissi__737584F72CA36E55");
+                    .HasName("PK__Permissi__737584F77760E5F3");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -441,7 +432,7 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.Prescriptions)
                     .HasForeignKey(d => d.ExaminationResultId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Prescript__Exami__1AD3FDA4");
+                    .HasConstraintName("FK__Prescript__Exami__19DFD96B");
             });
 
             modelBuilder.Entity<PrescriptionItem>(entity =>
@@ -462,19 +453,19 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.PrescriptionItems)
                     .HasForeignKey(d => d.MedicineId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Prescript__Medic__1EA48E88");
+                    .HasConstraintName("FK__Prescript__Medic__1DB06A4F");
 
                 entity.HasOne(d => d.Prescription)
                     .WithMany(p => p.PrescriptionItems)
                     .HasForeignKey(d => d.PrescriptionId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Prescript__Presc__1DB06A4F");
+                    .HasConstraintName("FK__Prescript__Presc__1CBC4616");
             });
 
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Roles__737584F79807C0DC");
+                    .HasName("PK__Roles__737584F73301D9F3");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -646,13 +637,13 @@ namespace SEP490_BE.Entities
                 entity.HasOne(d => d.Material)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.MaterialId)
-                    .HasConstraintName("FK__Transacti__Mater__3587F3E0");
+                    .HasConstraintName("FK__Transacti__Mater__3493CFA7");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Transacti__UserI__367C1819");
+                    .HasConstraintName("FK__Transacti__UserI__3587F3E0");
             });
 
             modelBuilder.Entity<TransactionHistory>(entity =>
@@ -673,17 +664,17 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.TransactionHistories)
                     .HasForeignKey(d => d.ChangedBy)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Transacti__Chang__3B40CD36");
+                    .HasConstraintName("FK__Transacti__Chang__3A4CA8FD");
 
                 entity.HasOne(d => d.Transaction)
                     .WithMany(p => p.TransactionHistories)
                     .HasForeignKey(d => d.TransactionId)
-                    .HasConstraintName("FK__Transacti__Trans__3A4CA8FD");
+                    .HasConstraintName("FK__Transacti__Trans__395884C4");
             });
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E38268F4D4D")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E3843FA754D")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -744,6 +735,8 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.PatientName).HasMaxLength(100);
 
+                entity.Property(e => e.PatientProfileId).HasMaxLength(100);
+
                 entity.Property(e => e.Status)
                     .HasMaxLength(50)
                     .HasDefaultValueSql("('WAITING')");
@@ -756,7 +749,7 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.Visits)
                     .HasForeignKey(d => d.AppointmentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Visits__Appointm__76969D2E");
+                    .HasConstraintName("FK__Visits__Appointm__75A278F5");
 
                 entity.HasOne(d => d.AssignedDoctor)
                     .WithMany(p => p.Visits)
@@ -768,7 +761,13 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.Visits)
                     .HasForeignKey(d => d.ExaminationRoomId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Visits__Examinat__75A278F5");
+                    .HasConstraintName("FK__Visits__Examinat__74AE54BC");
+
+                entity.HasOne(d => d.PatientProfile)
+                    .WithMany(p => p.Visits)
+                    .HasForeignKey(d => d.PatientProfileId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__Visits__PatientP__76969D2E");
             });
 
             OnModelCreatingPartial(modelBuilder);
