@@ -80,7 +80,7 @@ namespace SEP490_BE.Services.AssignmentServices
             var duplicateLabRooms = requests
                 .GroupBy(r => r.LaboratoryRoomId)
                 .Where(g => g.Count() > 1)
-                .Select(g => g.Key)s
+                .Select(g => g.Key)
                 .ToList();
             if (duplicateLabRooms.Any())
                 throw new Exceptions.ArgumentException("Mỗi phòng xét nghiệm chỉ được tạo 1 chỉ định trong 1 lượt khám.");
