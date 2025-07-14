@@ -3,9 +3,15 @@ import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { Bell, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
-
+import { useNavigate } from 'react-router-dom';
 const AdminHeader: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/'); 
+  };
 
   return (
     <div className="h-16 px-6 flex items-center justify-between bg-white border-b">
@@ -28,7 +34,7 @@ const AdminHeader: React.FC = () => {
           <span>{user?.name}</span>
         </Button>
         
-        <Button variant="ghost" size="sm" onClick={logout}>
+        <Button variant="ghost" size="sm" onClick={handleLogout}>
           <LogOut className="h-5 w-5" />
         </Button>
       </div>
