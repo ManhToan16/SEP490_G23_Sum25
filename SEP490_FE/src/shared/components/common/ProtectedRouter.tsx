@@ -6,12 +6,10 @@ const ProtectedRoute = ({ children, requiredRoles }) => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectUser);
 
-  // Nếu chưa đăng nhập → chuyển về trang login
   if (!isAuthenticated) {
-    return <Navigate to="/auth/login" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
-  // Nếu có yêu cầu role và không khớp → unauthorized
   if (
     requiredRoles &&
     Array.isArray(requiredRoles) &&
