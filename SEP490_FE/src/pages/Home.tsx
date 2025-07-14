@@ -9,16 +9,16 @@ import ResultLookup from '@/pages/ResultLookup';
 import LoginModal from '@/pages/LoginModal';
 import { useSelector } from 'react-redux';
 import { selectIsAuthenticated } from '@/shared/store/slices/authSlice';
+import { useAuth } from '@/shared/hooks/business/useAuth';
 
 const HomePage = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [showLogin, setShowLogin] = useState(false);
   const isLoggedIn = useSelector(selectIsAuthenticated);
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
-    localStorage.removeItem('clinic_auth_token');
-    localStorage.removeItem('clinic_user_data');
-    setShowLogin(false);
+    logout()
   };
 
   const renderActiveSection = () => {

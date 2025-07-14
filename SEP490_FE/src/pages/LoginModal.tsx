@@ -8,12 +8,15 @@ import { X, User, Lock } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import authService from '@/shared/services/authService';
+import { useDispatch } from "react-redux";
+import { setUser } from "@/shared/store/slices/authSlice";
 
 const LoginModal = ({ onClose }) => {
   const [userType, setUserType] = useState('');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -27,10 +30,17 @@ const LoginModal = ({ onClose }) => {
     }
 
     try {
-      const { user } = await authService.login(credentials.username, credentials.password);
+      const { user, token } = await authService.login(
+        credentials.username,
+        credentials.password
+      );
+
+      dispatch(setUser(user));
+      localStorage.setItem("clinic_auth_token", token);
+      localStorage.setItem("clinic_user_data", JSON.stringify(user));
 
       toast({
-        title: 'Đăng nhập thành công!',
+        title: "Đăng nhập thành công!",
         description: `Chào mừng ${user?.name}`,
       });
 
