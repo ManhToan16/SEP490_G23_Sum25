@@ -1,10 +1,9 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://70.153.24.53:5050/api";
 
 // Tạo axios instance riêng cho doctor profile API
 const doctorApiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || "https://70.153.24.53:5050/api",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",

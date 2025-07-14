@@ -3,7 +3,7 @@ import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/shared/components/ui/button";
 
-const Unauthorized = () => {
+const Forbiden = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -38,4 +38,4 @@ const Unauthorized = () => {
   );
 };
 
-export default Unauthorized;
+export default Forbiden;

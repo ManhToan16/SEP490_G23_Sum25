@@ -56,6 +56,7 @@ export const ROUTES = {
   NOT_FOUND: '/404',
   UNAUTHORIZED: '/unauthorized',
   SERVER_ERROR: '/500',
+  FORBIDDEN: '/403',
 } as const;
 
 // Navigation menu items for each role
