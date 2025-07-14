@@ -5,6 +5,11 @@ namespace SEP490_BE.Entities
 {
     public partial class Transaction
     {
+        public Transaction()
+        {
+            TransactionHistories = new HashSet<TransactionHistory>();
+        }
+
         public string Id { get; set; } = null!;
         public string MaterialId { get; set; } = null!;
         public string TransactionType { get; set; } = null!;
@@ -18,6 +23,7 @@ namespace SEP490_BE.Entities
         public DateTime? UpdatedAt { get; set; }
 
         public virtual Material Material { get; set; } = null!;
+        public virtual ICollection<TransactionHistory> TransactionHistories { get; set; }
         public virtual User User { get; set; } = null!;
     }
 }

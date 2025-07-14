@@ -669,7 +669,7 @@ namespace SEP490_BE.Entities
                 entity.HasOne(d => d.Transaction)
                     .WithMany(p => p.TransactionHistories)
                     .HasForeignKey(d => d.TransactionId)
-                    .HasConstraintName("FK__Transacti__Trans__395884C4");
+                    .HasConstraintName("FK__Transacti__Trans__6EC0713C");
             });
 
             modelBuilder.Entity<User>(entity =>

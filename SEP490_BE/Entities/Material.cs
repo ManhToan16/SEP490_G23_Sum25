@@ -7,7 +7,6 @@ namespace SEP490_BE.Entities
     {
         public Material()
         {
-            TransactionHistories = new HashSet<TransactionHistory>();
             Transactions = new HashSet<Transaction>();
         }
 
@@ -24,7 +23,6 @@ namespace SEP490_BE.Entities
 
         public virtual Category Category { get; set; } = null!;
         public virtual Supplier Supplier { get; set; } = null!;
-        public virtual ICollection<TransactionHistory> TransactionHistories { get; set; }
         public virtual ICollection<Transaction> Transactions { get; set; }
     }
 }
