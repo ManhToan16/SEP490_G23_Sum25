@@ -1,47 +1,50 @@
 import { api } from "./apiClient";
+import {jwtDecode} from "jwt-decode";
+import { getDeviceId } from "../utils/deviceHelper";
 
-// Đơn giản hóa Auth Service
+const TOKEN_KEY = "clinic_auth_token";
+const USER_KEY = "clinic_user_data";
+
+interface DecodedToken {
+  name: string;
+  role: string;
+  userId: string;
+  exp: number;
+  iat: number;
+}
+
 export const authService = {
-  // Đăng nhập
-  login: async (email: string, password: string) => {
+  login: async (email, password) => {
     try {
-      const response: any = await api.post("/auth/login", { email, password });
+      const response = await api.post("/Auth/login", {
+        email,
+        password,
+        deviceId: getDeviceId(),
+      });
 
-      // Lưu token và user data
-      if (response.token) {
-        localStorage.setItem("clinic_auth_token", response.token);
-      }
-      if (response.user) {
-        localStorage.setItem("clinic_user_data", JSON.stringify(response.user));
-      }
+      const { accessToken, refreshToken } = response.data?.[0];
+      console.log('Login response:', response.data);
+      const user = jwtDecode<DecodedToken>(accessToken);
 
-      return response;
+      localStorage.setItem(TOKEN_KEY, accessToken);
+      localStorage.setItem("refreshToken", refreshToken);
+      localStorage.setItem(USER_KEY, JSON.stringify(user));
+
+      return { user, token: accessToken };
     } catch (error) {
       throw error;
     }
   },
 
-  // Đăng ký
-  register: async (userData: any) => {
-    try {
-      const response = await api.post("/auth/register", userData);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Đăng xuất
   logout: async () => {
     try {
-      await api.post("/auth/logout");
+      await api.post("/Auth/logout");
     } catch (error) {
-      // Ignore API error, logout locally anyway
       console.error("Logout API error:", error);
     } finally {
-      // Always clean local storage
-      localStorage.removeItem("clinic_auth_token");
-      localStorage.removeItem("clinic_user_data");
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem("refreshToken");
     }
   },
 
@@ -59,19 +62,22 @@ export const authService = {
   },
 
   // Lấy thông tin user hiện tại
-  getCurrentUser: async () => {
+  getCurrentUser: () => {
     try {
-      const response: any = await api.get("/auth/me");
-      if (response.user) {
-        localStorage.setItem("clinic_user_data", JSON.stringify(response.user));
-      }
-      return response;
-    } catch (error) {
-      throw error;
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (!token) return null;
+      const user = jwtDecode<DecodedToken>(token);
+      return user;
+    } catch (err) {
+      return null;
     }
   },
 
-  // Đổi mật khẩu
+  getAccessToken: () => localStorage.getItem(TOKEN_KEY),
+  getRefreshToken: () => localStorage.getItem("refreshToken"),
+
+  isAuthenticated: () => !!localStorage.getItem(TOKEN_KEY),
+
   changePassword: async (oldPassword: string, newPassword: string) => {
     try {
       const response = await api.post("/auth/change-password", {
