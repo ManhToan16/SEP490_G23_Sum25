@@ -7,7 +7,7 @@ const ProtectedRoute = ({ children, requiredRoles }) => {
   const user = useSelector(selectUser);
 
   if (!isAuthenticated) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/403" replace />;
   }
 
   if (
@@ -15,7 +15,7 @@ const ProtectedRoute = ({ children, requiredRoles }) => {
     Array.isArray(requiredRoles) &&
     !requiredRoles.includes(user?.role)
   ) {
-    return <Navigate to="/unauthorized" replace />;
+    return <Navigate to="/403" replace />;
   }
 
   return children;
