@@ -391,7 +391,7 @@ CREATE TABLE TransactionHistory (
 	NewReason NVARCHAR(MAX) NOT NULL,
     ChangedBy NVARCHAR(100) NOT NULL,
     ChangedAt DATETIME DEFAULT GETDATE(),
-    FOREIGN KEY (TransactionId) REFERENCES Materials(Id) ON DELETE CASCADE,
+    FOREIGN KEY (TransactionId) REFERENCES Transactions(Id) ON DELETE CASCADE,
     FOREIGN KEY (ChangedBy) REFERENCES Users(Id)
 );
 

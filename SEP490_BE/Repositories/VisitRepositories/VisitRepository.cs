@@ -71,6 +71,7 @@ namespace SEP490_BE.Repositories.VisitRepositories
                     VisitStatus.WAITING when v.IsPrioritized == false => 4,
                     VisitStatus.IN_LABORATORY => 5,
                     VisitStatus.COMPLETED => 6,
+                    VisitStatus.CANCELLED => 7,
                     _ => 99
                 })
                 .ThenBy(v => v.QueueNumber)
@@ -78,6 +79,7 @@ namespace SEP490_BE.Repositories.VisitRepositories
                 .Take(pageSize)
                 .Select(v => new VisitResponseDTO
                 {
+                    VisitId = v.Id,
                     ExaminationRoomId = v.ExaminationRoomId,
                     AppointmentId = v.AppointmentId,
                     AssignedDoctorId = v.AssignedDoctorId,

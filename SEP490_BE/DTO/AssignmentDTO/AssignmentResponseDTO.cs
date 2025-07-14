@@ -9,6 +9,7 @@ namespace SEP490_BE.DTO.AssignmentDTO
         public string LaboratoryRoomId { get; set; }
         public string LaboratoryRoomName { get; set; }
         public decimal? TotalPrice { get; set; }
+        public string Status { get; set; }
         public List<AssignmentServiceResponseDTO> AssignmentServices { get; set; }
     }
 
