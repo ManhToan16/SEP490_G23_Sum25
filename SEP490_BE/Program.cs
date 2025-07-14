@@ -27,6 +27,7 @@ using SEP490_BE.Repositories.TimeSlotRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
 using SEP490_BE.Services.AppointmentServices;
+using SEP490_BE.Services.AssignmentServices;
 using SEP490_BE.Services.AuditLogServices;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.CategoryServices;
@@ -161,7 +162,7 @@ builder.Services.AddScoped<ITimeSlotService, TimeSlotService>();
 builder.Services.AddScoped<IMedicineService, MedicineService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IVisitService, VisitService>();
-builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IAssignmentService, SEP490_BE.Services.AssignmentServices.AssignmentService>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
