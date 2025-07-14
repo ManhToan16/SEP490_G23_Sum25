@@ -1,8 +1,14 @@
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useEffect } from "react";
+
 import Loading from "@/shared/components/common/LoadingSpinner";
 import { ErrorBoundary } from "@/shared/components/common/ErrorBoundary";
 import { ROUTES } from "@/shared/constants/routes";
+import ProtectedRoute from "@/shared/components/common/ProtectedRouter";
+import { checkAuth } from "@/shared/store/slices/authSlice";
+import { useAppDispatch } from "@/shared/store/index";
+
 
 // Lazy imports for code splitting
 const AuthRoutes = React.lazy(() => import("./AuthRoutes"));
@@ -15,12 +21,19 @@ const AdminRoutes = React.lazy(() => import("./AdminRoutes"));
 const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const HomePage = React.lazy(() => import("@/pages/Home"));
 const Health = React.lazy(() => import("@/pages/Health"));
+const Unauthorized = React.lazy(() => import("@/pages/Unauthorize"));
 
 interface AppRouterProps {
   className?: string;
 }
 
 const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    dispatch(checkAuth());
+  }, [dispatch]);
+  
   return (
     <div className={className}>
       <ErrorBoundary>
@@ -45,16 +58,29 @@ const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
             <Route path="/patient/*" element={<PatientRoutes />} />
 
             {/* Doctor routes */}
-            <Route path="/doctor/*" element={<DoctorRoutes />} />
+            <Route path="/doctor/*" element={
+              <ProtectedRoute requiredRoles={["DOCTOR"]}>
+                <DoctorRoutes />
+              </ProtectedRoute>
+            } />
 
             {/* Receptionist routes */}
-            <Route path="/receptionist/*" element={<ReceptionistRoutes />} />
+            <Route path="/receptionist/*" element={
+              <ProtectedRoute requiredRoles={["RECEPTIONIST"]}>
+                <ReceptionistRoutes />
+              </ProtectedRoute>
+            } />
 
             {/* Admin routes */}
-            <Route path="/admin/*" element={<AdminRoutes />} />
+            <Route path="/admin/*" element={
+              <ProtectedRoute requiredRoles={["ADMIN"]}>
+                <AdminRoutes />
+              </ProtectedRoute>
+            } />
 
             {/* Error routes */}
             <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
+            <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
             <Route
               path="*"
               element={<Navigate to={ROUTES.NOT_FOUND} replace />}

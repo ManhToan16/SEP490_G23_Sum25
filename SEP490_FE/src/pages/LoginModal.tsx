@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -8,52 +7,69 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { X, User, Lock } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
+import authService from '@/shared/services/authService';
+import { useDispatch } from "react-redux";
+import { setUser } from "@/shared/store/slices/authSlice";
 
 const LoginModal = ({ onClose }) => {
   const [userType, setUserType] = useState('');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const { toast } = useToast();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    
-    // Demo login logic
-    if (credentials.username && credentials.password && userType) {
+
+    if (!credentials.username || !credentials.password) {
+      toast({
+        title: 'Lỗi đăng nhập',
+        description: 'Vui lòng điền đầy đủ thông tin',
+      });
+      return;
+    }
+
+    try {
+      const { user, token } = await authService.login(
+        credentials.username,
+        credentials.password
+      );
+
+      dispatch(setUser(user));
+      localStorage.setItem("clinic_auth_token", token);
+      localStorage.setItem("clinic_user_data", JSON.stringify(user));
+
       toast({
         title: "Đăng nhập thành công!",
-        description: `Chào mừng ${userType}`,
+        description: `Chào mừng ${user?.name}`,
       });
-      
-      console.log('Login successful', { userType, credentials });
-      
-      // Navigate based on user type
-      switch (userType) {
-        case 'admin':
-          navigate('/admin-dashboard');
+
+      // Điều hướng dựa trên role hoặc userType đã chọn
+      switch (user?.role ) {
+        case 'ADMIN':
+          navigate('/admin/dashboard');
           break;
-        case 'doctor':
-          navigate('/doctor-dashboard');
+        case 'DOCTOR':
+          navigate('/doctor/dashboard');
           break;
-        case 'nurse':
-          navigate('/nurse-dashboard');
+        case 'NURSE':
+          navigate('/nurse/dashboard');
           break;
-        case 'receptionist':
-          navigate('/receptionist-dashboard');
+        case 'RECEPTIONIST':
+          navigate('/receptionist/dashboard');
           break;
-        case 'technician':
-          navigate('/technician-dashboard');
+        case 'TECHNICIAN':
+          navigate('/technician/dashboard');
           break;
         default:
           navigate('/dashboard');
       }
-      
+
       onClose();
-    } else {
+    } catch (error) {
       toast({
-        title: "Lỗi đăng nhập",
-        description: "Vui lòng điền đầy đủ thông tin",
-        // variant: "destructive"
+        title: 'Lỗi đăng nhập',
+        description: error.message || 'Thông tin không hợp lệ',
       });
     }
   };
@@ -75,22 +91,6 @@ const LoginModal = ({ onClose }) => {
         </div>
 
         <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <Label htmlFor="userType">Loại tài khoản *</Label>
-            <Select value={userType} onValueChange={setUserType} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn loại tài khoản" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Quản trị viên</SelectItem>
-                <SelectItem value="doctor">Bác sĩ</SelectItem>
-                <SelectItem value="nurse">Y tá</SelectItem>
-                <SelectItem value="receptionist">Lễ tân</SelectItem>
-                <SelectItem value="technician">Kỹ thuật viên</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <div>
             <Label htmlFor="username">Tên đăng nhập *</Label>
             <div className="relative">
@@ -127,17 +127,6 @@ const LoginModal = ({ onClose }) => {
             Đăng Nhập
           </Button>
         </form>
-
-        <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-          <h3 className="font-semibold text-gray-800 mb-2">Demo Accounts:</h3>
-          <div className="space-y-1 text-sm text-gray-600">
-            <div>Admin: admin / admin123</div>
-            <div>Bác sĩ: doctor / doctor123</div>
-            <div>Y tá: nurse / nurse123</div>
-            <div>Lễ tân: receptionist / rec123</div>
-            <div>Kỹ thuật viên: tech / tech123</div>
-          </div>
-        </div>
       </Card>
     </div>
   );

@@ -7,9 +7,19 @@ import DoctorTeam from '@/pages/DoctorTeam';
 import MedicalServices from '@/pages/MedicalServices';
 import ResultLookup from '@/pages/ResultLookup';
 import LoginModal from '@/pages/LoginModal';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated } from '@/shared/store/slices/authSlice';
+import { useAuth } from '@/shared/hooks/business/useAuth';
+
 const HomePage = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [showLogin, setShowLogin] = useState(false);
+  const isLoggedIn = useSelector(selectIsAuthenticated);
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout()
+  };
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -51,12 +61,21 @@ const HomePage = () => {
                 </div>
               </div>
             </div>
-            <Button 
-              onClick={() => setShowLogin(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
-            >
-              Đăng Nhập
-            </Button>
+            {isLoggedIn ? (
+              <Button
+                onClick={handleLogout}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2"
+              >
+                Đăng Xuất
+              </Button>
+            ) : (
+              <Button
+                onClick={() => setShowLogin(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2"
+              >
+                Đăng Nhập
+              </Button>
+            )}
           </div>
         </div>
       </header>
@@ -75,9 +94,8 @@ const HomePage = () => {
               <button
                 key={key}
                 onClick={() => setActiveSection(key)}
-                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-blue-600 ${
-                  activeSection === key ? 'bg-blue-800 border-b-2 border-white' : ''
-                }`}
+                className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors hover:bg-blue-600 ${activeSection === key ? 'bg-blue-800 border-b-2 border-white' : ''
+                  }`}
               >
                 <Icon className="w-4 h-4" />
                 {label}
@@ -167,7 +185,7 @@ const HomePage = () => {
             <div>
               <h3 className="text-xl font-bold mb-4 text-blue-400">Về Chúng Tôi</h3>
               <p className="text-sm text-gray-300 mb-4">
-                Phòng khám chuyên sâu đa ngành với 7 phòng cận lâm sàng và 5 phòng khám chuyên khoa, 
+                Phòng khám chuyên sâu đa ngành với 7 phòng cận lâm sàng và 5 phòng khám chuyên khoa,
                 phục vụ toàn diện nhu cầu chăm sóc sức khỏe thần kinh.
               </p>
               <div className="flex items-center gap-2 text-sm">
@@ -200,10 +218,10 @@ const HomeSection = ({ setActiveSection }) => {
           Chăm Sóc Sức Khỏe Thần Kinh Chuyên Nghiệp
         </h2>
         <p className="text-xl mb-8 max-w-4xl mx-auto leading-relaxed">
-          Với 7 phòng cận lâm sàng trang bị thiết bị hiện đại và 5 phòng khám chuyên khoa, 
+          Với 7 phòng cận lâm sàng trang bị thiết bị hiện đại và 5 phòng khám chuyên khoa,
           chúng tôi cung cấp dịch vụ chăm sóc sức khỏe toàn diện trong lĩnh vực thần kinh học
         </p>
-        <Button 
+        <Button
           onClick={() => setActiveSection('appointment')}
           className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-3 rounded-full font-semibold"
         >

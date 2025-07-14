@@ -1,7 +1,6 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { authService } from "../../services/authService";
 
-// Simple async actions sử dụng authService
 export const loginUser = createAsyncThunk(
   "auth/login",
   async ({ email, password }: { email: string; password: string }) => {
@@ -10,18 +9,6 @@ export const loginUser = createAsyncThunk(
       return response;
     } catch (error: any) {
       throw new Error(error.message || "Đăng nhập thất bại");
-    }
-  }
-);
-
-export const registerUser = createAsyncThunk(
-  "auth/register",
-  async (userData: any) => {
-    try {
-      const response = await authService.register(userData);
-      return response;
-    } catch (error: any) {
-      throw new Error(error.message || "Đăng ký thất bại");
     }
   }
 );
@@ -112,25 +99,6 @@ const authSlice = createSlice({
         state.error = action.error.message || "Đăng nhập thất bại";
       })
 
-      // Register
-      .addCase(registerUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(registerUser.fulfilled, (state, action) => {
-        state.loading = false;
-        // Auto login after register if token is provided
-        if (action.payload.data?.token) {
-          state.user = action.payload.data.user;
-          state.token = action.payload.data.token;
-          state.isAuthenticated = true;
-        }
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Đăng ký thất bại";
-      })
-
       // Logout
       .addCase(logoutUser.fulfilled, (state) => {
         state.user = null;
@@ -144,7 +112,7 @@ const authSlice = createSlice({
       })
       .addCase(getCurrentUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload.user;
+        state.user = action.payload;
       })
       .addCase(getCurrentUser.rejected, (state, action) => {
         state.loading = false;
