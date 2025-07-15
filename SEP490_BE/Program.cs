@@ -16,6 +16,7 @@ using SEP490_BE.Repositories.CategoryRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using SEP490_BE.Repositories.MaterialRepositories;
 using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
@@ -24,6 +25,7 @@ using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.SupplierRepositories;
 using SEP490_BE.Repositories.TimeSlotRepositories;
+using SEP490_BE.Repositories.TransactionRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
 using SEP490_BE.Services.AppointmentServices;
@@ -35,6 +37,7 @@ using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
+using SEP490_BE.Services.MaterialServices;
 using SEP490_BE.Services.MedicineServices;
 using SEP490_BE.Services.PatientProfileServices;
 using SEP490_BE.Services.ScheduleChangeServices;
@@ -42,6 +45,7 @@ using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
 using SEP490_BE.Services.SupplierServices;
 using SEP490_BE.Services.TimeSlotServices;
+using SEP490_BE.Services.TransactionServices;
 using SEP490_BE.Services.UserServices;
 using SEP490_BE.Services.VisitServices;
 using StackExchange.Redis;
@@ -163,6 +167,9 @@ builder.Services.AddScoped<IMedicineService, MedicineService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IVisitService, VisitService>();
 builder.Services.AddScoped<IAssignmentService, SEP490_BE.Services.AssignmentServices.AssignmentService>();
+builder.Services.AddScoped<IMaterialService, MaterialService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -183,6 +190,8 @@ builder.Services.AddScoped<IMedicineRepository, MedicineRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IVisitRepository, VisitRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 
 

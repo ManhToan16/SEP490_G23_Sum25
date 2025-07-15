@@ -8,6 +8,7 @@ namespace SEP490_BE.Entities
         public Supplier()
         {
             Materials = new HashSet<Material>();
+            Transactions = new HashSet<Transaction>();
         }
 
         public string Id { get; set; } = null!;
@@ -20,5 +21,7 @@ namespace SEP490_BE.Entities
         public DateTime? CreatedAt { get; set; }
 
         public virtual ICollection<Material> Materials { get; set; }
+        public virtual ICollection<Transaction> Transactions { get; set; }
+
     }
 }

@@ -15,6 +15,6 @@ namespace SEP490_BE.Entities
         public DateTime? ChangedAt { get; set; }
 
         public virtual User ChangedByNavigation { get; set; } = null!;
-        public virtual Material Transaction { get; set; } = null!;
+        public virtual Transaction Transaction { get; set; } = null!;
     }
 }
