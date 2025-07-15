@@ -151,12 +151,12 @@ namespace SEP490_BE.Entities
                 entity.HasOne(d => d.Assignment)
                     .WithMany(p => p.AssignmentServices)
                     .HasForeignKey(d => d.AssignmentId)
-                    .HasConstraintName("FK__Assignmen__Assig__3D2915A8");
+                    .HasConstraintName("FK__Assignmen__Assig__3F115E1A");
 
                 entity.HasOne(d => d.Service)
                     .WithMany(p => p.AssignmentServices)
                     .HasForeignKey(d => d.ServiceId)
-                    .HasConstraintName("FK__Assignmen__Servi__3E1D39E1");
+                    .HasConstraintName("FK__Assignmen__Servi__40058253");
             });
 
             modelBuilder.Entity<AuditLog>(entity =>
@@ -211,7 +211,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<ExaminationResult>(entity =>
             {
-                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0CF6F72E12")
+                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0CBF2E5BA1")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -384,7 +384,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<PatientProfile>(entity =>
             {
-                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0DE4A2D35B")
+                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0DFC67839B")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -411,7 +411,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Permission>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Permissi__737584F77760E5F3");
+                    .HasName("PK__Permissi__737584F7769B02F0");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -465,7 +465,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Roles__737584F73301D9F3");
+                    .HasName("PK__Roles__737584F7733915E5");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -618,6 +618,10 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.MaterialId).HasMaxLength(100);
 
+                entity.Property(e => e.Price)
+                    .HasColumnType("decimal(18, 2)")
+                    .HasDefaultValueSql("((0))");
+
                 entity.Property(e => e.RoomId).HasMaxLength(100);
 
                 entity.Property(e => e.RoomType).HasMaxLength(50);
@@ -626,32 +630,31 @@ namespace SEP490_BE.Entities
                     .HasMaxLength(50)
                     .HasDefaultValueSql("('PENDING')");
 
+                entity.Property(e => e.SupplierId).HasMaxLength(100);
+
                 entity.Property(e => e.TransactionType).HasMaxLength(50);
 
                 entity.Property(e => e.UpdatedAt)
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
-                entity.Property(e => e.Price)
-                .HasColumnType("decimal(18, 2)");
-
 
                 entity.Property(e => e.UserId).HasMaxLength(100);
 
                 entity.HasOne(d => d.Material)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.MaterialId)
-                    .HasConstraintName("FK__Transacti__Mater__3493CFA7");
+                    .HasConstraintName("FK__Transacti__Mater__3587F3E0");
+
+                entity.HasOne(d => d.Supplier)
+                    .WithMany(p => p.Transactions)
+                    .HasForeignKey(d => d.SupplierId)
+                    .HasConstraintName("FK__Transacti__Suppl__37703C52");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Transacti__UserI__3587F3E0");
-                entity.HasOne(d => d.Supplier)
-     .WithMany(p => p.Transactions)
-    .HasForeignKey(d => d.SupplierId)
-    .OnDelete(DeleteBehavior.ClientSetNull)
-    .HasConstraintName("FK_Transaction_Supplier");
+                    .HasConstraintName("FK__Transacti__UserI__367C1819");
             });
 
             modelBuilder.Entity<TransactionHistory>(entity =>
@@ -672,17 +675,17 @@ namespace SEP490_BE.Entities
                     .WithMany(p => p.TransactionHistories)
                     .HasForeignKey(d => d.ChangedBy)
                     .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Transacti__Chang__3A4CA8FD");
+                    .HasConstraintName("FK__Transacti__Chang__3C34F16F");
 
                 entity.HasOne(d => d.Transaction)
                     .WithMany(p => p.TransactionHistories)
                     .HasForeignKey(d => d.TransactionId)
-                    .HasConstraintName("FK__Transacti__Trans__6EC0713C");
+                    .HasConstraintName("FK__Transacti__Trans__3B40CD36");
             });
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E3843FA754D")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E387233D3FC")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
