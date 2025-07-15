@@ -57,12 +57,22 @@ namespace SEP490_BE.Services.VisitServices
             if (appointment == null)
                 throw new ResourceNotFoundException(MessageConstants.APPOINTMENT_NOT_FOUND);
 
+            var existingVisit = await _context.Visits
+                .FirstOrDefaultAsync(v => v.AppointmentId == request.AppointmentId);
+                if (existingVisit != null)
+                throw new ConflictDataException(MessageConstants.VISIT_CONFLICT);
+
             if (appointment.ExpiredAt.HasValue && appointment.ExpiredAt.Value < DateTime.UtcNow)
                 throw new ArgumentException(MessageConstants.APPOINTMENT_EXPIRED);
 
+            if (appointment.Status == AppointmentStatus.COMPLETED || appointment.Status == AppointmentStatus.CANCELLED)
+            {
+                throw new ArgumentException(MessageConstants.APPOINTMENT_INVALID_STATUS_CREATE_VISIT);
+            }
+
             var today = DateTime.UtcNow.Date;
             if (appointment.Date.Date != today)
-                throw new ArgumentException(MessageConstants.APPOINTMENT_INVALID_CREATE_VISIT);
+                throw new ArgumentException(MessageConstants.APPOINTMENT_INVALID_DATE_CREATE_VISIT);
 
             var assignedDoctor = await _context.Users.FindAsync(request.AssignedDoctorId);
             if (assignedDoctor == null)
@@ -82,7 +92,7 @@ namespace SEP490_BE.Services.VisitServices
                 PatientProfileId = request.PatientProfileId,
                 AssignedDoctorId = request.AssignedDoctorId,
                 PatientName = patientProfile.Name,
-                TotalPrice = appointment.TotalPrice,
+                TotalPrice = 200000,
                 IsPrioritized = request.IsPrioritized,
                 QueueNumber = nextQueueNumber,
                 Status = VisitStatus.WAITING,
@@ -103,6 +113,7 @@ namespace SEP490_BE.Services.VisitServices
             }
             return new VisitResponseDTO
             {
+                VisitId = visit.Id,
                 ExaminationRoomId = visit.ExaminationRoomId,
                 ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
@@ -125,6 +136,7 @@ namespace SEP490_BE.Services.VisitServices
 
             return new VisitResponseDTO
             {
+                VisitId = visit.Id,
                 ExaminationRoomId = visit.ExaminationRoomId,
                 ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
@@ -199,6 +211,7 @@ namespace SEP490_BE.Services.VisitServices
                 htmlContent);
             return new VisitResponseDTO
             {
+                VisitId = visit.Id,
                 ExaminationRoomId = visit.ExaminationRoomId,
                 ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
@@ -237,6 +250,7 @@ namespace SEP490_BE.Services.VisitServices
             }
             return new VisitResponseDTO
             {
+                VisitId = visit.Id,
                 ExaminationRoomId = visit.ExaminationRoomId,
                 ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,
@@ -259,6 +273,7 @@ namespace SEP490_BE.Services.VisitServices
 
             return new VisitResponseDTO
             {
+                VisitId = visit.Id,
                 ExaminationRoomId = visit.ExaminationRoomId,
                 ExaminationRoomName = visit.ExaminationRoom.Name,
                 AppointmentId = visit.AppointmentId,

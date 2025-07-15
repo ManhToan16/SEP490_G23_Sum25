@@ -48,7 +48,7 @@ namespace SEP490_BE.Repositories.PatientProfileRepositories
 
             if (!string.IsNullOrWhiteSpace(name))
             {
-                query = query.Where(p => p.Name.Contains(name));
+                query = query.Where(p => EF.Functions.Collate(p.Name, "Latin1_General_CI_AI").Contains(name));
             }
 
             if (dob.HasValue)

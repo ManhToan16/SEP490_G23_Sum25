@@ -13,9 +13,16 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/shared/hooks/business/useAuth';
+import { useNavigate } from 'react-router-dom';
 
 const DoctorHeader: React.FC = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/'); 
+  };
 
   return (
     <div className="h-16 px-6 flex items-center justify-between bg-white border-b">
@@ -86,7 +93,7 @@ const DoctorHeader: React.FC = () => {
               <span>Cài đặt</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout} className="text-red-600">
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600">
               <LogOut className="mr-2 h-4 w-4" />
               <span>Đăng xuất</span>
             </DropdownMenuItem>

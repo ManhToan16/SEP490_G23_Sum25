@@ -64,6 +64,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
                 TotalPrice = assignment.TotalPrice,
+                Status = assignment.Status,
                 AssignmentServices = assignment.AssignmentServices.Select(s => new AssignmentServiceResponseDTO
                 {
                     ServiceId = s.Service.Id,
@@ -104,7 +105,7 @@ namespace SEP490_BE.Services.AssignmentServices
                     if (invalidServices.Any())
                     {
                         var invalidNames = string.Join(", ", invalidServices.Select(s => s.Name));
-                        throw new Exceptions.ArgumentException($"Các dịch vụ được chọn phải cùng một phòng xét nghiệm '{labRoom.Name}': {invalidNames}");
+                        throw new Exceptions.ArgumentException($"Các dịch vụ này không thuộc phòng xét nghiệm '{labRoom.Name}': {invalidNames}");
                     }
 
                     var totalPrice = CalculateTotalPrice(services);
@@ -135,6 +136,7 @@ namespace SEP490_BE.Services.AssignmentServices
                         LaboratoryRoomId = assignment.LaboratoryRoomId,
                         LaboratoryRoomName = labRoom.Name,
                         TotalPrice = assignment.TotalPrice,
+                        Status = assignment.Status,
                         AssignmentServices = services.Select(s => new AssignmentServiceResponseDTO
                         {
                             ServiceId = s.Id,
@@ -143,6 +145,7 @@ namespace SEP490_BE.Services.AssignmentServices
                         }).ToList()
                     });
                 }
+                await _context.SaveChangesAsync();
 
                 #region Update Visit
                 var visitId = requests.First().VisitId;
@@ -189,6 +192,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 LaboratoryRoomId = a.LaboratoryRoomId,
                 LaboratoryRoomName = a.LaboratoryRoom?.Name ?? "",
                 TotalPrice = a.TotalPrice,
+                Status = a.Status,
                 AssignmentServices = a.AssignmentServices.Select(s => new AssignmentServiceResponseDTO
                 {
                     ServiceId = s.Service.Id,
@@ -216,6 +220,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
                 TotalPrice = assignment.TotalPrice,
+                Status = assignment.Status,
                 AssignmentServices = assignment.AssignmentServices.Select(s => new AssignmentServiceResponseDTO
                 {
                     ServiceId = s.Service.Id,
@@ -269,6 +274,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
                 TotalPrice = assignment.TotalPrice,
+                Status = assignment.Status,
                 AssignmentServices = assignment.AssignmentServices.Select(s => new AssignmentServiceResponseDTO
                 {
                     ServiceId = s.Service.Id,
