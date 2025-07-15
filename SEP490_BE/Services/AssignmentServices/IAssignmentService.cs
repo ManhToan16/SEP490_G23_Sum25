@@ -7,7 +7,7 @@ namespace SEP490_BE.Services.AssignmentServices
     {
         Task<Pagination<AssignmentResponseDTO>> GetAssignments(string laboratoryRoomId, string? status, DateTime date, int pageNumber, int pageSize);
         Task<AssignmentResponseDTO> GetById(string id);
-        Task<List<AssignmentResponseDTO>> CreateRange(List<AssignmentRequestDTO> requests);
+        Task<List<AssignmentResponseDTO>> CreateRange(string visitId, List<AssignmentRequestDTO> requests);
         Task<List<AssignmentResponseDTO>> GetByVisitId(string visitId);
         Task<AssignmentResponseDTO> Calling(string id);
         Task<AssignmentResponseDTO> MarkAsCompleted(string id);
