@@ -20,7 +20,7 @@ namespace SEP490_BE.Controllers
         }
 
         [Authorize(Roles = RoleConstants.Doctor)]
-        [HttpPost("visits/{visitId}")]
+        [HttpPost("visit/{visitId}")]
         public async Task<ActionResult<ApiResponse>> CreateRange(string visitId, [FromBody] List<AssignmentRequestDTO> requests)
         {
             var result = await _assignmentService.CreateRange(visitId, requests);
