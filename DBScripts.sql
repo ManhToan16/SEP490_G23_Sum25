@@ -235,7 +235,8 @@ CREATE TABLE Assignments (
        'PENDING', 
        'WAITING', 
        'IN_PROGRESS', 
-       'COMPLETED'
+       'COMPLETED',
+	   'CANCELLED'
      )),
    CreateAt DATETIME DEFAULT GETDATE(),
    FOREIGN KEY (LaboratoryRoomId) REFERENCES LaboratoryRooms(Id),
@@ -371,14 +372,18 @@ CREATE TABLE Transactions (
     TransactionType NVARCHAR(50) NOT NULL CHECK (TransactionType IN ('IMPORT', 'EXPORT', 'PROVIDE', 'RETURN')),
     Quantity INT NOT NULL CHECK (Quantity > 0),
     RoomId NVARCHAR(100), 
-	RoomType NVARCHAR (50), -- EXAMINATION / LABORATORY
+    RoomType NVARCHAR (50), -- EXAMINATION / LABORATORY
     UserId NVARCHAR(100) NOT NULL,
     Reason NVARCHAR(MAX) NULL, -- Lý do đổi trả (nếu TransactionType = RETURN)
-    Status NVARCHAR(50) DEFAULT 'PENDING' CHECK (Status IN ('PENDING', 'APPROVED', 'REJECTED')), -- Trạng thái đổi trả
+    Status NVARCHAR(50) DEFAULT 'PENDING' CHECK (Status IN ('PENDING', 'APPROVED', 'REJECTED')), 
+    DefectiveQuantity INT NULL,
+    Price DECIMAL(18, 2) NULL DEFAULT 0,
+    SupplierId NVARCHAR(100) NULL,
     CreatedAt DATETIME DEFAULT GETDATE(),
     UpdatedAt DATETIME DEFAULT GETDATE(),
     FOREIGN KEY (MaterialId) REFERENCES Materials(Id) ON DELETE CASCADE,
-    FOREIGN KEY (UserId) REFERENCES Users(Id)
+    FOREIGN KEY (UserId) REFERENCES Users(Id),
+    FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id)
 );
 
 --29
@@ -561,18 +566,6 @@ VALUES
 (NEWID(), '1bb171ba-3851-4739-867a-274a50b7d2eb', 
  N'Thạc sĩ Y học thần kinh - Đại học Y Dược TP.HCM', 5, N'Bác sĩ Hồ Thuỷ Ngân chuyên điều trị các bệnh về thần kinh trung ương và tâm lý như rối loạn lo âu, trầm cảm, và rối loạn giấc ngủ.', N'');
 
--- PATIENT PROFILE
-INSERT INTO PatientProfiles (Id, Name, CitizenId, PhoneNumber, Email, DateOfBirth, Gender, Address, CreatedAt)
-VALUES
-(NEWID(), N'Trần Minh Quang', '012345678902', '0963657883', 'quangli2k3@gmail.com', '2003-09-14', N'Nam', N'Văn Khê, Q. Hà Đông, Hà Nội', GETDATE()),
-(NEWID(), N'Nguyễn Văn Nam', '012345678901', '0912345698', 'namnguyen@example.com', '1990-04-12', N'Nam', N'30 Cầu Giấy, Q. Cầu Giấy, Hà Nội', GETDATE()),
-(NEWID(), N'Lê Thị Hương', '012345678902', '0912345679', 'huongle@example.com', '1988-06-21', N'Nữ', N'15 Kim Liên, Q. Đống Đa, Hà Nội', GETDATE()),
-(NEWID(), N'Phạm Đức Anh', '012345678903', '0912345680', 'anhpham@example.com', '1995-02-05', N'Nam', N'120 Nguyễn Văn Cừ, Q. Long Biên, Hà Nội', GETDATE()),
-(NEWID(), N'Trần Thị Lan', '012345678904', '0912345681', 'lantran@example.com', '1992-09-10', N'Nữ', N'8 Lê Lợi, TP. Nam Định, Nam Định', GETDATE()),
-(NEWID(), N'Đỗ Quang Minh', '012345678905', '0912345682', 'minhdo@example.com', '1986-07-19', N'Nam', N'42 Trần Hưng Đạo, TP. Hải Dương, Hải Dương', GETDATE()),
-(NEWID(), N'Hoàng Thị Vân', '012345678906', '0912345683', 'vanhoang@example.com', '1997-12-03', N'Nữ', N'55 Quang Trung, TP. Bắc Ninh, Bắc Ninh', GETDATE()),
-(NEWID(), N'Vũ Văn Cường', '012345678907', '0912345684', 'cuongvu@example.com', '1991-03-25', N'Nam', N'10 Nguyễn Trãi, TP. Hưng Yên, Hưng Yên', GETDATE());
-
 -- EXAMINATION ROOM
 INSERT INTO ExaminationRooms (Id, Name, Description)
 VALUES
@@ -638,3 +631,90 @@ VALUES
   ('TS003', N'Ca Tối', '18:00:00', '22:00:00', N'Khám buổi tối từ 18h00 đến 22h');
 
 
+-- SCHEDULE
+INSERT INTO KhanhAnNeurologyClinic.dbo.Schedules (Id,UserId,[Role],RoomId,RoomType,[Date],TimeSlotId,Status) VALUES
+	 (N'032b7408-808d-43cb-bfa4-91eb1bdb7584',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'DOCTOR',N'EE5F53BD-7D98-40DF-ADB9-804EC04583DC',N'EXAMINATION','2025-07-13',N'TS002',N'SCHEDULED'),
+	 (N'1f711a85-492b-47f8-b4c5-0ed25190fb54',N'1bb171ba-3851-4739-867a-274a50b7d2eb',N'DOCTOR',N'7358793E-64E8-4A7E-B154-59F74AE00865',N'EXAMINATION','2025-07-08',N'TS001',N'SCHEDULED'),
+	 (N'2c58ffa3-239e-4284-ae94-5681fbc35e18',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'DOCTOR',N'A6DEEDEF-ED5F-4835-92C2-4B6AEEC4E582',N'EXAMINATION','2025-07-11',N'TS002',N'SCHEDULED'),
+	 (N'3d2da661-9051-4d37-ad54-523a14a78229',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'DOCTOR',N'A6DEEDEF-ED5F-4835-92C2-4B6AEEC4E582',N'EXAMINATION','2025-07-12',N'TS002',N'SCHEDULED'),
+	 (N'74cff2d1-2044-4157-8c3e-89f20e767da1',N'e39f4a97-78b5-4c5e-9052-0466cf9bd2ba',N'NURSE',N'EE5F53BD-7D98-40DF-ADB9-804EC04583DC',N'EXAMINATION','2025-07-09',N'TS001',N'SCHEDULED'),
+	 (N'75f9e900-6596-40d5-a665-aae712cf1111',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'DOCTOR',N'7358793E-64E8-4A7E-B154-59F74AE00865',N'EXAMINATION','2025-07-09',N'TS001',N'SCHEDULED'),
+	 (N'778ae258-3adb-4cf9-9ddc-3b80ce4c0fe8',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'DOCTOR',N'EE5F53BD-7D98-40DF-ADB9-804EC04583DC',N'EXAMINATION','2025-07-14',N'TS001',N'SCHEDULED'),
+	 (N'97d5149b-7319-4ac2-964d-bbb519d3489b',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'DOCTOR',N'7358793E-64E8-4A7E-B154-59F74AE00865',N'EXAMINATION','2025-07-10',N'TS001',N'SCHEDULED'),
+	 (N'988bbe82-3549-45ec-b996-6eb4c708c9db',N'e39f4a97-78b5-4c5e-9052-0466cf9bd2ba',N'NURSE',N'EE5F53BD-7D98-40DF-ADB9-804EC04583DC',N'EXAMINATION','2025-07-14',N'TS001',N'SCHEDULED'),
+	 (N'ba6637d6-e448-4c5c-b4e9-c91d34e9a6c8',N'e39f4a97-78b5-4c5e-9052-0466cf9bd2ba',N'NURSE',N'EE5F53BD-7D98-40DF-ADB9-804EC04583DC',N'EXAMINATION','2025-07-08',N'TS002',N'SCHEDULED');
+
+
+
+-- SCHEDULE CHANGE REQUEST
+INSERT INTO KhanhAnNeurologyClinic.dbo.ScheduleChangeRequests (Id,RequesterId,RequesterScheduleId,TargetUserId,TargetScheduleId,Reason,Status) VALUES
+	 (N'fe824cef-d7e5-4505-8db6-bdb0a4375ffb',N'8f62d494-ea4e-4a45-93f6-9536fa08561e',N'1f711a85-492b-47f8-b4c5-0ed25190fb54',N'1bb171ba-3851-4739-867a-274a50b7d2eb',N'778ae258-3adb-4cf9-9ddc-3b80ce4c0fe8',N'Need to swap time slots 2',N'APPROVED');
+
+
+-- SUPPLIER
+INSERT INTO KhanhAnNeurologyClinic.dbo.Suppliers (Id,Name,PhoneNumber,Email,Address,Description,UpdatedAt,CreatedAt) VALUES
+	 (N'39896f98-d390-49fe-9846-2fa5b235c4da',N'Vật tư Công nghiệp Đông Anh',N'0988046655',N'',N'Xóm Bãi, Uy Nỗ, Đông Anh, Hà Nội',N'Cung cấp găng tay latex/nitrile, giá từ 1.500–3.500 ₫/đôi.','2025-07-13 16:28:48.42','2025-07-13 16:28:48.093'),
+	 (N'3a629404-7e36-4b5d-b6fc-1ecd6a995bf7',N'Trung tâm Thiết bị y tế Ngô Gia',N'0987014436',N'duocsihai36@gmail.com',N'216 Nguyễn Xiển, Thanh Xuân, Hà Nội',N'Cung cấp Omron, máy đo đường huyết, máy tạo.','2025-07-13 16:31:49.073','2025-07-13 16:31:48.86'),
+	 (N'46db39c2-e728-456b-a70a-2c97c8c98e29',N'Quang Dương Medical',N'0965588369',N'',N'49‑50C1 Đại Kim, Hoàng Mai, Hà Nội',N'Cung cấp máy đo huyết áp tự động Omron, A&D, Raycom...','2025-07-13 16:30:15.67','2025-07-13 16:30:15.453'),
+	 (N'48e92625-6081-4453-98aa-6c271c45c704',N'Ống nghe y tế – Ông Khôi',N'0948802788',N'trankhoi01.ktyh@gmail.com',N'Ngõ 132 Nguyễn Xiển, Thanh Xuân, Hà Nội',N'Phân phối ống nghe Littmann, Spirit… chính hãng.','2025-07-13 16:32:29.373','2025-07-13 16:32:29.163'),
+	 (N'7748fe73-e2d3-4f46-877d-c1d22f22810b',N'COMED Vietnam',N'0963022218',N'info@comed.com.vn',N'95 Chùa Bộc, Đống Đa, Hà Nội',N'Nhập khẩu & phân phối thiết bị y tế tiêu chuẩn toàn cầu.','2025-07-13 16:33:23.52','2025-07-13 16:33:23.317'),
+	 (N'7d466c60-d5c9-4aa3-a791-aab7d5143c95',N'Thiết bị y tế Hamedco',N'',N'',N'Nguyễn Hồng, Ba Đình, Hà Nội',N'Cung cấp đa dạng vật tư y tế tiêu hao.','2025-07-13 16:32:12.247','2025-07-13 16:32:12.04'),
+	 (N'9aa9aa1e-0767-494b-8428-7e188a1f7089',N'Getz Healthcare Vietnam',N'',N'',N'Hà Nội',N'Nhà phân phối thiết bị y tế cao cấp cho bệnh viện và phòng khám.','2025-07-13 16:33:33.887','2025-07-13 16:33:33.683'),
+	 (N'b4ed1dda-8750-4467-a28e-d15529f0bd5b',N'VNPS Safety',N'',N'',N'Kho Hà Nội',N'Nhà phân phối cấp 1 găng tay y tế HTC, Duy Hàng tại Hà Nội.','2025-07-13 16:29:27.02','2025-07-13 16:29:26.803'),
+	 (N'bf8091cf-7adb-437b-83ca-c35e62a3b9b6',N'Công ty TNHH Phát triển TM Long Khánh',N'0435561235',N'',N'580 Quang Trung, Hà Đông, Hà Nội',N'Phân phối găng tay cao su y tế, giao hàng nội thành.','2025-07-13 16:29:19.4','2025-07-13 16:29:19.19'),
+	 (N'db8f9194-3f77-4bb7-b15a-1987888549ff',N'Duy Hàng Medical',N'0936012609',N'info@duyhang.com',N'',N'Nhà máy sản xuất găng tay latex và nitrile, đạt ISO.','2025-07-13 16:29:54.59','2025-07-13 16:29:54.377');
+INSERT INTO KhanhAnNeurologyClinic.dbo.Suppliers (Id,Name,PhoneNumber,Email,Address,Description,UpdatedAt,CreatedAt) VALUES
+	 (N'f0d08e04-b206-48d1-b1ab-7700a72c2607',N'MedJin (Thiết bị y tế MedJin)',N'0917992556',N'info@medjin.vn',N'88 Phạm Ngọc Thạch, Đống Đa, Hà Nội',N'Ống nghe MDF & Littmann, bảo hành trọn đời.','2025-07-13 16:32:38.833','2025-07-13 16:32:38.627');
+
+
+  -- CATEGORY
+  INSERT INTO KhanhAnNeurologyClinic.dbo.Categories (Id,Name,Description,UpdatedAt,CreatedAt) VALUES
+	 (N'05385ded-6a7b-4c38-9a79-48bca0581f4a',N'Máy đo đường huyết',N'Đo nồng độ glucose trong máu.','2025-07-13 16:01:15.76','2025-07-13 16:01:15.513'),
+	 (N'0a8c23f5-9641-429d-a5aa-4bb900ce01bf',N'Bộ dụng cụ lấy máu',N'Thu thập máu xét nghiệm cận lâm sàng.','2025-07-13 16:01:34.0','2025-07-13 16:01:33.757'),
+	 (N'0ca6a8b4-2b69-475f-9525-561b1b6cce31',N'Máy đo SPO2',N'Giám sát nồng độ oxy trong máu.','2025-07-13 16:01:21.393','2025-07-13 16:01:21.15'),
+	 (N'1e8127fc-1f01-45c1-9fbf-a6d5c5f0b582',N'Kim tiêm – Ống tiêm',N'Dùng trong tiêm hoặc lấy máu.','2025-07-13 16:01:10.867','2025-07-13 16:01:10.62'),
+	 (N'2d2eab26-d862-485b-aa22-f0e70ebf87d3',N'Khẩu trang y tế',N'Ngăn ngừa lây nhiễm trong phòng khám.','2025-07-13 16:01:54.913','2025-07-13 16:01:54.073'),
+	 (N'41e4644a-31b5-456d-a132-1da1f61cae76',N'Bông gạc y tế',N'Dùng trong tiểu phẫu, lấy máu, vệ sinh vùng da.','2025-07-13 16:00:42.75','2025-07-13 16:00:42.407'),
+	 (N'5dde23b6-1414-4f1f-a8de-8471c9c62a9b',N'Tăm bông y tế',N'Lấy mẫu xét nghiệm họng, mũi.','2025-07-13 16:02:01.783','2025-07-13 16:02:01.54'),
+	 (N'9aa3cc89-fcb1-429e-8b00-b64e09bbc041',N'Găng tay y tế',N'Dùng trong phẫu thuật','2025-07-13 15:26:32.843','2025-07-13 15:21:40.413'),
+	 (N'9ccf0d18-0364-4802-bc10-1136fb75d4b8',N'Gạc tẩm cồn',N'Sát trùng da trước khi tiêm hoặc chích máu.','2025-07-13 16:01:45.437','2025-07-13 16:01:45.187'),
+	 (N'9d95dc24-2c3e-4ab4-a33a-4a445fd525b8',N'Búa phản xạ',N'Dụng cụ kiểm tra phản xạ gân xương.','2025-07-13 16:00:59.383','2025-07-13 16:00:59.133');
+INSERT INTO KhanhAnNeurologyClinic.dbo.Categories (Id,Name,Description,UpdatedAt,CreatedAt) VALUES
+	 (N'abc9779f-6ea0-4c12-9772-ddf167c78e3f',N'Miếng dán điện cực',N'Dán lên da để truyền tín hiệu tới máy đo.','2025-07-13 16:01:28.03','2025-07-13 16:01:27.787'),
+	 (N'c4af54f7-f5f0-44c0-a64a-f6120b38fa61',N'Ống nghe',N'Dùng nghe tim phổi trong khám thần kinh.','2025-07-13 16:00:48.81','2025-07-13 16:00:48.563'),
+	 (N'c8c3f568-7898-44af-add4-308ec74b9dd0',N'Dung dịch sát khuẩn',N'Vệ sinh tay và bề mặt y tế.','2025-07-13 16:01:39.683','2025-07-13 16:01:39.44'),
+	 (N'dc30ea17-23eb-4e7e-aa9a-c819f35087fc',N'Băng keo y tế',N'Cố định điện cực trong EEG, ECG.','2025-07-13 16:01:05.58','2025-07-13 16:01:05.32'),
+	 (N'f842f8b2-ec04-45a8-917a-f881eed25108',N'Máy đo huyết áp',N'Đo huyết áp bệnh nhân trong khám ban đầu.','2025-07-13 16:03:07.457','2025-07-13 15:38:59.877');
+
+
+-- MATERIAL
+INSERT INTO KhanhAnNeurologyClinic.dbo.Materials (Id,Name,CategoryId,SupplierId,Unit,QuantityInStock,MaxQuantity,MinQuantity,UpdatedAt,CreatedAt) VALUES
+	 (N'0c393f19-e6b9-4589-93ce-3a9957b9ce8b',N'Găng tay y tế',N'9aa3cc89-fcb1-429e-8b00-b64e09bbc041',N'b4ed1dda-8750-4467-a28e-d15529f0bd5b',N'Cái',291,200,50,'2025-07-14 07:17:53.673','2025-07-14 07:17:53.523'),
+	 (N'6b56e6e2-03bc-4b92-8d88-d883480acd47',N'Bông gạc y tế',N'41e4644a-31b5-456d-a132-1da1f61cae76',N'7748fe73-e2d3-4f46-877d-c1d22f22810b',N'Cái',100,200,50,'2025-07-15 09:18:59.52','2025-07-15 09:18:59.42'),
+	 (N'c7285c99-6ba2-4a6c-8979-951a328659ad',N'Khẩu trang y tế',N'2d2eab26-d862-485b-aa22-f0e70ebf87d3',N'7748fe73-e2d3-4f46-877d-c1d22f22810b',N'Cái',100,200,50,'2025-07-15 09:21:15.003','2025-07-15 09:17:31.12'),
+	 (N'ee7c17a0-d6a5-420a-a7ac-fcdf6f295d62',N'Kim tiêm – Ống tiêm',N'1e8127fc-1f01-45c1-9fbf-a6d5c5f0b582',N'7748fe73-e2d3-4f46-877d-c1d22f22810b',N'Cái',100,200,50,'2025-07-15 09:20:39.197','2025-07-15 09:17:14.41');
+
+-- TRANSACTIONS
+INSERT INTO KhanhAnNeurologyClinic.dbo.Transactions (Id,MaterialId,TransactionType,Quantity,RoomId,RoomType,UserId,Reason,Status,CreatedAt,UpdatedAt,Price,SupplierId,DefectiveQuantity) VALUES
+	 (N'1c18139b-03ef-433a-9a6a-fd2981b510b9',N'0c393f19-e6b9-4589-93ce-3a9957b9ce8b',N'IMPORT',95,NULL,NULL,N'de394cfc-7da7-4ab7-8a0f-a9e2bea629f4',N'Nhập hàng mới',N'APPROVED','2025-07-15 09:00:00.0','2025-07-15 09:00:00.0',10.50,N'b4ed1dda-8750-4467-a28e-d15529f0bd5b',NULL),
+	 (N'775fbd73-53bd-449b-a88f-de5ca44dc4e2',N'0c393f19-e6b9-4589-93ce-3a9957b9ce8b',N'IMPORT',96,NULL,NULL,N'de394cfc-7da7-4ab7-8a0f-a9e2bea629f4',N'Nhập hàng mới',N'APPROVED','2025-07-15 11:50:00.0','2025-07-15 11:50:00.0',10.50,N'b4ed1dda-8750-4467-a28e-d15529f0bd5b',4);
+
+
+-- PATIENT PROFILE
+INSERT INTO PatientProfiles (Id, Name, CitizenId, PhoneNumber, Email, DateOfBirth, Gender, Address)
+VALUES
+(NEWID(), N'Nguyễn Văn Nam', '012345678901', '0912345678', 'nam.nguyen@example.com', '1990-05-15', N'Nam', N'123 Phố Huế, Hai Bà Trưng, Hà Nội'),
+(NEWID(), N'Trần Thị Hương', '012345178902', '0987654321', 'huong.pham@example.com', '1985-03-22', N'Nữ', N'45 Lê Lợi, TP Bắc Giang, Bắc Giang'),
+(NEWID(), N'Đỗ Quang Huy', '012345678903', '0901122334', 'huy.do@example.com', '1992-07-10', N'Nam', N'89 Trần Nguyên Hãn, Lê Chân, Hải Phòng'),
+(NEWID(), N'Trần Thị Lan', '012345678904', '0973111222', 'lan.tran@example.com', '1988-12-05', N'Nữ', N'12 Nguyễn Trãi, TP Nam Định, Nam Định'),
+(NEWID(), N'Lê Văn Dũng', '012345678905', '0934455667', 'dung.le@example.com', '1995-09-30', N'Nam', N'66 Quang Trung, TP Vinh, Nghệ An'),
+(NEWID(), N'Hoàng Thị Thu', '012345678906', '0967888999', 'thu.hoang@example.com', '1993-01-18', N'Nữ', N'21 Minh Khai, TP Hưng Yên, Hưng Yên'),
+(NEWID(), N'Vũ Đức Minh', '012345678907', '0944332211', 'minh.vu@example.com', '1991-04-07', N'Nam', N'17 Tô Hiệu, TP Thái Bình, Thái Bình'),
+(NEWID(), N'Ngô Thị Hạnh', '012345678908', '0922334455', 'hanh.ngo@example.com', '1987-08-25', N'Nữ', N'98 Lý Thường Kiệt, TP Bắc Ninh, Bắc Ninh'),
+(NEWID(), N'Bùi Văn Thành', '012345678909', '0955667788', 'thanh.bui@example.com', '1996-11-12', N'Nam', N'53 Hồng Bàng, TP Việt Trì, Phú Thọ'),
+(NEWID(), N'Tạ Thị Mai', '012345678910', '0933221100', 'mai.ta@example.com', '1994-06-03', N'Nữ', N'36 Nguyễn Văn Cừ, TP Lào Cai, Lào Cai'),
+(NEWID(), N'Nguyễn Thị Thuỳ Dương', '010000000000', '0967888992', 'quangli2k3@gmail.com', '1998-01-01', N'Nữ', N'21 Minh Khai, TP Yên Bái'),
+(NEWID(), N'Nguyễn Thế Duy', '002000000000', '0944332231', 'quangli2k3@gmail.com', '2002-08-26', N'Nam', N'Thái Hoà, TP Nghệ An'),
+(NEWID(), N'Nguyễn Hữu Đạt', '000300000000', '0922134455', 'quangli2k3@gmail.com', '1995-02-02', N'Nam', N'Đan Phượng, TP Hà Nội'),
+(NEWID(), N'Ngô Văn Giang', '000040000000', '0955667428', 'quangli2k3@gmail.com', '2000-03-03', N'Nam', N'53 Nam Đàn, TP Nghệ An'),
+(NEWID(), N'Ngô Thị Lan', '000005000000', '0933242100', 'quangli2k3@gmail.com', '1996-04-04', N'Nữ', N'36 Chương Mỹ B, TP Hà Nội');
