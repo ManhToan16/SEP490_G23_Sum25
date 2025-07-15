@@ -74,9 +74,12 @@ namespace SEP490_BE.Services.AssignmentServices
             };
         }
 
-        public async Task<List<AssignmentResponseDTO>> CreateRange(List<AssignmentRequestDTO> requests)
+        public async Task<List<AssignmentResponseDTO>> CreateRange(string visitId, List<AssignmentRequestDTO> requests)
         {
             var results = new List<AssignmentResponseDTO>();
+
+            var visit = await _visitRepository.FindById(visitId)
+                ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
             var duplicateLabRooms = requests
                 .GroupBy(r => r.LaboratoryRoomId)
@@ -91,8 +94,6 @@ namespace SEP490_BE.Services.AssignmentServices
             {
                 foreach (var request in requests)
                 {
-                    var visit = await _visitRepository.FindById(request.VisitId)
-                        ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
                     var labRoom = await _laboratoryRoomRepository.FindByIdAsync(request.LaboratoryRoomId)
                         ?? throw new ResourceNotFoundException(MessageConstants.LABO_ROOM_NOT_FOUND);
                     var services = await _context.Services
@@ -113,7 +114,7 @@ namespace SEP490_BE.Services.AssignmentServices
                     {
                         Id = Guid.NewGuid().ToString(),
                         LaboratoryRoomId = request.LaboratoryRoomId,
-                        VisitId = request.VisitId,
+                        VisitId = visitId,
                         TotalPrice = totalPrice,
                         Status = AssignmentStatus.PENDING,
                         CreateAt = DateTime.UtcNow
@@ -148,7 +149,6 @@ namespace SEP490_BE.Services.AssignmentServices
                 await _context.SaveChangesAsync();
 
                 #region Update Visit
-                var visitId = requests.First().VisitId;
                 var visitToUpdate = await _context.Visits
                     .Include(v => v.Appointment)
                     .FirstOrDefaultAsync(v => v.Id == visitId)

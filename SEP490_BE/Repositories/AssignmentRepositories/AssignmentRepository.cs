@@ -73,6 +73,7 @@ namespace SEP490_BE.Repositories.AssignmentRepositories
                     AssignmentStatus.WAITING => 2,
                     AssignmentStatus.PENDING => 3,
                     AssignmentStatus.COMPLETED => 4,
+                    AssignmentStatus.CANCELLED => 5,
                     _ => 99
                 })
                 .ThenBy(a => a.CreateAt);
