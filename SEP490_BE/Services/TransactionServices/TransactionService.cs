@@ -59,8 +59,8 @@ namespace SEP490_BE.Services.TransactionServices
                 Status = "APPROVED",
                 SupplierId = importDto.SupplierId,
                 Price = importDto.Price,
-                CreatedAt = importDto.ImportDate + importDto.ImportTime,
-                UpdatedAt = importDto.ImportDate + importDto.ImportTime
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
 
@@ -82,7 +82,7 @@ namespace SEP490_BE.Services.TransactionServices
 
         }
 
-        public async Task<TransactionResponseDTO> CreateProvideTransaction(string materialId, int quantity, string userId, string roomId, string roomType, string? reason = null)
+        public async Task<TransactionResponseDTO> CreateProvideTransaction(ProvideMaterialDTO provideDto,string userId)
         {
             var user = await _context.Users
                 .Include(u => u.UserRoles)
@@ -92,28 +92,32 @@ namespace SEP490_BE.Services.TransactionServices
                 throw new UnauthorizedAccessException("Chỉ admin mới có quyền phân phát vật tư.");
             }
 
-            var material = await _materialRepository.FindByIdAsync(materialId);
+            var material = await _materialRepository.FindByIdAsync(provideDto.MaterialId);
             if (material == null)
             {
                 throw new ResourceNotFoundException("Vật tư không tồn tại.");
             }
-            if (material.QuantityInStock < quantity)
+            if (material.QuantityInStock < provideDto.Quantity)
             {
                 throw new Exception("Số lượng tồn kho không đủ để phân phát.");
             }
-
+            var room = await DetectRoomTypeAsync(provideDto.RoomId);
+            if (room == null)
+            {
+                throw new ResourceNotFoundException("Phòng không tồn tại.");
+            }
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid().ToString(),
-                MaterialId = materialId,
+                MaterialId = provideDto.MaterialId,
                 TransactionType = "PROVIDE",
-                Quantity = quantity,
-                RoomId = roomId,
-                RoomType = roomType,
+                Quantity = provideDto.Quantity,
+                RoomId = provideDto.RoomId,
+                RoomType = room, 
                 UserId = userId,
-                Reason = reason,
                 Status = "PENDING",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
             };
 
             using var transactionScope = await _context.Database.BeginTransactionAsync();
@@ -126,7 +130,8 @@ namespace SEP490_BE.Services.TransactionServices
             catch (Exception ex)
             {
                 await transactionScope.RollbackAsync();
-                throw;
+                throw ex;
+              
             }
             return MapToResponseDTO(transaction);
 
@@ -325,6 +330,16 @@ namespace SEP490_BE.Services.TransactionServices
                 SupplierId = transaction.SupplierId,
                 SupplierName = transaction.Supplier?.Name
             };
+        }
+        private async Task<string> DetectRoomTypeAsync(string roomId)
+        {
+            if (await _context.ExaminationRooms.AnyAsync(r => r.Id == roomId))
+                return "EXAMINATION";
+
+            if (await _context.LaboratoryRooms.AnyAsync(r => r.Id == roomId))
+                return "LABORATORY";
+
+            throw new ResourceNotFoundException("Không tìm thấy phòng.");
         }
     }
 }

@@ -22,7 +22,7 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpPost("import")]
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
+        [Authorize(Roles = RoleConstants.Admin)]
         public async Task<IActionResult> CreateImportTransaction([FromBody] ImportMaterialDTO importDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -48,23 +48,23 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpPost("provide")]
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
-        public async Task<IActionResult> CreateProvideTransaction([FromQuery] string materialId, [FromQuery] int quantity, [FromQuery] string roomId, [FromQuery] string roomType, [FromQuery] string? reason = null)
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> CreateProvideTransaction([FromBody] ProvideMaterialDTO provideDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
-            if (string.IsNullOrEmpty(materialId) || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(roomType))
+            if (string.IsNullOrEmpty(provideDto.MaterialId) || string.IsNullOrEmpty(provideDto.RoomId) )
             {
                 return BadRequest(new ApiResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Success = false,
-                    Message = "MaterialId, RoomId, và RoomType là bắt buộc.",
+                    Message = "MaterialId và RoomId là bắt buộc.",
                     Data = null
                 });
             }
 
-            var transaction = await _transactionService.CreateProvideTransaction(materialId, quantity, userId, roomId, roomType, reason);
+            var transaction = await _transactionService.CreateProvideTransaction(provideDto,userId);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
