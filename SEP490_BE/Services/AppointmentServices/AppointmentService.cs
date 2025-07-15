@@ -471,6 +471,15 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     visit.Status = VisitStatus.CANCELLED;
                     await _visitRepository.Update(visit);
+
+                    var assignments = await _context.Assignments
+                        .Where(a => a.VisitId == visit.Id)
+                        .ToListAsync();
+                    foreach (var asm in assignments)
+                    {
+                        asm.Status = AssignmentStatus.CANCELLED;
+                    }
+                    _context.Assignments.UpdateRange(assignments);
                 }
 
                 await _context.SaveChangesAsync();
