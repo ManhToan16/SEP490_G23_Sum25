@@ -25,6 +25,7 @@ using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.SupplierRepositories;
 using SEP490_BE.Repositories.TimeSlotRepositories;
+using SEP490_BE.Repositories.TransactionRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
 using SEP490_BE.Services.AppointmentServices;
@@ -44,6 +45,7 @@ using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
 using SEP490_BE.Services.SupplierServices;
 using SEP490_BE.Services.TimeSlotServices;
+using SEP490_BE.Services.TransactionServices;
 using SEP490_BE.Services.UserServices;
 using SEP490_BE.Services.VisitServices;
 using StackExchange.Redis;
@@ -166,6 +168,8 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IVisitService, VisitService>();
 builder.Services.AddScoped<IAssignmentService, SEP490_BE.Services.AssignmentServices.AssignmentService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -187,6 +191,7 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IVisitRepository, VisitRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 
 
 
