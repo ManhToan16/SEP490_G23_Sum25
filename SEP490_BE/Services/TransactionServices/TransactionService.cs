@@ -44,7 +44,7 @@ namespace SEP490_BE.Services.TransactionServices
 
             if (importDto.DefectiveQuantity >= importDto.Quantity)
             {
-                throw new Exception("Số lượng lỗi không được vượt quá số lượng nhập.");
+                throw new Exceptions.ArgumentException("Số lượng lỗi không được vượt quá số lượng nhập.");
             }
             var effectiveQuantity = importDto.Quantity - importDto.DefectiveQuantity;
             var transaction = new Transaction
