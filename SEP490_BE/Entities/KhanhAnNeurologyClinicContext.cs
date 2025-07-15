@@ -631,6 +631,9 @@ namespace SEP490_BE.Entities
                 entity.Property(e => e.UpdatedAt)
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Price)
+                .HasColumnType("decimal(18, 2)");
+
 
                 entity.Property(e => e.UserId).HasMaxLength(100);
 
@@ -644,6 +647,11 @@ namespace SEP490_BE.Entities
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Transacti__UserI__3587F3E0");
+                entity.HasOne(d => d.Supplier)
+     .WithMany(p => p.Transactions)
+    .HasForeignKey(d => d.SupplierId)
+    .OnDelete(DeleteBehavior.ClientSetNull)
+    .HasConstraintName("FK_Transaction_Supplier");
             });
 
             modelBuilder.Entity<TransactionHistory>(entity =>
