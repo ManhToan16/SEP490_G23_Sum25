@@ -22,6 +22,5 @@ namespace SEP490_BE.Entities
 
         public virtual ICollection<Material> Materials { get; set; }
         public virtual ICollection<Transaction> Transactions { get; set; }
-
     }
 }
