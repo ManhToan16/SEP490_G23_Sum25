@@ -41,6 +41,8 @@ namespace SEP490_BE.Hubs
         Task SendCategoryDelete(string cateId);
         // New: Low Stock Alert
         Task SendLowStockAlert(ProvidedSummaryDTO summary);
+        // Transaction Update
+        Task SendTransactionUpdate(TransactionResponseDTO transaction);
 
     }
 }
