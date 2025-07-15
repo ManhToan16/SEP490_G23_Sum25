@@ -1,7 +1,6 @@
 import { useAppSelector, useAppDispatch } from "../../store";
 import {
   loginUser,
-  registerUser,
   logoutUser,
   getCurrentUser,
   logout,
@@ -17,16 +16,6 @@ export const useAuth = () => {
   const login = async (email: string, password: string) => {
     try {
       const result = await dispatch(loginUser({ email, password })).unwrap();
-      return { success: true, data: result };
-    } catch (error: any) {
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Register function
-  const register = async (userData: any) => {
-    try {
-      const result = await dispatch(registerUser(userData)).unwrap();
       return { success: true, data: result };
     } catch (error: any) {
       return { success: false, error: error.message };
@@ -74,7 +63,6 @@ export const useAuth = () => {
 
     // Actions
     login,
-    register,
     logout: logoutAction,
     refreshUser,
     checkAuthentication,

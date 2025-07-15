@@ -6,182 +6,116 @@
 
 @layer base {
   :root {
-    --background: 245 247 250; /* #F5F7FA */
-    --foreground: 44 62 80; /* #2C3E50 */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    --card: 255 255 255; /* White cards */
-    --card-foreground: 44 62 80;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
 
-    --popover: 255 255 255;
-    --popover-foreground: 44 62 80;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 44 62 80; /* #2C3E50 - Navy Blue */
-    --primary-foreground: 255 255 255;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
 
-    --secondary: 169 198 232; /* #A9C6E8 - Light Blue */
-    --secondary-foreground: 44 62 80;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
 
-    --muted: 248 250 252; /* #F8FAFC - Very light gray */
-    --muted-foreground: 100 116 139; /* #64748B - Medium gray */
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 178 196 177; /* #B2C4B1 - Light Green */
-    --accent-foreground: 44 62 80;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
 
-    --destructive: 220 38 38; /* #DC2626 - Red */
-    --destructive-foreground: 255 255 255;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 226 232 240; /* #E2E8F0 - Light border */
-    --input: 226 232 240; /* #E2E8F0 - Input border */
-    --ring: 59 130 246; /* #3B82F6 - Blue focus ring */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
 
-    /* Sidebar variables */
-    --sidebar-background: 255 255 255;
-    --sidebar-foreground: 44 62 80;
-    --sidebar-primary: 44 62 80;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 248 250 252;
-    --sidebar-accent-foreground: 44 62 80;
-    --sidebar-border: 226 232 240;
-    --sidebar-ring: 59 130 246;
+    --sidebar-background: 0 0% 98%;
 
-    /* Clinic Brand Colors */
-    --clinic-navy: 44 62 80; /* #2C3E50 - Primary Navy */
-    --clinic-blue: 169 198 232; /* #A9C6E8 - Light Blue */
-    --clinic-gray: 245 247 250; /* #F5F7FA - Background Gray */
-    --clinic-green: 134 185 147; /* #86B993 - Softer Green */
-    --clinic-slate: 100 116 139; /* #64748B - Slate Gray */
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
 
 @layer base {
-  html,
-  body,
-  #root {
-    background-color: #f8fafc !important;
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-poppins;
   }
 }
 
 @layer components {
-  /* Clinic UI Components */
   .clinic-card {
     @apply bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow;
   }
 
   .clinic-button-primary {
-    @apply bg-[#2C3E50] text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors font-medium;
+    @apply bg-clinic-navy text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors font-medium;
   }
 
   .clinic-button-secondary {
-    @apply bg-[#A9C6E8] text-[#2C3E50] px-4 py-2 rounded-lg hover:bg-opacity-80 transition-colors font-medium;
-  }
-
-  .clinic-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#A9C6E8] focus:border-transparent;
-  }
-
-  .clinic-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-
-  .clinic-badge-success {
-    @apply bg-green-100 text-green-800;
-  }
-
-  .clinic-badge-warning {
-    @apply bg-orange-100 text-orange-800;
-  }
-
-  .clinic-badge-error {
-    @apply bg-red-100 text-red-800;
-  }
-
-  .clinic-badge-info {
-    @apply bg-blue-100 text-blue-800;
-  }
-
-  /* Layout helpers */
-  .clinic-container {
-    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
-
-  .clinic-section {
-    @apply py-8 space-y-6;
-  }
-
-  .clinic-header {
-    @apply border-b border-gray-200 pb-4 mb-6;
-  }
-}
-
-/* Role-based themes - Clean professional colors */
-.patient-theme {
-  --theme-primary: #3b82f6;
-  --theme-primary-dark: #2563eb;
-  --theme-background: #ffffff;
-  --theme-sidebar-bg: #f8fafc;
-  --theme-accent: #eff6ff;
-}
-
-.doctor-theme {
-  --theme-primary: #2c3e50;
-  --theme-primary-dark: #1a252f;
-  --theme-background: #ffffff;
-  --theme-sidebar-bg: #f8fafc;
-  --theme-accent: #f1f5f9;
-}
-
-.receptionist-theme {
-  --theme-primary: #10b981;
-  --theme-primary-dark: #059669;
-  --theme-background: #ffffff;
-  --theme-sidebar-bg: #f0fdf4;
-  --theme-accent: #dcfce7;
-}
-
-.admin-theme {
-  --theme-primary: #374151;
-  --theme-primary-dark: #1f2937;
-  --theme-background: #ffffff;
-  --theme-sidebar-bg: #f9fafb;
-  --theme-accent: #f3f4f6;
-}
-
-/* Loading animations */
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin {
-  animation: spin 1s linear infinite;
-}
-
-/* Responsive utilities */
-@layer utilities {
-  .clinic-hide-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
-  .clinic-hide-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .clinic-grid-responsive {
-    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
-  }
-
-  .clinic-flex-center {
-    @apply flex items-center justify-center;
-  }
-
-  .clinic-flex-between {
-    @apply flex items-center justify-between;
+    @apply bg-clinic-blue text-clinic-navy px-4 py-2 rounded-lg hover:bg-opacity-80 transition-colors font-medium;
   }
 }

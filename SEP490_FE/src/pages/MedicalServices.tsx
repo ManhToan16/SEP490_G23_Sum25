@@ -1,7 +1,6 @@
-// MedicalServices.jsx
-import React from 'react';
-import './MedicalServices.scss';
-import { Clock, Star, FileText } from 'lucide-react';
+import { Card } from '@/shared/components/ui/card';
+import { Badge } from '@/shared/components/ui/badge';
+import { FileText, Clock, Star } from 'lucide-react';
 
 const services = [
   {
@@ -88,64 +87,76 @@ const services = [
 
 const MedicalServices = () => {
   return (
-    <div className="medical-services">
-      <div className="medical-services__header">
-        <h2>Dịch Vụ Y Tế</h2>
-        <p>
+    <div className="space-y-8">
+      <div className="text-center">
+        <h2 className="text-3xl font-bold text-gray-800 mb-4">Dịch Vụ Y Tế</h2>
+        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
           Cung cấp đầy đủ các dịch vụ khám, điều trị và xét nghiệm chuyên khoa thần kinh với 7 phòng cận lâm sàng hiện đại
         </p>
       </div>
 
-      <div className="medical-services__grid">
+      <div className="grid md:grid-cols-2 gap-6">
         {services.map((service) => (
-          <div key={service.id} className="service-card">
-            <div className="service-card__top">
+          <Card key={service.id} className="p-6 hover:shadow-xl transition-all duration-300 border-l-4 border-green-500">
+            <div className="flex justify-between items-start mb-4">
               <div>
-                <h3>{service.name}</h3>
-                <div className="service-card__duration">
-                  <Clock className="icon" />
-                  <span>{service.duration}</span>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{service.name}</h3>
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4" />
+                    <span>{service.duration}</span>
+                  </div>
                 </div>
               </div>
-              <div className="badge price">{service.price}</div>
+              <Badge className="bg-green-100 text-green-800 text-lg font-bold px-3 py-1">
+                {service.price}
+              </Badge>
             </div>
-
-            <p className="description">{service.description}</p>
-
+            
+            <p className="text-gray-600 mb-4 leading-relaxed">
+              {service.description}
+            </p>
+            
             <div>
-              <h4 className="features-title">
-                <FileText className="icon" /> Bao Gồm:
+              <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                <FileText className="w-4 h-4" />
+                Bao Gồm:
               </h4>
-              <ul className="features-list">
+              <ul className="space-y-2">
                 {service.features.map((feature, index) => (
-                  <li key={index} className="feature-item">
-                    <Star className="star" /> {feature}
+                  <li key={index} className="flex items-center gap-2 text-sm text-gray-600">
+                    <Star className="w-3 h-3 text-yellow-500 fill-current" />
+                    {feature}
                   </li>
                 ))}
               </ul>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
 
-      <div className="promo-card">
-        <h3>Gói Khám Sức Khỏe Tổng Quát</h3>
-        <p>Tiết kiệm chi phí khi đăng ký gói khám tổng hợp nhiều dịch vụ cận lâm sàng</p>
-        <div className="promo-discounts">
-          <div className="discount">
-            <div className="percent">15%</div>
-            <div>Giảm giá gói cơ bản</div>
-          </div>
-          <div className="discount">
-            <div className="percent">25%</div>
-            <div>Giảm giá gói nâng cao</div>
-          </div>
-          <div className="discount">
-            <div className="percent">30%</div>
-            <div>Giảm giá gói VIP</div>
+      <Card className="p-6 bg-blue-50 border-blue-200">
+        <div className="text-center">
+          <h3 className="text-xl font-bold text-blue-800 mb-3">Gói Khám Sức Khỏe Tổng Quát</h3>
+          <p className="text-blue-700 mb-4">
+            Tiết kiệm chi phí khi đăng ký gói khám tổng hợp nhiều dịch vụ cận lâm sàng
+          </p>
+          <div className="flex justify-center gap-8 text-sm">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">15%</div>
+              <div className="text-blue-700">Giảm giá gói cơ bản</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">25%</div>
+              <div className="text-blue-700">Giảm giá gói nâng cao</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">30%</div>
+              <div className="text-blue-700">Giảm giá gói VIP</div>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   );
 };

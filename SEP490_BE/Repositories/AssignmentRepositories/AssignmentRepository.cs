@@ -87,6 +87,7 @@ namespace SEP490_BE.Repositories.AssignmentRepositories
                     LaboratoryRoomId = a.LaboratoryRoomId,
                     LaboratoryRoomName = a.LaboratoryRoom.Name,
                     TotalPrice = a.TotalPrice ?? 0,
+                    Status = a.Status,
                     AssignmentServices = a.AssignmentServices.Select(asv => new AssignmentServiceResponseDTO
                     {
                         ServiceId = asv.ServiceId,

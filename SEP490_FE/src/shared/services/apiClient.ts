@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Đơn giản hóa API client
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://70.153.24.53:5050/api",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
@@ -36,7 +36,6 @@ apiClient.interceptors.response.use(
       // Token expired, redirect to login
       localStorage.removeItem("clinic_auth_token");
       localStorage.removeItem("clinic_user_data");
-      window.location.href = "/auth/login";
     }
 
     // Trả về error message đơn giản
