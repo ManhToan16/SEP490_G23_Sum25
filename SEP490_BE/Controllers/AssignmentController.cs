@@ -20,10 +20,10 @@ namespace SEP490_BE.Controllers
         }
 
         [Authorize(Roles = RoleConstants.Doctor)]
-        [HttpPost]
-        public async Task<ActionResult<ApiResponse>> CreateRange([FromBody] List<AssignmentRequestDTO> requests)
+        [HttpPost("visits/{visitId}")]
+        public async Task<ActionResult<ApiResponse>> CreateRange(string visitId, [FromBody] List<AssignmentRequestDTO> requests)
         {
-            var result = await _assignmentService.CreateRange(requests);
+            var result = await _assignmentService.CreateRange(visitId, requests);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
