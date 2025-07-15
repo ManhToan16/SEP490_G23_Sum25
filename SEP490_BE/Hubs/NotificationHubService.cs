@@ -8,6 +8,7 @@ using SEP490_BE.DTO.ScheduleChangeDTO;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.DTO.ServiceDTO;
 using SEP490_BE.DTO.SupplierDTO;
+using SEP490_BE.DTO.TransactionDTO;
 using SEP490_BE.Entities;
 
 namespace SEP490_BE.Hubs
@@ -97,6 +98,14 @@ namespace SEP490_BE.Hubs
         public async Task SendCategoryDelete(string cateId)
         {
             await _hubContext.Clients.All.SendAsync("ReceiveCategoryDelete", cateId);
+        }
+        public async Task SendLowStockAlert(ProvidedSummaryDTO summary)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveLowStockAlert", summary);
+        }
+        public async Task SendTransactionUpdate(TransactionResponseDTO transaction)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveTransactionUpdate", transaction);
         }
     }
 }
