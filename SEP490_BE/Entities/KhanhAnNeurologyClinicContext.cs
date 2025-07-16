@@ -211,14 +211,12 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<ExaminationResult>(entity =>
             {
-                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0CBF2E5BA1")
+                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0C5D9D1771")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
 
                 entity.Property(e => e.AccessCode).HasMaxLength(50);
-
-                entity.Property(e => e.AppointmentId).HasMaxLength(100);
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnType("datetime")
@@ -232,11 +230,7 @@ namespace SEP490_BE.Entities
                     .HasColumnType("datetime")
                     .HasDefaultValueSql("(getdate())");
 
-                entity.HasOne(d => d.Appointment)
-                    .WithMany(p => p.ExaminationResults)
-                    .HasForeignKey(d => d.AppointmentId)
-                    .OnDelete(DeleteBehavior.ClientSetNull)
-                    .HasConstraintName("FK__Examinati__Appoi__0A9D95DB");
+                entity.Property(e => e.VisitId).HasMaxLength(100);
 
                 entity.HasOne(d => d.Doctor)
                     .WithMany(p => p.ExaminationResults)
@@ -249,6 +243,12 @@ namespace SEP490_BE.Entities
                     .HasForeignKey(d => d.MedicalRecordId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Examinati__Medic__08B54D69");
+
+                entity.HasOne(d => d.Visit)
+                    .WithMany(p => p.ExaminationResults)
+                    .HasForeignKey(d => d.VisitId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK__Examinati__Visit__0A9D95DB");
             });
 
             modelBuilder.Entity<ExaminationRoom>(entity =>
@@ -384,7 +384,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<PatientProfile>(entity =>
             {
-                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0DFC67839B")
+                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0D0F83CD63")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -411,7 +411,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Permission>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Permissi__737584F7769B02F0");
+                    .HasName("PK__Permissi__737584F748576A94");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -465,7 +465,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Roles__737584F7733915E5");
+                    .HasName("PK__Roles__737584F7DC319567");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -685,7 +685,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E387233D3FC")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E387BE0C8B9")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
