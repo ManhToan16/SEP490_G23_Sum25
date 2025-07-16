@@ -99,7 +99,7 @@ namespace SEP490_BE.Services.TransactionServices
             }
             if (material.QuantityInStock < provideDto.Quantity)
             {
-                throw new Exception("Số lượng tồn kho không đủ để phân phát.");
+                throw new Exceptions.ArgumentException("Số lượng tồn kho không đủ để phân phát.");
             }
             var room = await DetectRoomTypeAsync(provideDto.RoomId);
             if (room == null)
@@ -137,69 +137,133 @@ namespace SEP490_BE.Services.TransactionServices
 
         }
 
-        public async Task<TransactionResponseDTO> RequestReturnTransaction(string transactionId, int quantity, string userId, string reason)
+        public async Task<TransactionResponseDTO> RequestReturnTransaction(NurseReturnDTO returnDto, string userId)
         {
-            var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null || !user.UserRoles.Any(ur => ur.RoleName == "ADMIN"))
-            {
-                throw new UnauthorizedAccessException("Chỉ admin mới có quyền yêu cầu đổi trả.");
-            }
-
-            var transaction = await _transactionRepository.FindByIdAsync(transactionId);
+            var transaction = await _transactionRepository.FindByIdAsync(returnDto.TransactionId);
             if (transaction == null)
             {
                 throw new ResourceNotFoundException("Giao dịch không tồn tại.");
             }
             if (transaction.Status != "APPROVED" || transaction.TransactionType != "PROVIDE")
             {
-                throw new Exception("Chỉ giao dịch phân phát đã phê duyệt mới có thể đổi trả.");
+                throw new Exceptions.ArgumentException("Chỉ giao dịch cung cấp đã phê duyệt mới có thể đổi trả.");
             }
-            if (quantity > transaction.Quantity)
+            if (returnDto.Quantity > transaction.Quantity)
             {
-                throw new Exception("Số lượng đổi trả không được vượt quá số lượng giao dịch.");
-            }
+                throw new Exceptions.ArgumentException("Số lượng đổi trả không được vượt quá số lượng giao dịch.");
+            }          
+            var returnTransaction = new Transaction
+            {
+                Id = Guid.NewGuid().ToString(),
+                MaterialId = transaction.MaterialId,
+                TransactionType = "NURSE_RETURN",
+                Quantity = returnDto.Quantity,
+                RoomId = transaction.RoomId,
+                RoomType = transaction.RoomType,
+                UserId = userId,
+                Reason = returnDto.Reason,
+                Status = "PENDING",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
-            transaction.Status = "PENDING";
-            transaction.Reason = reason;
-            transaction.Quantity = quantity;
-            transaction.UpdatedAt = DateTime.UtcNow;
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transaction.Id,
+                OldQuantity = transaction.Quantity,
+                NewQuantity = returnDto.Quantity,
+                OldReason = "Đang sử dụng",
+                NewReason = "Báo cáo hỏng từ y tá",
+                ChangedBy = userId,
+                ChangedAt = DateTime.UtcNow
+            };
 
             using var transactionScope = await _context.Database.BeginTransactionAsync();
             try
             {
-                await _transactionRepository.UpdateAsync(transaction);
+                await _transactionRepository.AddAsync(returnTransaction);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
                 await _context.SaveChangesAsync();
                 await transactionScope.CommitAsync();
             }
-            catch
+            catch (Exception ex)
             {
                 await transactionScope.RollbackAsync();
-                throw;
+                throw new Exception("Đã xảy ra lỗi khi yêu cầu đổi trả: " + ex.Message);
             }
-            return MapToResponseDTO(transaction);
+            return MapToResponseDTO(returnTransaction);
 
         }
+        public async Task<TransactionResponseDTO> RequestAdminReturnTransaction(AdminReturnDTO returnDto, string adminId)
+        {
+            var originalTransaction = await _transactionRepository.FindByIdAsync(returnDto.TransactionId);
+            if (originalTransaction == null)
+            {
+                throw new ResourceNotFoundException("Giao dịch không tồn tại.");
+            }
+            if (returnDto.Quantity > originalTransaction.Quantity)
+            {
+                throw new Exception("Số lượng đổi trả không được vượt quá số lượng giao dịch.");
+            }
 
+            var supplierReturnTransaction = new Transaction
+            {
+                Id = Guid.NewGuid().ToString(),
+                MaterialId = originalTransaction.MaterialId,
+                TransactionType = "SUPPLIER_RETURN",
+                Quantity = returnDto.Quantity,
+                RoomId = null, 
+                RoomType = null,
+                UserId = adminId,
+                Reason = returnDto.Reason,
+                Status = "PENDING",
+                SupplierId = originalTransaction.SupplierId,
+                Price = originalTransaction.Price, 
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = supplierReturnTransaction.Id,
+                OldQuantity = originalTransaction.Quantity,
+                NewQuantity = returnDto.Quantity,
+                OldReason = originalTransaction.Reason ?? "Đang tồn kho",
+                NewReason = "Yêu cầu đổi trả lên nhà cung cấp",
+                ChangedBy = adminId,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            using var transactionScope = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _transactionRepository.AddAsync(supplierReturnTransaction);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
+                await _context.SaveChangesAsync();
+                await transactionScope.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transactionScope.RollbackAsync();
+                throw new Exception("Đã xảy ra lỗi khi gửi yêu cầu đổi trả lên nhà cung cấp: " + ex.Message);
+            }
+            return MapToResponseDTO(supplierReturnTransaction);
+
+        }
         public async Task<TransactionResponseDTO> ApproveReturnTransaction(string transactionId, string adminId)
         {
-            var admin = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == adminId);
-            if (admin == null || !admin.UserRoles.Any(ur => ur.RoleName == "ADMIN"))
-            {
-                throw new UnauthorizedAccessException("Chỉ admin mới có quyền phê duyệt đổi trả.");
-            }
+
 
             var transaction = await _transactionRepository.FindByIdAsync(transactionId);
             if (transaction == null)
             {
                 throw new ResourceNotFoundException("Giao dịch không tồn tại.");
             }
-            if (transaction.Status != "PENDING" || transaction.TransactionType != "PROVIDE")
+            if (transaction.Status != "PENDING" || transaction.TransactionType != "NURSE_RETURN")
             {
-                throw new Exception("Giao dịch không thể phê duyệt đổi trả.");
+                throw new Exceptions.ArgumentException("Giao dịch không thể phê duyệt báo cáo hỏng từ y tá.");
             }
 
             var material = await _materialRepository.FindByIdAsync(transaction.MaterialId);
@@ -208,9 +272,11 @@ namespace SEP490_BE.Services.TransactionServices
                 throw new ResourceNotFoundException("Vật tư không tồn tại.");
             }
 
+
             transaction.Status = "APPROVED";
             transaction.UpdatedAt = DateTime.UtcNow;
             material.QuantityInStock += transaction.Quantity; // Tăng lại số lượng tồn kho
+            transaction.DefectiveQuantity += transaction.Quantity; // Cập nhật số lượng lỗi
 
             var history = new TransactionHistory
             {
@@ -219,7 +285,7 @@ namespace SEP490_BE.Services.TransactionServices
                 OldQuantity = 0, // Giả định ban đầu
                 NewQuantity = transaction.Quantity,
                 OldReason = transaction.Reason ?? "",
-                NewReason = "Đổi trả được phê duyệt",
+                NewReason = "Báo cáo hỏng từ y tá được phê duyệt",
                 ChangedBy = adminId,
                 ChangedAt = DateTime.UtcNow
             };
@@ -244,31 +310,35 @@ namespace SEP490_BE.Services.TransactionServices
 
         public async Task<TransactionResponseDTO> RejectReturnTransaction(string transactionId, string adminId)
         {
-            var admin = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == adminId);
-            if (admin == null || !admin.UserRoles.Any(ur => ur.RoleName == "ADMIN"))
-            {
-                throw new UnauthorizedAccessException("Chỉ admin mới có quyền từ chối đổi trả.");
-            }
 
             var transaction = await _transactionRepository.FindByIdAsync(transactionId);
             if (transaction == null)
             {
                 throw new ResourceNotFoundException("Giao dịch không tồn tại.");
             }
-            if (transaction.Status != "PENDING" || transaction.TransactionType != "PROVIDE")
+            if (transaction.Status != "PENDING" || transaction.TransactionType != "NURSE_RETURN")
             {
-                throw new Exception("Giao dịch không thể từ chối đổi trả.");
+                throw new Exceptions.ArgumentException("Giao dịch không thể phê duyệt báo cáo hỏng từ y tá");
             }
 
             transaction.Status = "REJECTED";
             transaction.UpdatedAt = DateTime.UtcNow;
-
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transactionId,
+                OldQuantity = transaction.Quantity,
+                NewQuantity = transaction.Quantity,
+                OldReason = transaction.Reason ?? "",
+                NewReason = "Báo cáo hỏng từ y tá bị từ chối",
+                ChangedBy = adminId,
+                ChangedAt = DateTime.UtcNow
+            };
             using var transactionScope = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _transactionRepository.UpdateAsync(transaction);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
                 await _context.SaveChangesAsync();
                 await transactionScope.CommitAsync();
             }
@@ -409,13 +479,13 @@ namespace SEP490_BE.Services.TransactionServices
 
             if (!approvedTransactions.Any())
             {
-                throw new ResourceNotFoundException("Không có vật tư nào được phân phát cho phòng này.");
+                throw new ResourceNotFoundException("Chỉ những vật tư được phê duyệt mới được sử dụng");
             }
 
             int totalAvailableQuantity = approvedTransactions.Sum(t => t.Quantity);
             if (totalAvailableQuantity < useDto.Quantity)
             {
-                throw new Exception("Số lượng vật tư yêu cầu vượt quá số lượng còn lại.");
+                throw new Exceptions.ArgumentException("Số lượng vật tư yêu cầu vượt quá số lượng còn lại.");
             }
 
             // Giảm số lượng từ các giao dịch
@@ -488,7 +558,7 @@ namespace SEP490_BE.Services.TransactionServices
             }
             if (transaction.Status != "PENDING" || transaction.TransactionType != "PROVIDE")
             {
-                throw new Exception("Chỉ giao dịch phân phát đang chờ phê duyệt mới có thể được phê duyệt.");
+                throw new Exceptions.ArgumentException("Chỉ giao dịch phân phát đang chờ phê duyệt mới có thể được phê duyệt.");
             }
 
             var material = await _materialRepository.FindByIdAsync(transaction.MaterialId);
@@ -499,6 +569,11 @@ namespace SEP490_BE.Services.TransactionServices
 
             transaction.Status = "APPROVED";
             transaction.UpdatedAt = DateTime.UtcNow;
+            material.QuantityInStock -= transaction.Quantity; // Giảm số lượng tồn kho
+            if (material.QuantityInStock < 0)
+            {
+                throw new Exceptions.ArgumentException("Số lượng tồn kho không đủ để phân phát.");
+            }
 
             var history = new TransactionHistory
             {
@@ -581,6 +656,129 @@ namespace SEP490_BE.Services.TransactionServices
                 return "LABORATORY";
 
             throw new ResourceNotFoundException("Không tìm thấy phòng.");
+        }
+        public async Task<Pagination<TransactionResponseDTO>> GetDefectiveBatches(int pageNumber = 1, int pageSize = 10)
+        {
+            if (pageNumber < 1) pageNumber = 1;
+            if (pageSize < 1) pageSize = 10;
+
+            var defectiveTransactions = await _context.Transactions
+                .Where(t => t.TransactionType == "IMPORT" && t.DefectiveQuantity > 0)
+                .OrderBy(t => t.CreatedAt)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var totalItems = await _context.Transactions
+                .CountAsync(t => t.TransactionType == "IMPORT" && t.DefectiveQuantity > 0);
+
+            if (!defectiveTransactions.Any())
+            {
+                throw new ResourceNotFoundException("Không có lô hàng nào có hàng lỗi.");
+            }
+
+            var responseDtos = defectiveTransactions.Select(MapToResponseDTO).ToList();
+            return new Pagination<TransactionResponseDTO>
+            {
+                Items = responseDtos,
+                TotalItems = totalItems,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
+        }
+        public async Task<TransactionResponseDTO> ApproveAdminReturnTransaction(string transactionId, string adminId)
+        {
+
+            var transaction = await _transactionRepository.FindByIdAsync(transactionId);
+            if (transaction == null)
+            {
+                throw new ResourceNotFoundException("Giao dịch không tồn tại.");
+            }
+            if (transaction.Status != "PENDING" || transaction.TransactionType != "SUPPLIER_RETURN")
+            {
+                throw new Exceptions.ArgumentException("Giao dịch không thể phê duyệt đổi trả hàng hóa.");
+            }
+
+            var material = await _materialRepository.FindByIdAsync(transaction.MaterialId);
+            if (material == null)
+            {
+                throw new ResourceNotFoundException("Vật tư không tồn tại.");
+            }
+
+
+            transaction.Status = "APPROVED";
+            transaction.UpdatedAt = DateTime.UtcNow;
+
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transactionId,
+                OldQuantity = transaction.Quantity, 
+                NewQuantity = transaction.Quantity,
+                OldReason = transaction.Reason ?? "",
+                NewReason = "Đổi trả hàng hóa được phê duyệt",
+                ChangedBy = adminId,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            using var transactionScope = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _transactionRepository.UpdateAsync(transaction);
+                await _materialRepository.UpdateAsync(material);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
+                await _context.SaveChangesAsync();
+                await transactionScope.CommitAsync();
+            }
+            catch (Exception ex)
+            {
+                await transactionScope.RollbackAsync();
+                throw;
+            }
+            return MapToResponseDTO(transaction);
+
+        }
+
+        public async Task<TransactionResponseDTO> RejectAdminReturnTransaction(string transactionId, string adminId)
+        {
+            var transaction = await _transactionRepository.FindByIdAsync(transactionId);
+            if (transaction == null)
+            {
+                throw new ResourceNotFoundException("Giao dịch không tồn tại.");
+            }
+            if (transaction.Status != "PENDING" || transaction.TransactionType != "SUPPLIER_RETURN")
+            {
+                throw new Exceptions.ArgumentException("Giao dịch không thể phê duyệt đổi trả hàng hóa");
+            }
+
+            transaction.Status = "REJECTED";
+            transaction.UpdatedAt = DateTime.UtcNow;
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transactionId,
+                OldQuantity = transaction.Quantity,
+                NewQuantity = transaction.Quantity,
+                OldReason = transaction.Reason ?? "",
+                NewReason = "Yêu cầu đổi trả lên nhà cung cấp bị từ chối",
+                ChangedBy = adminId,
+                ChangedAt = DateTime.UtcNow
+            };
+            using var transactionScope = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _transactionRepository.UpdateAsync(transaction);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
+                await _context.SaveChangesAsync();
+                await transactionScope.CommitAsync();
+            }
+            catch
+            {
+                await transactionScope.RollbackAsync();
+                throw;
+            }
+            return MapToResponseDTO(transaction);
+
         }
     }
 }
