@@ -276,7 +276,7 @@ namespace SEP490_BE.Services.TransactionServices
             transaction.Status = "APPROVED";
             transaction.UpdatedAt = DateTime.UtcNow;
             material.QuantityInStock += transaction.Quantity; // Tăng lại số lượng tồn kho
-            transaction.DefectiveQuantity += transaction.Quantity; // Cập nhật số lượng lỗi
+            transaction.DefectiveQuantity = transaction.Quantity; // Cập nhật số lượng lỗi
 
             var history = new TransactionHistory
             {

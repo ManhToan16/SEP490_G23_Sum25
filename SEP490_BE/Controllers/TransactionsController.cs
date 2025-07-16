@@ -134,9 +134,8 @@ namespace SEP490_BE.Controllers
                 Data = new[] { transaction }
             });
         }
-
-        [HttpPut("return/approve-nurse-return/{transactionId}")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("return/approve-nurse-return/{transactionId}")]
         public async Task<IActionResult> ApproveReturnTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
