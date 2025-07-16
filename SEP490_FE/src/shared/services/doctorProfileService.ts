@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Tạo axios instance riêng cho doctor profile API
 const doctorApiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://70.153.24.53:5050/api",
+  baseURL: import.meta.env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
