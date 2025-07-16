@@ -36,6 +36,7 @@
 		</PackageReference>
 	</ItemGroup>
 	<ItemGroup>
+	  <Folder Include="DTO\MedicalRecordDTO\" />
 	  <Folder Include="Entities\" />
 	</ItemGroup>
 </Project>

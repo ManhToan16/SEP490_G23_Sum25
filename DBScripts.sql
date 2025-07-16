@@ -262,7 +262,7 @@ CREATE TABLE ExaminationResults (
    Id NVARCHAR(100) PRIMARY KEY,
    MedicalRecordId NVARCHAR(100) NOT NULL,
    DoctorId NVARCHAR(100) NOT NULL,
-   AppointmentId NVARCHAR(100) NOT NULL,
+   VisitId NVARCHAR(100) NOT NULL,
    Summary NVARCHAR(MAX),
    Conclusion NVARCHAR(MAX),
    AccessCode NVARCHAR(50) UNIQUE,
@@ -270,7 +270,7 @@ CREATE TABLE ExaminationResults (
    CreatedAt DATETIME DEFAULT GETDATE(),
    FOREIGN KEY (MedicalRecordId) REFERENCES MedicalRecords(Id),
    FOREIGN KEY (DoctorId) REFERENCES Users(Id),
-   FOREIGN KEY (AppointmentId) REFERENCES Appointments(Id)
+   FOREIGN KEY (VisitId) REFERENCES Visits(Id)
 );
 
 --20
@@ -718,3 +718,4 @@ VALUES
 (NEWID(), N'Nguyễn Hữu Đạt', '000300000000', '0922134455', 'quangli2k3@gmail.com', '1995-02-02', N'Nam', N'Đan Phượng, TP Hà Nội'),
 (NEWID(), N'Ngô Văn Giang', '000040000000', '0955667428', 'quangli2k3@gmail.com', '2000-03-03', N'Nam', N'53 Nam Đàn, TP Nghệ An'),
 (NEWID(), N'Ngô Thị Lan', '000005000000', '0933242100', 'quangli2k3@gmail.com', '1996-04-04', N'Nữ', N'36 Chương Mỹ B, TP Hà Nội');
+

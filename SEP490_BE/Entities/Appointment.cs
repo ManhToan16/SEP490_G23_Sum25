@@ -7,7 +7,6 @@ namespace SEP490_BE.Entities
     {
         public Appointment()
         {
-            ExaminationResults = new HashSet<ExaminationResult>();
             Visits = new HashSet<Visit>();
         }
 
@@ -29,7 +28,6 @@ namespace SEP490_BE.Entities
 
         public virtual User? RequiredDoctor { get; set; }
         public virtual TimeSlot TimeSlot { get; set; } = null!;
-        public virtual ICollection<ExaminationResult> ExaminationResults { get; set; }
         public virtual ICollection<Visit> Visits { get; set; }
     }
 }
