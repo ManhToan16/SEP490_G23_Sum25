@@ -17,6 +17,7 @@ using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.MaterialRepositories;
+using SEP490_BE.Repositories.MedicalRecordRepositories;
 using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
@@ -38,6 +39,7 @@ using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Services.MaterialServices;
+using SEP490_BE.Services.MedicalRecordServices;
 using SEP490_BE.Services.MedicineServices;
 using SEP490_BE.Services.PatientProfileServices;
 using SEP490_BE.Services.ScheduleChangeServices;
@@ -169,6 +171,7 @@ builder.Services.AddScoped<IVisitService, VisitService>();
 builder.Services.AddScoped<IAssignmentService, SEP490_BE.Services.AssignmentServices.AssignmentService>();
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 
 
 
@@ -192,6 +195,7 @@ builder.Services.AddScoped<IVisitRepository, VisitRepository>();
 builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 
 
 
