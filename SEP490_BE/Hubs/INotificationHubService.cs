@@ -7,6 +7,7 @@ using SEP490_BE.DTO.ScheduleChangeDTO;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.DTO.ServiceDTO;
 using SEP490_BE.DTO.SupplierDTO;
+using SEP490_BE.DTO.TransactionDTO;
 
 namespace SEP490_BE.Hubs
 {
@@ -38,6 +39,10 @@ namespace SEP490_BE.Hubs
         // Category
         Task SendCategoryUpdate(CategoryResponseDTO category);
         Task SendCategoryDelete(string cateId);
+        // New: Low Stock Alert
+        Task SendLowStockAlert(ProvidedSummaryDTO summary);
+        // Transaction Update
+        Task SendTransactionUpdate(TransactionResponseDTO transaction);
 
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.TransactionDTO;
+using SEP490_BE.Hubs;
 using SEP490_BE.Services.TransactionServices;
 
 namespace SEP490_BE.Controllers
@@ -15,14 +16,17 @@ namespace SEP490_BE.Controllers
     public class TransactionsController : ControllerBase
     {
         private readonly ITransactionService _transactionService;
+        private readonly INotificationHubService _notificationHubService;
 
-        public TransactionsController(ITransactionService transactionService)
+        public TransactionsController(ITransactionService transactionService, INotificationHubService notificationHubService)
         {
-            _transactionService = transactionService;          
+            _transactionService = transactionService;
+            _notificationHubService = notificationHubService;
+            
         }
 
         [HttpPost("import")]
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
+        [Authorize(Roles = RoleConstants.Admin)]
         public async Task<IActionResult> CreateImportTransaction([FromBody] ImportMaterialDTO importDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -48,23 +52,23 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpPost("provide")]
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
-        public async Task<IActionResult> CreateProvideTransaction([FromQuery] string materialId, [FromQuery] int quantity, [FromQuery] string roomId, [FromQuery] string roomType, [FromQuery] string? reason = null)
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> CreateProvideTransaction([FromBody] ProvideMaterialDTO provideDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
-            if (string.IsNullOrEmpty(materialId) || string.IsNullOrEmpty(roomId) || string.IsNullOrEmpty(roomType))
+            if (string.IsNullOrEmpty(provideDto.MaterialId) || string.IsNullOrEmpty(provideDto.RoomId) )
             {
                 return BadRequest(new ApiResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Success = false,
-                    Message = "MaterialId, RoomId, và RoomType là bắt buộc.",
+                    Message = "MaterialId và RoomId là bắt buộc.",
                     Data = null
                 });
             }
 
-            var transaction = await _transactionService.CreateProvideTransaction(materialId, quantity, userId, roomId, roomType, reason);
+            var transaction = await _transactionService.CreateProvideTransaction(provideDto,userId);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -168,5 +172,124 @@ namespace SEP490_BE.Controllers
                 Data = new[] { pagination }
             });
         }
+        [HttpGet("total-by-room-type")]
+        public async Task<IActionResult> GetTotalProvidedByRoomType([FromQuery] string roomType)
+        {
+            try
+            {
+                var summary = await _transactionService.GetTotalProvidedByRoomType(roomType);
+                foreach (var item in summary.Where(s => s.IsLowStock))
+                {
+                    await _notificationHubService.SendLowStockAlert(item);
+                }
+                return Ok(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = MessageConstants.GET_SUCCESS,
+                    Data = summary
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = ex.Message,
+                    Data = null
+                });
+            }
+        }
+
+        [HttpGet("total-by-room-id")]
+        public async Task<IActionResult> GetTotalProvidedByRoomId([FromQuery] string roomId)
+        {
+            try
+            {
+                var summary = await _transactionService.GetTotalProvidedByRoomId(roomId);
+                foreach (var item in summary.Where(s => s.IsLowStock))
+                {
+                    await _notificationHubService.SendLowStockAlert(item);
+                }
+                return Ok(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = MessageConstants.GET_SUCCESS,
+                    Data = summary
+                });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = ex.Message,
+                    Data = null
+                });
+            }
+        }
+        [HttpPost("use")]
+        [Authorize(Roles = RoleConstants.Nurse)]
+        public async Task<IActionResult> UseMaterial([FromBody] UseMaterialDTO useDto)
+        {
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+
+            if (string.IsNullOrEmpty(useDto.MaterialId) || string.IsNullOrEmpty(useDto.RoomId) || useDto.Quantity <= 0)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "MaterialId, RoomId và Quantity hợp lệ là bắt buộc.",
+                    Data = null
+                });
+            }
+
+            var transaction = await _transactionService.UseMaterial(useDto, userId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = new[] { transaction }
+            });
+        }
+        [HttpPut("provide/approve/{transactionId}")]
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> ApproveProvideTransaction(string transactionId)
+        {
+            var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var transaction = await _transactionService.ApproveProvideTransaction(transactionId, adminId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { transaction }
+            });
+        }
+
+        [HttpPut("provide/reject/{transactionId}")]
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> RejectProvideTransaction(string transactionId)
+        {
+            var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var transaction = await _transactionService.RejectProvideTransaction(transactionId, adminId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { transaction }
+            });
+        }
+
     }
 }
