@@ -102,5 +102,10 @@
         public const string EXAM_ROOM_NOT_FOUND = "Không tìm thấy phòng khám tổng quát.";
         public const string LABO_ROOM_NOT_FOUND = "Không tìm thấy phòng xét nghiệm.";
         #endregion
+
+        #region Medical Record
+        public const string MEDICAL_RECORD_NOT_FOUND = "Không tìm thấy hồ sơ bệnh án.";
+        public const string MEDICAL_RECORD_CONFLICT = "Hồ sơ bệnh án đã tồn tại.";
+        #endregion
     }
 }

@@ -59,14 +59,14 @@ const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
 
             {/* Doctor routes */}
             <Route path="/doctor/*" element={
-              <ProtectedRoute requiredRoles={["DOCTOR"]}>
+              <ProtectedRoute requiredRoles={["DOCTOR", "ADMIN"]}>
                 <DoctorRoutes />
               </ProtectedRoute>
             } />
 
             {/* Receptionist routes */}
             <Route path="/receptionist/*" element={
-              <ProtectedRoute requiredRoles={["RECEPTIONIST"]}>
+              <ProtectedRoute requiredRoles={["RECEPTIONIST", "ADMIN"]}>
                 <ReceptionistRoutes />
               </ProtectedRoute>
             } />
