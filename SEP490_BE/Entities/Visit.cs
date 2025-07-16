@@ -8,6 +8,7 @@ namespace SEP490_BE.Entities
         public Visit()
         {
             Assignments = new HashSet<Assignment>();
+            ExaminationResults = new HashSet<ExaminationResult>();
         }
 
         public string Id { get; set; } = null!;
@@ -27,5 +28,6 @@ namespace SEP490_BE.Entities
         public virtual ExaminationRoom ExaminationRoom { get; set; } = null!;
         public virtual PatientProfile PatientProfile { get; set; } = null!;
         public virtual ICollection<Assignment> Assignments { get; set; }
+        public virtual ICollection<ExaminationResult> ExaminationResults { get; set; }
     }
 }
