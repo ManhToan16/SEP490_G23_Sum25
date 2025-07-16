@@ -67,7 +67,7 @@ const authSlice = createSlice({
     checkAuth: (state) => {
       const token = localStorage.getItem("clinic_auth_token");
       const userData = localStorage.getItem("clinic_user_data");
-
+      // console.log("checkAuth - token:", token, "userData:", userData);
       if (token && userData) {
         try {
           state.token = token;
