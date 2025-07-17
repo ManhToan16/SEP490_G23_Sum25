@@ -25,11 +25,11 @@ namespace SEP490_BE.Controllers
         }
 
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetDoctorProfile(string id)
+        [HttpGet("{doctorId}")]
+        public async Task<IActionResult> GetDoctorProfile(string doctorId)
         {
 
-            var dto = await _doctorProfileService.GetById(id);
+            var dto = await _doctorProfileService.GetById(doctorId);
             var data = dto != null ? new List<object> { dto } : new List<object>();
             return Ok(new ApiResponse
             {
