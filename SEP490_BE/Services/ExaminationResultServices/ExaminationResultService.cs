@@ -34,7 +34,7 @@ namespace SEP490_BE.Services.ExaminationResultServices
 
             var medRecord = await _context.MedicalRecords
                 .FirstOrDefaultAsync(x => x.PatientProfileId == visit.PatientProfileId)
-                ?? throw new Exceptions.ArgumentException(MessageConstants.MEDICAL_RECORD_NOT_FOUND);
+                ?? throw new Exceptions.ArgumentException(MessageConstants.EXAMINATION_RESULT_MEDICAL_RECORD_NOT_FOUND);
 
             var sessionDoctor = await _authService.GetAuthenticatedUser();
 

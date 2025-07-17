@@ -111,6 +111,7 @@
         #region Exam Result
         public const string EXAMINATION_RESULT_NOT_FOUND = "Không tìm thấy phiếu kết quả khám tổng quát.";
         public const string EXAMINATION_RESULT_INVALID_UPDATE = "Không thể cập nhật phiếu kết quả khám tổng quát đã HOÀN THÀNH.";
+        public const string EXAMINATION_RESULT_MEDICAL_RECORD_NOT_FOUND = "Bệnh nhân chưa có hồ sơ bệnh án, hãy tạo hồ sơ bệnh án cho bệnh nhân trước.";
         #endregion
     }
 }
