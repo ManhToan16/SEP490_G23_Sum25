@@ -369,7 +369,7 @@ CREATE TABLE Materials (
 CREATE TABLE Transactions (
     Id NVARCHAR(100) PRIMARY KEY,
     MaterialId NVARCHAR(100) NOT NULL,
-    TransactionType NVARCHAR(50) NOT NULL CHECK (TransactionType IN ('IMPORT', 'EXPORT', 'PROVIDE', 'RETURN')),
+    TransactionType NVARCHAR(50) NOT NULL CHECK (TransactionType IN ('IMPORT', 'EXPORT', 'PROVIDE', 'RETURN', 'NURSE_RETURN', 'SUPPLIER_RETURN')),
     Quantity INT NOT NULL CHECK (Quantity > 0),
     RoomId NVARCHAR(100), 
     RoomType NVARCHAR (50), -- EXAMINATION / LABORATORY
