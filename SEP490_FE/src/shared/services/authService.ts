@@ -1,5 +1,5 @@
 import { api } from "./apiClient";
-import {jwtDecode} from "jwt-decode";
+import { jwtDecode } from "jwt-decode";
 import { getDeviceId } from "../utils/deviceHelper";
 
 const TOKEN_KEY = "clinic_auth_token";
@@ -38,13 +38,23 @@ export const authService = {
 
   logout: async () => {
     try {
-      await api.post("/Auth/logout");
+      const accessToken = localStorage.getItem("clinic_auth_token");
+      const refreshToken = localStorage.getItem("refreshToken");
+      const deviceId = getDeviceId();
+      await api.post(
+        "/Auth/logout",
+        {
+          accessToken,
+          refreshToken,
+          deviceId,
+        },
+      );
     } catch (error) {
       console.error("Logout API error:", error);
     } finally {
-      localStorage.removeItem(TOKEN_KEY);
-      localStorage.removeItem(USER_KEY);
+      localStorage.removeItem("clinic_auth_token");
       localStorage.removeItem("refreshToken");
+      localStorage.removeItem("clinic_user_data");
     }
   },
 
