@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.TransactionDTO;
+using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Services.TransactionServices;
 
@@ -78,13 +79,13 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpPost("return/request")]
-        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
-        public async Task<IActionResult> RequestReturnTransaction([FromQuery] string transactionId, [FromQuery] int quantity, [FromQuery] string reason)
+        [HttpPost("return/nurse-request")]
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> RequestReturnTransaction([FromBody] NurseReturnDTO returnDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
-            if (string.IsNullOrEmpty(transactionId) || string.IsNullOrEmpty(reason))
+            if (string.IsNullOrEmpty(returnDto.TransactionId) || string.IsNullOrEmpty(returnDto.Reason))
             {
                 return BadRequest(new ApiResponse
                 {
@@ -95,7 +96,9 @@ namespace SEP490_BE.Controllers
                 });
             }
 
-            var transaction = await _transactionService.RequestReturnTransaction(transactionId, quantity, userId, reason);
+            var transaction = await _transactionService.RequestReturnTransaction(returnDto,userId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -104,23 +107,38 @@ namespace SEP490_BE.Controllers
                 Data = new[] { transaction }
             });
         }
-
-        [HttpPut("return/approve/{transactionId}")]
+        [HttpPost("return/admin-request")]
         [Authorize(Roles = RoleConstants.Admin)]
-        public async Task<IActionResult> ApproveReturnTransaction(string transactionId)
+        public async Task<IActionResult> RequestAdminReturnTransaction([FromBody] AdminReturnDTO returnDto)
         {
-            var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(adminId))
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+
+            if (string.IsNullOrEmpty(returnDto.TransactionId) || string.IsNullOrEmpty(returnDto.Reason))
             {
-                return Unauthorized(new ApiResponse
+                return BadRequest(new ApiResponse
                 {
-                    StatusCode = StatusCodes.Status401Unauthorized,
+                    StatusCode = StatusCodes.Status400BadRequest,
                     Success = false,
-                    Message = "Không tìm thấy UserId trong token.",
+                    Message = "TransactionId và Reason là bắt buộc.",
                     Data = null
                 });
             }
 
+            var transaction = await _transactionService.RequestAdminReturnTransaction(returnDto, userId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status201Created,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = new[] { transaction }
+            });
+        }
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("return/approve-nurse-return/{transactionId}")]
+        public async Task<IActionResult> ApproveReturnTransaction(string transactionId)
+        {
+            var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
             var transaction = await _transactionService.ApproveReturnTransaction(transactionId, adminId);
             return Ok(new ApiResponse
             {
@@ -131,7 +149,7 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [HttpPut("return/reject/{transactionId}")]
+        [HttpPut("return/reject-nurse-return/{transactionId}")]
         [Authorize(Roles = RoleConstants.Admin)]
         public async Task<IActionResult> RejectReturnTransaction(string transactionId)
         {
@@ -146,7 +164,37 @@ namespace SEP490_BE.Controllers
                 Data = new[] { transaction }
             });
         }
+        [HttpPut("return/approve-supplier-return/{transactionId}")]
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> ApproveAdminReturnTransaction(string transactionId)
+        {
+            var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var transaction = await _transactionService.ApproveAdminReturnTransaction(transactionId, adminId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { transaction }
+            });
+        }
 
+        [HttpPut("return/reject-supplier-return/{transactionId}")]
+        [Authorize(Roles = RoleConstants.Admin)]
+        public async Task<IActionResult> RejectAdminReturnTransaction(string transactionId)
+        {
+            var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var transaction = await _transactionService.RejectAdminReturnTransaction(transactionId, adminId);
+            await _notificationHubService.SendTransactionUpdate(transaction);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { transaction }
+            });
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTransactionById(string id)
         {
@@ -175,8 +223,7 @@ namespace SEP490_BE.Controllers
         [HttpGet("total-by-room-type")]
         public async Task<IActionResult> GetTotalProvidedByRoomType([FromQuery] string roomType)
         {
-            try
-            {
+            
                 var summary = await _transactionService.GetTotalProvidedByRoomType(roomType);
                 foreach (var item in summary.Where(s => s.IsLowStock))
                 {
@@ -189,24 +236,14 @@ namespace SEP490_BE.Controllers
                     Message = MessageConstants.GET_SUCCESS,
                     Data = summary
                 });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    Success = false,
-                    Message = ex.Message,
-                    Data = null
-                });
-            }
+            
+           
         }
 
         [HttpGet("total-by-room-id")]
         public async Task<IActionResult> GetTotalProvidedByRoomId([FromQuery] string roomId)
         {
-            try
-            {
+           
                 var summary = await _transactionService.GetTotalProvidedByRoomId(roomId);
                 foreach (var item in summary.Where(s => s.IsLowStock))
                 {
@@ -219,17 +256,7 @@ namespace SEP490_BE.Controllers
                     Message = MessageConstants.GET_SUCCESS,
                     Data = summary
                 });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new ApiResponse
-                {
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    Success = false,
-                    Message = ex.Message,
-                    Data = null
-                });
-            }
+           
         }
         [HttpPost("use")]
         [Authorize(Roles = RoleConstants.Nurse)]
@@ -260,7 +287,7 @@ namespace SEP490_BE.Controllers
             });
         }
         [HttpPut("provide/approve/{transactionId}")]
-        [Authorize(Roles = RoleConstants.Admin)]
+        [Authorize(Roles =RoleConstants.Admin + "," + RoleConstants.Nurse)]
         public async Task<IActionResult> ApproveProvideTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -276,7 +303,7 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpPut("provide/reject/{transactionId}")]
-        [Authorize(Roles = RoleConstants.Admin)]
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Nurse)]
         public async Task<IActionResult> RejectProvideTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -288,6 +315,36 @@ namespace SEP490_BE.Controllers
                 Success = true,
                 Message = MessageConstants.PUT_SUCCESS,
                 Data = new[] { transaction }
+            });
+        }
+        [HttpGet("defective-batches")]
+        public async Task<IActionResult> GetDefectiveBatches([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        {
+
+                var pagination = await _transactionService.GetDefectiveBatches(pageNumber, pageSize);
+                if (pagination.Items.Any())
+                {
+                    await _notificationHubService.SendTransactionUpdate(pagination.Items.First()); // Gửi thông báo cho lô đầu tiên
+                }
+                return Ok(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = MessageConstants.GET_SUCCESS,
+                    Data = new[] { pagination }
+                });
+        
+        }
+        [HttpGet("histories")]
+        public async Task<IActionResult> GetTransactionHistories([FromQuery] string? transactionId = null)
+        {
+            var histories = await _transactionService.GetTransactionHistories(transactionId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = histories
             });
         }
 

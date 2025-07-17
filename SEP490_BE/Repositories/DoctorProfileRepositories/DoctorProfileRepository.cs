@@ -20,7 +20,7 @@ namespace SEP490_BE.Repositories.DoctorProfileRepositories
 
         public async Task<DoctorProfile> FindByDoctorIdAsync(string doctorId)
         {
-            return await _context.DoctorProfiles.FirstOrDefaultAsync(dp => dp.DoctorId == doctorId);
+            return await _context.DoctorProfiles.Include(dp => dp.Doctor).FirstOrDefaultAsync(dp => dp.DoctorId == doctorId);
         }
 
         public async Task<(List<DoctorProfile> DoctorProfiles, int TotalItems)> FindAll(
