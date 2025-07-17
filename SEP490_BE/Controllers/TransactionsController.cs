@@ -287,7 +287,7 @@ namespace SEP490_BE.Controllers
             });
         }
         [HttpPut("provide/approve/{transactionId}")]
-        [Authorize(Roles = RoleConstants.Admin)]
+        [Authorize(Roles =RoleConstants.Admin + "," + RoleConstants.Nurse)]
         public async Task<IActionResult> ApproveProvideTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -303,7 +303,7 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpPut("provide/reject/{transactionId}")]
-        [Authorize(Roles = RoleConstants.Admin)]
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Nurse)]
         public async Task<IActionResult> RejectProvideTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;

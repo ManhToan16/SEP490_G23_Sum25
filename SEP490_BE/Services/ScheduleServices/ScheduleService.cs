@@ -104,11 +104,16 @@ namespace SEP490_BE.Services.ScheduleServices
             foreach (var assignment in request.ScheduleAssignments.OrderBy(a => a.Date))
             {
                 var date = assignment.Date.Date;
+                var hasSameTimeSlot = await _context.Schedules.AnyAsync(s =>
+                    s.UserId == request.UserId &&
+                    s.Date == date &&
+                    s.TimeSlotId == assignment.TimeSlotId);
 
-                if (await _scheduleRepository.CheckScheduleConflictAsync(request.UserId, date))
+                if (hasSameTimeSlot)
                 {
-                    throw new ConflictDataException($"Người dùng đã có lịch vào ngày {date:yyyy-MM-dd}.");
+                    throw new ConflictDataException($"Người dùng đã có lịch cho khung giờ này vào ngày {date:yyyy-MM-dd}.");
                 }
+
                 var roomType = await DetectRoomTypeAsync(assignment.RoomId);
                 if (roomType == null)
                 {
@@ -235,10 +240,16 @@ namespace SEP490_BE.Services.ScheduleServices
                 throw new ResourceNotFoundException("Không tìm thấy khoảng thời gian.");
             }
 
-            if (await _scheduleRepository.CheckScheduleConflictAsync(request.UserId, request.Date))
+            var hasSameTimeSlot = await _context.Schedules.AnyAsync(s =>
+       s.UserId == request.UserId &&
+       s.Date == request.Date &&
+       s.TimeSlotId == request.TimeSlotId);
+
+            if (hasSameTimeSlot)
             {
-                throw new ResourceNotFoundException("Người dùng này đã có lịch làm việc trùng vào ngày được chọn.");
+                throw new ConflictDataException("Người dùng này đã có lịch làm việc cho khung giờ này vào ngày được chọn.");
             }
+
             var existingSchedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(request.RoomId, request.Date, request.Date);
             var existingSlotSchedules = existingSchedules.Where(s => s.TimeSlotId == request.TimeSlotId).ToList();
             if (room == "EXAMINATION")

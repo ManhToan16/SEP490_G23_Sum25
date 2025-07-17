@@ -88,6 +88,7 @@ namespace SEP490_BE.Services.TransactionServices
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Id == userId);
             if (user == null || !user.UserRoles.Any(ur => ur.RoleName == "ADMIN" ))
+
             {
                 throw new UnauthorizedAccessException("Chỉ admin mới có quyền phân phát vật tư.");
             }
@@ -417,11 +418,12 @@ namespace SEP490_BE.Services.TransactionServices
             }
             var summaries = await _context.Transactions
                 .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomType == roomType)
-                .GroupBy(t => t.Material.Name)
+                .GroupBy(t => new { t.Material.Name, t.RoomId })
                 .Select(g => new ProvidedSummaryDTO
                 {
-                    MaterialName = g.Key,
+                    MaterialName = g.Key.Name,
                     TotalQuantity = g.Sum(t => t.Quantity),
+                    RoomId = g.Key.RoomId,
                     RoomType = roomType
                 })
                 .ToListAsync();           
