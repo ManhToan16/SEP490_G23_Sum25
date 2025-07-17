@@ -21,5 +21,6 @@ namespace SEP490_BE.Services.TransactionServices
         Task<TransactionResponseDTO> ApproveProvideTransaction(string transactionId, string adminId);
         Task<TransactionResponseDTO> RejectProvideTransaction(string transactionId, string adminId);
         Task<Pagination<TransactionResponseDTO>> GetDefectiveBatches(int pageNumber = 1, int pageSize = 10);
+        Task<List<TransactionHistoryDTO>> GetTransactionHistories(string? transactionId = null);
     }
 }

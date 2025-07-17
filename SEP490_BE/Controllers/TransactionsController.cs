@@ -335,6 +335,18 @@ namespace SEP490_BE.Controllers
                 });
         
         }
+        [HttpGet("histories")]
+        public async Task<IActionResult> GetTransactionHistories([FromQuery] string? transactionId = null)
+        {
+            var histories = await _transactionService.GetTransactionHistories(transactionId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = histories
+            });
+        }
 
     }
 }

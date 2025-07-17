@@ -782,5 +782,35 @@ namespace SEP490_BE.Services.TransactionServices
             return MapToResponseDTO(transaction);
 
         }
+        public async Task<List<TransactionHistoryDTO>> GetTransactionHistories(string? transactionId = null)
+        {
+            var query = _context.TransactionHistories.AsQueryable();
+            if (!string.IsNullOrEmpty(transactionId))
+            {
+                query = query.Where(th => th.TransactionId == transactionId);
+            }
+
+            var histories = await query
+                .OrderBy(th => th.ChangedAt)
+                .Select(th => new TransactionHistoryDTO
+                {
+                    Id = th.Id,
+                    TransactionId = th.TransactionId,
+                    OldQuantity = th.OldQuantity,
+                    NewQuantity = th.NewQuantity,
+                    OldReason = th.OldReason,
+                    NewReason = th.NewReason,
+                    ChangedBy = th.ChangedBy,
+                    ChangedAt = th.ChangedAt
+                })
+                .ToListAsync();
+
+            if (!histories.Any() && !string.IsNullOrEmpty(transactionId))
+            {
+                throw new ResourceNotFoundException($"Không tìm thấy lịch sử giao dịch cho TransactionId: {transactionId}.");
+            }
+
+            return histories;
+        }
     }
 }
