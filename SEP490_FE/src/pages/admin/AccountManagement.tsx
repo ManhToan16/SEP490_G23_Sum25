@@ -1,224 +1,282 @@
+import React, { useEffect, useState } from "react";
+import { adminService } from "@/shared/services/adminService"; // ĐÚNG
+import Modal from "@/shared/components/common/Modal";
 
-import React, { useState } from 'react';
-import { Users, Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
+const initialForm = {
+  name: "",
+  phoneNumber: "",
+  email: "",
+  password: "",
+  dateOfBirth: "",
+  gender: "Nam",
+  address: "",
+  role: "TECHNICIAN",
+};
 
 const AccountManagement: React.FC = () => {
-  const [selectedRole, setSelectedRole] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState<any[]>([]);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState(initialForm);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [editUser, setEditUser] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState(initialForm);
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [roleFilter, setRoleFilter] = useState("ALL");
 
-  const users = [
-    {
-      id: 1,
-      name: 'Nguyễn Văn Nam',
-      email: 'nam@phongkham.com',
-      role: 'Patient',
-      phone: '0912345678',
-      status: 'Hoạt động',
-      createdDate: '2025-01-15',
-      lastLogin: '2025-06-18'
-    },
-    {
-      id: 2,
-      name: 'BS. Trần Thị Lan',
-      email: 'bs.lan@phongkham.com',
-      role: 'Doctor',
-      phone: '0987654321',
-      status: 'Hoạt động',
-      createdDate: '2025-02-01',
-      lastLogin: '2025-06-18',
-      specialty: 'Thần kinh học',
-      license: 'BS12345'
-    },
-    {
-      id: 3,
-      name: 'Lê Thị Hoa',
-      email: 'hoa@phongkham.com',
-      role: 'Receptionist',
-      phone: '0901234567',
-      status: 'Hoạt động',
-      createdDate: '2025-03-10',
-      lastLogin: '2025-06-17'
-    },
-    {
-      id: 4,
-      name: 'Phạm Văn Minh',
-      email: 'minh@phongkham.com',
-      role: 'Admin',
-      phone: '0976543210',
-      status: 'Hoạt động',
-      createdDate: '2025-01-01',
-      lastLogin: '2025-06-18'
-    },
-    {
-      id: 5,
-      name: 'BS. Hoàng Thị Bình',
-      email: 'bs.binh@phongkham.com',
-      role: 'Doctor',
-      phone: '0945678912',
-      status: 'Không hoạt động',
-      createdDate: '2025-04-20',
-      lastLogin: '2025-06-10',
-      specialty: 'Tâm thần học',
-      license: 'BS67890'
-    }
-  ];
-
-  const filteredUsers = users.filter(user => {
-    const matchesRole = selectedRole === 'all' || user.role === selectedRole;
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.phone.includes(searchTerm);
-    return matchesRole && matchesSearch;
-  });
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'Admin': return 'bg-red-100 text-red-800';
-      case 'Doctor': return 'bg-blue-100 text-blue-800';
-      case 'Receptionist': return 'bg-green-100 text-green-800';
-      case 'Patient': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+  const fetchUsers = async (page = pageNumber, size = pageSize, role = roleFilter) => {
+    try {
+      const data = await adminService.getListUsers(page, size, role);
+      setUsers(data.users);
+      setTotalItems(data.totalItems);
+      setPageNumber(data.pageNumber);
+      setPageSize(data.pageSize);
+      console.log("Số lượng user:", data.totalItems);
+    } catch (error) {
+      console.error("Lỗi khi lấy danh sách tài khoản:", error);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    return status === 'Hoạt động' 
-      ? 'bg-green-100 text-green-800' 
-      : 'bg-red-100 text-red-800';
+  useEffect(() => {
+    fetchUsers(1, pageSize, roleFilter);
+    // eslint-disable-next-line
+  }, [roleFilter]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await adminService.createUser(form);
+      setShowForm(false);
+      setForm(initialForm);
+      fetchUsers();
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Có lỗi xảy ra!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (userId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa tài khoản này?")) return;
+    try {
+      await adminService.deleteUser(userId);
+      fetchUsers();
+    } catch (err: any) {
+      alert(err?.response?.data?.message || "Xóa thất bại!");
+    }
+  };
+
+  const openEdit = (user: any) => {
+    setEditUser(user);
+    setEditForm({
+      name: user.name || "",
+      phoneNumber: user.phoneNumber || "",
+      email: user.email || "",
+      password: "", // không show password cũ
+      dateOfBirth: user.dateOfBirth ? user.dateOfBirth.slice(0,10) : "",
+      gender: user.gender || "Nam",
+      address: user.address || "",
+      role: user.role || "TECHNICIAN",
+    });
+    setEditError("");
+  };
+
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editUser) return;
+    setEditLoading(true);
+    setEditError("");
+    try {
+      await adminService.updateUser(editUser.id, editForm);
+      setEditUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      setEditError(err?.response?.data?.message || "Cập nhật thất bại!");
+    } finally {
+      setEditLoading(false);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
-            Quản lý tài khoản
-          </h1>
-          <p className="text-gray-600">
-            Tạo và quản lý tài khoản người dùng trong hệ thống
-          </p>
-        </div>
-        
-        <button className="flex items-center space-x-2 clinic-button-primary">
-          <Plus size={20} />
-          <span>Tạo tài khoản mới</span>
+    <div className="p-4">
+      <div className="flex items-center gap-4 mb-4">
+        <h1 className="text-2xl font-bold text-clinic-navy">Danh sách tài khoản</h1>
+        <button
+          className="clinic-button-primary px-4 py-2 rounded-lg text-base font-semibold shadow"
+          onClick={() => setShowForm(true)}
+        >
+          + Thêm tài khoản
         </button>
+        <select
+          className="border rounded-lg px-4 py-2 min-w-[200px] text-base shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all hover:border-blue-400"
+          value={roleFilter}
+          onChange={e => {
+            setRoleFilter(e.target.value);
+          }}
+        >
+          <option value="ALL">Tất cả vai trò</option>
+          <option value="ADMIN">Admin</option>
+          <option value="DOCTOR">Doctor</option>
+          <option value="RECEPTIONIST">Receptionist</option>
+          <option value="TECHNICIAN">Technician</option>
+          <option value="NURSE">Nurse</option>
+        </select>
       </div>
-
-      {/* Filters */}
-      <div className="clinic-card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Vai trò
-            </label>
-            <select
-              value={selectedRole}
-              onChange={(e) => setSelectedRole(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-            >
-              <option value="all">Tất cả vai trò</option>
-              <option value="Admin">Quản trị viên</option>
-              <option value="Doctor">Bác sĩ</option>
-              <option value="Receptionist">Lễ tân</option>
-              <option value="Patient">Bệnh nhân</option>
+      {showForm && (
+        <Modal open={showForm} onClose={() => setShowForm(false)} title="Thêm tài khoản mới">
+          <form onSubmit={handleAddUser} className="grid grid-cols-1 gap-5">
+            <input name="name" value={form.name} onChange={handleInputChange} required placeholder="Họ tên" className="border p-3 rounded-lg text-lg" />
+            <input name="phoneNumber" value={form.phoneNumber} onChange={handleInputChange} required placeholder="Số điện thoại" className="border p-3 rounded-lg text-lg" />
+            <input name="email" value={form.email} onChange={handleInputChange} required placeholder="Email" className="border p-3 rounded-lg text-lg" />
+            <input name="password" value={form.password} onChange={handleInputChange} required placeholder="Mật khẩu" type="password" className="border p-3 rounded-lg text-lg" />
+            <input name="dateOfBirth" value={form.dateOfBirth} onChange={handleInputChange} required placeholder="Ngày sinh (YYYY-MM-DD)" className="border p-3 rounded-lg text-lg" />
+            <input name="gender" value={form.gender} onChange={handleInputChange} required placeholder="Giới tính" className="border p-3 rounded-lg text-lg" />
+            <input name="address" value={form.address} onChange={handleInputChange} required placeholder="Địa chỉ" className="border p-3 rounded-lg text-lg" />
+            <select name="role" value={form.role} onChange={handleInputChange} className="border p-3 rounded-lg text-lg">
+              <option value="ADMIN">Admin</option>
+              <option value="DOCTOR">Doctor</option>
+              <option value="RECEPTIONIST">Receptionist</option>
+              <option value="TECHNICIAN">Technician</option>
+              <option value="NURSE">Nurse</option>
             </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Trạng thái
-            </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue">
-              <option value="all">Tất cả trạng thái</option>
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Không hoạt động</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tìm kiếm
-            </label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-              <input
-                type="text"
-                placeholder="Tên, email, số điện thoại..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-              />
+            <div className="flex gap-3 mt-2 justify-center">
+              <button type="submit" className="clinic-button-primary px-6 py-3 rounded-lg text-lg font-semibold shadow" disabled={loading}>
+                {loading ? "Đang tạo..." : "Tạo tài khoản"}
+              </button>
+              <button type="button" className="px-6 py-3 rounded-lg border text-lg font-semibold" onClick={() => setShowForm(false)}>
+                Hủy
+              </button>
             </div>
-          </div>
-        </div>
-      </div>
+            {error && <div className="text-red-600 text-center font-medium">{error}</div>}
+          </form>
+        </Modal>
+      )}
+      {editUser && (
+        <Modal open={!!editUser} onClose={() => setEditUser(null)} title="Cập nhật tài khoản">
+          <form onSubmit={handleUpdateUser} className="grid grid-cols-1 gap-5">
+            <input name="name" value={editForm.name} onChange={handleEditInputChange} required placeholder="Họ tên" className="border p-3 rounded-lg text-lg" />
+            <input name="phoneNumber" value={editForm.phoneNumber} onChange={handleEditInputChange} required placeholder="Số điện thoại" className="border p-3 rounded-lg text-lg" />
+            <input name="email" value={editForm.email} onChange={handleEditInputChange} required placeholder="Email" className="border p-3 rounded-lg text-lg" />
+            <input name="dateOfBirth" value={editForm.dateOfBirth} onChange={handleEditInputChange} required placeholder="Ngày sinh (YYYY-MM-DD)" className="border p-3 rounded-lg text-lg" />
+            <input name="gender" value={editForm.gender} onChange={handleEditInputChange} required placeholder="Giới tính" className="border p-3 rounded-lg text-lg" />
+            <input name="address" value={editForm.address} onChange={handleEditInputChange} required placeholder="Địa chỉ" className="border p-3 rounded-lg text-lg" />
+            <select name="role" value={editForm.role} onChange={handleEditInputChange} className="border p-3 rounded-lg text-lg">
+              <option value="ADMIN">Admin</option>
+              <option value="DOCTOR">Doctor</option>
+              <option value="RECEPTIONIST">Receptionist</option>
+              <option value="TECHNICIAN">Technician</option>
+              <option value="NURSE">Nurse</option>
+            </select>
+            <div className="flex gap-3 mt-2 justify-center">
+              <button type="submit" className="clinic-button-primary px-6 py-3 rounded-lg text-lg font-semibold shadow" disabled={editLoading}>
+                {editLoading ? "Đang cập nhật..." : "Cập nhật"}
+              </button>
+              <button type="button" className="px-6 py-3 rounded-lg border text-lg font-semibold" onClick={() => setEditUser(null)}>
+                Hủy
+              </button>
+            </div>
+            {editError && <div className="text-red-600 text-center font-medium">{editError}</div>}
+          </form>
+        </Modal>
+      )}
 
-      {/* User Table */}
-      <div className="clinic-card">
+      <div className="bg-white rounded-xl shadow p-4">
+        
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-medium text-clinic-navy">Người dùng</th>
-                <th className="text-left py-3 px-4 font-medium text-clinic-navy">Vai trò</th>
-                <th className="text-left py-3 px-4 font-medium text-clinic-navy">Liên hệ</th>
-                <th className="text-left py-3 px-4 font-medium text-clinic-navy">Trạng thái</th>
-                <th className="text-left py-3 px-4 font-medium text-clinic-navy">Hoạt động cuối</th>
-                <th className="text-center py-3 px-4 font-medium text-clinic-navy">Thao tác</th>
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Tên</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Vai trò</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">SĐT</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase">Thao tác</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-clinic-navy rounded-full flex items-center justify-center">
-                        <Users className="text-white" size={20} />
-                      </div>
-                      <div>
-                        <h4 className="font-medium text-clinic-navy">{user.name}</h4>
-                        <p className="text-sm text-gray-600">{user.email}</p>
-                        {user.role === 'Doctor' && user.specialty && (
-                          <p className="text-xs text-gray-500">{user.specialty}</p>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${getRoleColor(user.role)}`}>
-                      {user.role === 'Admin' ? 'Quản trị viên' :
-                       user.role === 'Doctor' ? 'Bác sĩ' :
-                       user.role === 'Receptionist' ? 'Lễ tân' : 'Bệnh nhân'}
+            <tbody className="bg-white divide-y divide-gray-100">
+              {users.map((user: any) => (
+                <tr key={user.id} className="hover:bg-gray-50 transition">
+                  <td className="px-4 py-3 font-medium flex items-center gap-2">
+                    {/* Avatar hoặc icon */}
+                    <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full text-blue-600 font-bold">
+                      {user.name?.charAt(0)}
                     </span>
-                    {user.role === 'Doctor' && user.license && (
-                      <p className="text-xs text-gray-500 mt-1">SCC: {user.license}</p>
-                    )}
+                    {user.name}
                   </td>
-                  <td className="py-4 px-4">
-                    <p className="text-gray-700">{user.phone}</p>
-                    <p className="text-sm text-gray-500">Tạo: {user.createdDate}</p>
-                  </td>
-                  <td className="py-4 px-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(user.status)}`}>
-                      {user.status}
+                  <td className="px-4 py-3">{user.email}</td>
+                  <td className="px-4 py-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold
+                      ${user.role === 'ADMIN' ? 'bg-red-100 text-red-700' :
+                        user.role === 'DOCTOR' ? 'bg-blue-100 text-blue-700' :
+                        user.role === 'RECEPTIONIST' ? 'bg-green-100 text-green-700' :
+                        'bg-gray-100 text-gray-700'}`}>
+                      {user.role}
                     </span>
                   </td>
-                  <td className="py-4 px-4 text-gray-700">
-                    {user.lastLogin}
+                  <td className="px-4 py-3">{user.phoneNumber}</td>
+                  <td className="px-4 py-3">
+                    <button
+                      className={`px-2 py-1 rounded-full text-xs font-semibold transition
+                        ${user.isActive
+                          ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                          : 'bg-red-100 text-red-700 hover:bg-red-200'}`}
+                      onClick={async () => {
+                        if (user.isActive) {
+                          if (window.confirm("Bạn có muốn vô hiệu hóa người dùng này không?")) {
+                            try {
+                              await adminService.deactivateUser(user.id);
+                              fetchUsers();
+                            } catch (err) {
+                              alert("Vô hiệu hóa thất bại!");
+                            }
+                          }
+                        } else {
+                          if (window.confirm("Bạn muốn kích hoạt người dùng này không?")) {
+                            try {
+                              await adminService.activateUser(user.id);
+                              fetchUsers();
+                            } catch (err) {
+                              alert("Kích hoạt thất bại!");
+                            }
+                          }
+                        }
+                      }}
+                    >
+                      {user.isActive ? "Hoạt động" : "Vô hiệu hóa"}
+                    </button>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex justify-center space-x-2">
-                      <button className="p-2 text-clinic-navy hover:bg-clinic-blue rounded-lg transition-colors">
-                        <Eye size={16} />
-                      </button>
-                      <button className="p-2 text-clinic-navy hover:bg-clinic-blue rounded-lg transition-colors">
-                        <Edit size={16} />
-                      </button>
-                      <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                  <td className="px-4 py-3 text-center flex justify-center gap-2">
+                    <button
+                      className="flex items-center gap-1 px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600 transition"
+                      onClick={() => openEdit(user)}
+                      type="button"
+                    >
+                      <i className="fa fa-edit"></i>
+                      Cập nhật
+                    </button>
+                    <button
+                      className="flex items-center gap-1 px-3 py-1 rounded bg-red-500 text-white hover:bg-red-600 transition"
+                      onClick={() => handleDelete(user.id)}
+                      type="button"
+                    >
+                      <i className="fa fa-trash"></i>
+                      Xóa
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -226,30 +284,34 @@ const AccountManagement: React.FC = () => {
           </table>
         </div>
       </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-clinic-navy">{users.length}</h3>
-          <p className="text-gray-600">Tổng người dùng</p>
+      <div className="flex justify-between items-center mt-4">
+        <div>
+          Trang {pageNumber} / {Math.ceil(totalItems / pageSize)}
         </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-blue-600">
-            {users.filter(u => u.role === 'Doctor').length}
-          </h3>
-          <p className="text-gray-600">Bác sĩ</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-green-600">
-            {users.filter(u => u.role === 'Receptionist').length}
-          </h3>
-          <p className="text-gray-600">Lễ tân</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-gray-600">
-            {users.filter(u => u.role === 'Patient').length}
-          </h3>
-          <p className="text-gray-600">Bệnh nhân</p>
+        <div className="flex gap-2">
+          <button
+            className="px-3 py-1 border rounded disabled:opacity-50"
+            onClick={() => fetchUsers(pageNumber - 1, pageSize, roleFilter)}
+            disabled={pageNumber === 1}
+          >
+            Trước
+          </button>
+          <button
+            className="px-3 py-1 border rounded disabled:opacity-50"
+            onClick={() => fetchUsers(pageNumber + 1, pageSize, roleFilter)}
+            disabled={pageNumber >= Math.ceil(totalItems / pageSize)}
+          >
+            Sau
+          </button>
+          <select
+            className="ml-2 border rounded-lg px-4 py-2 min-w-[140px] text-base shadow-sm focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all hover:border-blue-400"
+            value={pageSize}
+            onChange={e => fetchUsers(1, Number(e.target.value), roleFilter)}
+          >
+            {[5, 10, 20, 50].map(size => (
+              <option key={size} value={size}>{size} / trang</option>
+            ))}
+          </select>
         </div>
       </div>
     </div>
