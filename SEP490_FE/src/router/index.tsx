@@ -1,6 +1,7 @@
 import React, { Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useEffect } from "react";
+import { useSelector } from "react-redux";
 
 import Loading from "@/shared/components/common/LoadingSpinner";
 import { ErrorBoundary } from "@/shared/components/common/ErrorBoundary";
@@ -29,11 +30,16 @@ interface AppRouterProps {
 
 const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
   const dispatch = useAppDispatch();
+  const { loading } = useSelector((state: any) => state.auth);
 
   useEffect(() => {
     dispatch(checkAuth());
   }, [dispatch]);
-  
+
+  if (loading) {
+    return <Loading fullScreen text="Đang kiểm tra đăng nhập..." />;
+  }
+
   return (
     <div className={className}>
       <ErrorBoundary>

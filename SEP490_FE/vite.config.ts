@@ -32,7 +32,7 @@ export default defineConfig(async ({ mode }) => {
   return {
   server: {
     host: true,
-      port: process.env.PORT ? Number(process.env.PORT) : 8080,
+      port: process.env.PORT ? Number(process.env.PORT) : 3000,
     hmr: {
         overlay: false,
     },

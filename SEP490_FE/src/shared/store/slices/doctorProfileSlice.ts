@@ -1,19 +1,19 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { doctorProfileService } from "../../services/doctorProfileService";
+import { doctorService } from "../../services/doctorService";
 
-// Async actions
+// Async actions using doctorService
 export const fetchDoctorProfile = createAsyncThunk(
   "doctorProfile/fetch",
   async (doctorId: string) => {
-    const response = await doctorProfileService.getDoctorProfile(doctorId);
+    const response = await doctorService.getDoctorProfile(doctorId);
     return response;
   }
 );
 
 export const createDoctorProfile = createAsyncThunk(
-  "doctorProfile/create", 
+  "doctorProfile/create",
   async (profileData: any) => {
-    const response = await doctorProfileService.createDoctorProfile(profileData);
+    const response = await doctorService.createDoctorProfile(profileData);
     return response;
   }
 );
@@ -21,18 +21,18 @@ export const createDoctorProfile = createAsyncThunk(
 export const updateDoctorProfile = createAsyncThunk(
   "doctorProfile/update",
   async ({ doctorId, data }: { doctorId: string; data: any }) => {
-    const response = await doctorProfileService.updateDoctorProfile(doctorId, data);
+    const response = await doctorService.updateDoctorProfile(doctorId, data);
     return response;
   }
 );
 
-export const deleteDoctorProfile = createAsyncThunk(
-  "doctorProfile/delete",
-  async (doctorId: string) => {
-    await doctorProfileService.deleteDoctorProfile(doctorId);
-    return doctorId;
-  }
-);
+// export const deleteDoctorProfile = createAsyncThunk(
+//   "doctorProfile/delete",
+//   async (doctorId: string) => {
+//     await doctorService.deleteDoctorProfile(doctorId);
+//     return doctorId;
+//   }
+// );
 
 const initialState = {
   profile: null,
@@ -118,20 +118,20 @@ const doctorProfileSlice = createSlice({
         state.error = action.error.message || "Lỗi khi cập nhật hồ sơ bác sĩ";
       })
       
-      // Delete Doctor Profile
-      .addCase(deleteDoctorProfile.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(deleteDoctorProfile.fulfilled, (state) => {
-        state.loading = false;
-        state.profile = null;
-        state.success = true;
-      })
-      .addCase(deleteDoctorProfile.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || "Lỗi khi xóa hồ sơ bác sĩ";
-      });
+      // // Delete Doctor Profile
+      // .addCase(deleteDoctorProfile.pending, (state) => {
+      //   state.loading = true;
+      //   state.error = null;
+      // })
+      // .addCase(deleteDoctorProfile.fulfilled, (state) => {
+      //   state.loading = false;
+      //   state.profile = null;
+      //   state.success = true;
+      // })
+      // .addCase(deleteDoctorProfile.rejected, (state, action) => {
+      //   state.loading = false;
+      //   state.error = action.error.message || "Lỗi khi xóa hồ sơ bác sĩ";
+      // });
   },
 });
 

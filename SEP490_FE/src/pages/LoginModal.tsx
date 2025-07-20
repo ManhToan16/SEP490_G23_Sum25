@@ -17,6 +17,9 @@ const LoginModal = ({ onClose }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -41,7 +44,7 @@ const LoginModal = ({ onClose }) => {
 
       toast({
         title: "Đăng nhập thành công!",
-        description: `Chào mừng ${user?.name}`,
+        description: `Chào mừng ${user?.role}`,
       });
 
       // Điều hướng dựa trên role hoặc userType đã chọn
@@ -71,6 +74,34 @@ const LoginModal = ({ onClose }) => {
         title: 'Lỗi đăng nhập',
         description: error.message || 'Thông tin không hợp lệ',
       });
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail) {
+      toast({
+        title: 'Lỗi',
+        description: 'Vui lòng nhập email',
+      });
+      return;
+    }
+    setForgotLoading(true);
+    try {
+      await authService.forgotPassword(forgotEmail);
+      toast({
+        title: 'Thành công',
+        description: 'Vui lòng kiểm tra email để đặt lại mật khẩu.',
+      });
+      setShowForgotModal(false);
+      setForgotEmail("");
+    } catch (err) {
+      toast({
+        title: 'Lỗi',
+        description: err?.response?.data?.message || 'Có lỗi xảy ra!',
+      });
+    } finally {
+      setForgotLoading(false);
     }
   };
 
@@ -126,8 +157,50 @@ const LoginModal = ({ onClose }) => {
           <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700">
             Đăng Nhập
           </Button>
+          <div className="text-center mt-2">
+            <button
+              type="button"
+              className="text-blue-600 hover:underline text-sm"
+              onClick={() => setShowForgotModal(true)}
+            >
+              Quên mật khẩu?
+            </button>
+          </div>
         </form>
       </Card>
+      {showForgotModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md p-6 relative">
+            <Button
+              onClick={() => setShowForgotModal(false)}
+              variant="ghost"
+              className="absolute right-2 top-2 p-2"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">Quên mật khẩu</h2>
+              <p className="text-gray-600">Nhập email để nhận hướng dẫn đặt lại mật khẩu</p>
+            </div>
+            <form onSubmit={handleForgotPassword} className="space-y-4">
+              <div>
+                <Label htmlFor="forgot-email">Email *</Label>
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="Nhập email của bạn"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={forgotLoading || !forgotEmail}>
+                {forgotLoading ? 'Đang gửi...' : 'Gửi'}
+              </Button>
+            </form>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
