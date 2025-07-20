@@ -6,7 +6,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
 import { useToast } from '@/shared/components/ui/use-toast';
-import UserForm from '@/pages/admin/UserForm';
+import UserForm from '@/pages/admin/UserForm.tsx';
 import { adminService } from '@/shared/services/adminService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 
