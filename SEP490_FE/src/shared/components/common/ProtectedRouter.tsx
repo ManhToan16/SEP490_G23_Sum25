@@ -1,10 +1,21 @@
 import { useSelector } from "react-redux"; 
 import { Navigate } from "react-router-dom";
 import { selectIsAuthenticated, selectUser } from "@/shared/store/slices/authSlice";
+import type { ReactNode } from "react";
+import { useAuth } from "@/shared/hooks/business/useAuth";
 
-const ProtectedRoute = ({ children, requiredRoles }) => {
-  const isAuthenticated = useSelector(selectIsAuthenticated);
-  const user = useSelector(selectUser);
+
+interface ProtectedRouteProps {
+  children: ReactNode;
+  requiredRoles?: string[];
+}
+
+const ProtectedRoute = ({ children, requiredRoles }: ProtectedRouteProps) => {
+  const { isAuthenticated, user, loading } = useAuth();
+
+  if (loading || !user) {
+    return <div>Loading...</div>; // hoặc spinner đẹp hơn
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/403" replace />;

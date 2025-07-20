@@ -44,6 +44,20 @@ const initialState = {
   error: null,
 };
 
+export const checkAuth = createAsyncThunk("auth/checkAuth", async () => {
+  const token = localStorage.getItem("clinic_auth_token");
+  const userData = localStorage.getItem("clinic_user_data");
+
+  if (!token || !userData) {
+    throw new Error("No token or user data");
+  }
+
+  return {
+    token,
+    user: JSON.parse(userData),
+  };
+});
+
 // Simple slice
 const authSlice = createSlice({
   name: "auth",
@@ -63,23 +77,6 @@ const authSlice = createSlice({
       localStorage.removeItem("clinic_auth_token");
       localStorage.removeItem("clinic_user_data");
     },
-    // Check auth from localStorage on app start
-    checkAuth: (state) => {
-      const token = localStorage.getItem("clinic_auth_token");
-      const userData = localStorage.getItem("clinic_user_data");
-      // console.log("checkAuth - token:", token, "userData:", userData);
-      if (token && userData) {
-        try {
-          state.token = token;
-          state.user = JSON.parse(userData);
-          state.isAuthenticated = true;
-        } catch (error) {
-          // Invalid data, clear it
-          localStorage.removeItem("clinic_auth_token");
-          localStorage.removeItem("clinic_user_data");
-        }
-      }
-    },
   },
   extraReducers: (builder) => {
     builder
@@ -93,6 +90,8 @@ const authSlice = createSlice({
         state.user = action.payload.user;
         state.token = action.payload.token;
         state.isAuthenticated = true;
+        localStorage.setItem("clinic_auth_token", action.payload.token);
+        localStorage.setItem("clinic_user_data", JSON.stringify(action.payload.user));
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -104,6 +103,8 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.isAuthenticated = false;
+        localStorage.removeItem("clinic_auth_token");
+        localStorage.removeItem("clinic_user_data");
       })
 
       // Get Current User
@@ -123,11 +124,29 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         localStorage.removeItem("clinic_auth_token");
         localStorage.removeItem("clinic_user_data");
+      })
+      .addCase(checkAuth.pending, (state) => {
+        state.loading = true;
+        state.isAuthenticated = false; // reset temporarily
+      })
+      .addCase(checkAuth.fulfilled, (state, action) => {
+        state.loading = false;
+        state.token = action.payload.token;
+        state.user = action.payload.user;
+        state.isAuthenticated = true;
+      })
+      .addCase(checkAuth.rejected, (state) => {
+        state.loading = false;
+        state.token = null;
+        state.user = null;
+        state.isAuthenticated = false;
+        localStorage.removeItem("clinic_auth_token");
+        localStorage.removeItem("clinic_user_data");
       });
   },
 });
 
-export const { clearError, setUser, logout, checkAuth } = authSlice.actions;
+export const { clearError, setUser, logout } = authSlice.actions;
 export default authSlice.reducer;
 
 // Selectors

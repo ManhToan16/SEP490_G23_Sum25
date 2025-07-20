@@ -14,6 +14,7 @@ using SEP490_BE.Repositories.AssignmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.CategoryRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
+using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.MaterialRepositories;
@@ -36,6 +37,7 @@ using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.CategoryServices;
 using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.EmailServices;
+using SEP490_BE.Services.ExaminationResultServices;
 using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Services.MaterialServices;
@@ -172,6 +174,7 @@ builder.Services.AddScoped<IAssignmentService, SEP490_BE.Services.AssignmentServ
 builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+builder.Services.AddScoped<IExaminationResultService, ExaminationResultService>();
 
 
 
@@ -196,6 +199,7 @@ builder.Services.AddScoped<IAssignmentRepository, AssignmentRepository>();
 builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
+builder.Services.AddScoped<IExaminationResultRepository, ExaminationResultRepository>();
 
 
 
@@ -218,8 +222,11 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseMiddleware<NotFoundMiddleware>();
 
 app.UseHttpsRedirection();
-//app.UseCors("AllowAllOrigins");
-app.UseCors("AllowFrontend");
+
+// tạm thời để dev
+app.UseCors("AllowAllOrigins");
+// sau chuyển lại
+// app.UseCors("AllowFrontend");
 
 app.UseRouting();
 

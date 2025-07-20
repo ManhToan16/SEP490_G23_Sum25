@@ -51,7 +51,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
 
         public async Task<DoctorProfileResponseDTO> GetById(string id)
         {
-            var doctorProfile = await _doctorProfileRepository.GetDoctorProfileWithUserDetailsAsync(id);
+            var doctorProfile = await _doctorProfileRepository.FindByDoctorIdAsync(id);
             if (doctorProfile == null)
             {
                 throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ");
