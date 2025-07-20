@@ -14,15 +14,27 @@ export const useDoctorProfile = () => {
   );
 
   const loadProfile = (doctorId: string) => {
-    dispatch(fetchDoctorProfile(doctorId));
+    return dispatch(fetchDoctorProfile(doctorId));
   };
 
-  const createProfile = (profileData: any) => {
-    dispatch(createDoctorProfile(profileData));
+  const createProfile = (profileData: {
+    doctorId: string;
+    qualifications: string;
+    yearsOfExperience: number;
+    biography: string;
+    avatar: string;
+  }) => {
+    return dispatch(createDoctorProfile(profileData));
   };
 
-  const updateProfile = (doctorId: string, data: any) => {
-    dispatch(updateDoctorProfile({ doctorId, data }));
+  const updateProfile = (doctorId: string, data: {
+    doctorId: string;
+    qualifications: string;
+    yearsOfExperience: number;
+    biography: string;
+    avatar: string;
+  }) => {
+    return dispatch(updateDoctorProfile({ doctorId, data }));
   };
 
   const clearMessages = () => {

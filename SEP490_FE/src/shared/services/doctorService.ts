@@ -2,6 +2,42 @@ import { api } from "./apiClient";
 
 // Đơn giản hóa Doctor Service
 export const doctorService = {
+  // Lấy thông tin doctor profile theo ID
+  getDoctorProfile: async (doctorId: string) => {
+    try {
+      return await api.get(`/Doctor/Profiles/${doctorId}`);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Tạo doctor profile
+  createDoctorProfile: async (profileData: any) => {
+    try {
+      return await api.post("/Doctor/Profiles", profileData);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Cập nhật doctor profile
+  updateDoctorProfile: async (doctorId: string, profileData: any) => {
+    try {
+      return await api.put(`/Doctor/Profiles/${doctorId}`, profileData);
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Xóa doctor profile
+  deleteDoctorProfile: async (doctorId: string) => {
+    try {
+      return await api.delete(`/Doctor/Profiles/${doctorId}`);
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Lấy danh sách bác sĩ
   getDoctors: async (params?: any) => {
     try {
