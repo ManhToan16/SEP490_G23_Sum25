@@ -19,7 +19,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       header={<AdminHeader />}
       sidebar={<AdminSidebar />}
     >
-      {children}
+      <div className="flex-1 p-6">
+        {children}
+      </div>
     </BaseLayout>
   );
 };

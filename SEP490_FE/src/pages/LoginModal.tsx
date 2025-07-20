@@ -44,7 +44,7 @@ const LoginModal = ({ onClose }) => {
 
       toast({
         title: "Đăng nhập thành công!",
-        description: `Chào mừng ${user?.name}`,
+        description: `Chào mừng ${user?.role}`,
       });
 
       // Điều hướng dựa trên role hoặc userType đã chọn
