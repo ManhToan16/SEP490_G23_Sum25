@@ -719,3 +719,16 @@ VALUES
 (NEWID(), N'Ngô Văn Giang', '000040000000', '0955667428', 'quangli2k3@gmail.com', '2000-03-03', N'Nam', N'53 Nam Đàn, TP Nghệ An'),
 (NEWID(), N'Ngô Thị Lan', '000005000000', '0933242100', 'quangli2k3@gmail.com', '1996-04-04', N'Nữ', N'36 Chương Mỹ B, TP Hà Nội');
 
+-- MEDICINEs
+INSERT INTO Medicines (Id, Name, ActiveIngredients, Strength, Packaging, Unit, Description)
+VALUES
+(NEWID(), N'Paracetamol', N'Paracetamol', N'500 mg', N'Hộp 10 vỉ x 10 viên', N'Viên nén', N'Thuốc giảm đau, hạ sốt'),
+(NEWID(), N'Ibuprofen', N'Ibuprofen', N'200 mg', N'Hộp 5 vỉ x 10 viên', N'Viên nén', N'Thuốc kháng viêm, giảm đau không steroid'),
+(NEWID(), N'Amoxicillin', N'Amoxicillin', N'500 mg', N'Hộp 10 vỉ x 10 viên', N'Viên nang', N'Kháng sinh phổ rộng điều trị nhiễm khuẩn'),
+(NEWID(), N'Cefixime', N'Cefixime', N'100 mg', N'Lọ 60 ml', N'Hỗn dịch', N'Kháng sinh nhóm cephalosporin uống'),
+(NEWID(), N'Diazepam', N'Diazepam', N'5 mg', N'Hộp 10 vỉ x 10 viên', N'Viên nén', N'Thuốc an thần, chống lo âu, co giật'),
+(NEWID(), N'Ranitidine', N'Ranitidine', N'150 mg', N'Hộp 2 vỉ x 14 viên', N'Viên nén', N'Thuốc giảm tiết acid dạ dày'),
+(NEWID(), N'Metformin', N'Metformin hydrochloride', N'500 mg', N'Hộp 10 vỉ x 10 viên', N'Viên nén', N'Thuốc điều trị tiểu đường type 2'),
+(NEWID(), N'Salbutamol', N'Salbutamol sulfate', N'100 mcg/liều', N'Bình xịt', N'Bình hít', N'Thuốc giãn phế quản, điều trị hen'),
+(NEWID(), N'Loratadin', N'Loratadin', N'10 mg', N'Hộp 1 vỉ x 10 viên', N'Viên nén', N'Thuốc kháng histamin, chống dị ứng'),
+(NEWID(), N'Amitriptylin', N'Amitriptyline hydrochloride', N'25 mg', N'Hộp 5 vỉ x 10 viên', N'Viên nén', N'Thuốc chống trầm cảm 3 vòng');

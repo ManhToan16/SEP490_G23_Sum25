@@ -105,5 +105,14 @@ namespace SEP490_BE.Repositories.VisitRepositories
                 .FirstOrDefaultAsync(v => v.AppointmentId == appointmentId);
         }
 
+        public async Task<List<Visit>> GetByPatientProfile(string patientProfileId)
+        {
+            return await _context.Visits
+                .Include(v => v.ExaminationRoom)
+                .Include(v => v.AssignedDoctor)
+                .Where(v => v.PatientProfileId == patientProfileId)
+                .ToListAsync();
+        }
+
     }
 }
