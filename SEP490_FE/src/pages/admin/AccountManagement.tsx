@@ -10,12 +10,93 @@ import UserForm from '@/pages/admin/UserForm.tsx';
 import { adminService } from '@/shared/services/adminService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
 
+// Component for search and pagination controls (đưa ra ngoài)
+const SearchAndPaginationControls = ({
+  role,
+  title,
+  searchValue,
+  onSearchChange,
+  paginationState,
+  onPageChange,
+  onItemsPerPageChange,
+  filteredUsersCount,
+  totalPages
+}) => {
+  const { currentPage, itemsPerPage } = paginationState;
+
+  return (
+    <div className="space-y-3">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+        <Input
+          placeholder={`Tìm kiếm ${title.toLowerCase()}...`}
+          value={searchValue}
+          onChange={(e) => onSearchChange(role, e.target.value)}
+          className="pl-8 text-sm"
+        />
+      </div>
+
+      {/* Results count */}
+      <div className="text-xs text-gray-500">
+        {filteredUsersCount} {title.toLowerCase()}
+      </div>
+
+      {/* Pagination controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <span>Hiển thị:</span>
+            <Select
+              value={itemsPerPage.toString()}
+              onValueChange={(value) => onItemsPerPageChange(role, parseInt(value))}
+            >
+              <SelectTrigger className="w-16 h-6">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 w-6 p-0"
+              disabled={currentPage === 1}
+              onClick={() => onPageChange(role, currentPage - 1)}
+            >
+              <ChevronLeft className="w-3 h-3" />
+            </Button>
+            <span className="text-xs">
+              {currentPage} / {totalPages}
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-6 w-6 p-0"
+              disabled={currentPage === totalPages}
+              onClick={() => onPageChange(role, currentPage + 1)}
+            >
+              <ChevronRight className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const AccountManagement: React.FC = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [showForm, setShowForm] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [roleFilter, setRoleFilter] = useState('ALL');
 
   // Search and pagination states for each role
   const [searchStates, setSearchStates] = useState({
@@ -105,80 +186,6 @@ const AccountManagement: React.FC = () => {
       ...prev,
       [role]: { currentPage: 1, itemsPerPage: newItemsPerPage }
     }));
-  };
-
-  // Component for search and pagination controls
-  const SearchAndPaginationControls = ({ role, title }) => {
-    const totalPages = getTotalPages(role);
-    const { currentPage, itemsPerPage } = paginationStates[role];
-    const filteredUsers = getFilteredUsers(role, searchStates[role]);
-
-    return (
-      <div className="space-y-3">
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-          <Input
-            placeholder={`Tìm kiếm ${title.toLowerCase()}...`}
-            value={searchStates[role]}
-            onChange={(e) => handleSearchChange(role, e.target.value)}
-            className="pl-8 text-sm"
-          />
-        </div>
-
-        {/* Results count */}
-        <div className="text-xs text-gray-500">
-          {filteredUsers.length} {title.toLowerCase()}
-          {filteredUsers.length !== 1 ? '' : ''}
-        </div>
-
-        {/* Pagination controls */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between text-xs">
-            <div className="flex items-center gap-2">
-              <span>Hiển thị:</span>
-              <Select
-                value={itemsPerPage.toString()}
-                onValueChange={(value) => handleItemsPerPageChange(role, parseInt(value))}
-              >
-                <SelectTrigger className="w-16 h-6">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3">3</SelectItem>
-                  <SelectItem value="5">5</SelectItem>
-                  <SelectItem value="10">10</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-6 w-6 p-0"
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(role, currentPage - 1)}
-              >
-                <ChevronLeft className="w-3 h-3" />
-              </Button>
-              <span className="text-xs">
-                {currentPage} / {totalPages}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-6 w-6 p-0"
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(role, currentPage + 1)}
-              >
-                <ChevronRight className="w-3 h-3" />
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    );
   };
 
   const handleSaveUser = async (userType, userData) => {
@@ -328,9 +335,33 @@ const AccountManagement: React.FC = () => {
         </Button>
       </div>
 
+      {/* Role Filter Button Group */}
+      <div className="flex flex-wrap gap-2 items-center mb-2">
+        {[
+          { value: 'ALL', label: 'Tất cả' },
+          { value: 'DOCTOR', label: 'Bác Sĩ' },
+          { value: 'RECEPTIONIST', label: 'Lễ Tân' },
+          { value: 'TECHNICIAN', label: 'Kỹ Thuật Viên' },
+          { value: 'NURSE', label: 'Y Tá' },
+        ].map((role) => (
+          <button
+            key={role.value}
+            onClick={() => setRoleFilter(role.value)}
+            className={`px-4 py-1 rounded-full border transition-colors text-sm font-medium
+              ${roleFilter === role.value
+                ? 'bg-blue-600 text-white border-blue-600 shadow'
+                : 'bg-white text-gray-700 border-gray-300 hover:bg-blue-50'}
+            `}
+          >
+            {role.label}
+          </button>
+        ))}
+      </div>
+
       {/* Users Table */}
       <div className="grid grid-cols-4 gap-6">
         {/* Doctors */}
+        {(roleFilter === 'ALL' || roleFilter === 'DOCTOR') && (
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Bác Sĩ</h3>
@@ -345,7 +376,17 @@ const AccountManagement: React.FC = () => {
           </div>
           
           {/* Search and Pagination Controls */}
-          <SearchAndPaginationControls role="DOCTOR" title="Bác Sĩ" />
+          <SearchAndPaginationControls
+            role="DOCTOR"
+            title="Bác Sĩ"
+            searchValue={searchStates.DOCTOR}
+            onSearchChange={handleSearchChange}
+            paginationState={paginationStates.DOCTOR}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            filteredUsersCount={getFilteredUsers('DOCTOR', searchStates.DOCTOR).length}
+            totalPages={getTotalPages('DOCTOR')}
+          />
           
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -408,8 +449,10 @@ const AccountManagement: React.FC = () => {
             </div>
           )}
         </Card>
+        )}
 
         {/* Receptionists */}
+        {(roleFilter === 'ALL' || roleFilter === 'RECEPTIONIST') && (
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Lễ Tân</h3>
@@ -424,7 +467,17 @@ const AccountManagement: React.FC = () => {
           </div>
           
           {/* Search and Pagination Controls */}
-          <SearchAndPaginationControls role="RECEPTIONIST" title="Lễ Tân" />
+          <SearchAndPaginationControls
+            role="RECEPTIONIST"
+            title="Lễ Tân"
+            searchValue={searchStates.RECEPTIONIST}
+            onSearchChange={handleSearchChange}
+            paginationState={paginationStates.RECEPTIONIST}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            filteredUsersCount={getFilteredUsers('RECEPTIONIST', searchStates.RECEPTIONIST).length}
+            totalPages={getTotalPages('RECEPTIONIST')}
+          />
           
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -487,8 +540,10 @@ const AccountManagement: React.FC = () => {
             </div>
           )}
         </Card>
+        )}
 
         {/* Technicians */}
+        {(roleFilter === 'ALL' || roleFilter === 'TECHNICIAN') && (
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Kỹ Thuật Viên</h3>
@@ -503,7 +558,17 @@ const AccountManagement: React.FC = () => {
           </div>
           
           {/* Search and Pagination Controls */}
-          <SearchAndPaginationControls role="TECHNICIAN" title="Kỹ Thuật Viên" />
+          <SearchAndPaginationControls
+            role="TECHNICIAN"
+            title="Kỹ Thuật Viên"
+            searchValue={searchStates.TECHNICIAN}
+            onSearchChange={handleSearchChange}
+            paginationState={paginationStates.TECHNICIAN}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            filteredUsersCount={getFilteredUsers('TECHNICIAN', searchStates.TECHNICIAN).length}
+            totalPages={getTotalPages('TECHNICIAN')}
+          />
           
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -566,8 +631,10 @@ const AccountManagement: React.FC = () => {
             </div>
           )}
         </Card>
+        )}
 
         {/* Nurses */}
+        {(roleFilter === 'ALL' || roleFilter === 'NURSE') && (
         <Card className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Y Tá</h3>
@@ -582,7 +649,17 @@ const AccountManagement: React.FC = () => {
           </div>
           
           {/* Search and Pagination Controls */}
-          <SearchAndPaginationControls role="NURSE" title="Y Tá" />
+          <SearchAndPaginationControls
+            role="NURSE"
+            title="Y Tá"
+            searchValue={searchStates.NURSE}
+            onSearchChange={handleSearchChange}
+            paginationState={paginationStates.NURSE}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            filteredUsersCount={getFilteredUsers('NURSE', searchStates.NURSE).length}
+            totalPages={getTotalPages('NURSE')}
+          />
           
           {loading ? (
             <div className="flex justify-center items-center py-8">
@@ -645,6 +722,7 @@ const AccountManagement: React.FC = () => {
             </div>
           )}
         </Card>
+        )}
       </div>
 
       {/* UserForm Modal */}
