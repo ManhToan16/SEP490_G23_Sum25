@@ -58,6 +58,21 @@ namespace SEP490_BE.Controllers
                 Data = schedules
             });
         }
+        [HttpGet("role/{roleName}")]
+        public async Task<IActionResult> GetSchedulesByRole(
+           string roleName,
+           [FromQuery] DateTime fromDate,
+           [FromQuery] DateTime toDate)
+        {
+            var schedules = await _scheduleService.GetSchedulesByRole(roleName, fromDate, toDate);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = schedules
+            });
+        }
         [HttpGet("range")]
         public async Task<IActionResult> GetAllSchedules(
             [FromQuery] DateTime fromDate,
