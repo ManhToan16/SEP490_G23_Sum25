@@ -27,17 +27,27 @@ namespace SEP490_BE.Services.ScheduleServices
             }
 
             var schedules = await _scheduleRepository.GetSchedulesByUserAndDateRangeAsync(userId, fromDate, toDate);
-            return schedules.Select(s => new ScheduleResponseDTO
+            var result = new List<ScheduleResponseDTO>();
+
+            foreach (var s in schedules)
             {
-                Id = s.Id,
-                UserId = s.UserId,
-                Role = s.Role,
-                RoomId = s.RoomId,
-                RoomType = s.RoomType,
-                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
-                TimeSlotId = s.TimeSlotId,
-                Status = s.Status
-            }).ToList();
+                var dto = new ScheduleResponseDTO
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = s.User.Name,
+                    Role = s.Role,
+                    RoomId = s.RoomId,
+                    RoomName = await GetRoomNameAsync(s.RoomId),
+                    RoomType = s.RoomType,
+                    Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
+                    TimeSlotId = s.TimeSlotId,
+                    Status = s.Status
+                };
+                result.Add(dto);
+            }
+
+            return result;
         }
 
         public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime fromDate, DateTime toDate)
@@ -48,17 +58,57 @@ namespace SEP490_BE.Services.ScheduleServices
             }
 
             var schedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(roomId, fromDate, toDate);
-            return schedules.Select(s => new ScheduleResponseDTO
+            var result = new List<ScheduleResponseDTO>();
+
+            foreach (var s in schedules)
             {
-                Id = s.Id,
-                UserId = s.UserId,
-                Role = s.Role,
-                RoomId = s.RoomId,
-                RoomType = s.RoomType,
-                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
-                TimeSlotId = s.TimeSlotId,
-                Status = s.Status
-            }).ToList();
+                var dto = new ScheduleResponseDTO
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = s.User.Name,
+                    Role = s.Role,
+                    RoomId = s.RoomId,
+                    RoomName = await GetRoomNameAsync(s.RoomId),
+                    RoomType = s.RoomType,
+                    Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
+                    TimeSlotId = s.TimeSlotId,
+                    Status = s.Status
+                };
+                result.Add(dto);
+            }
+
+            return result;
+        }
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRole(string role, DateTime fromDate, DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+            }
+
+            var schedules = await _scheduleRepository.GetSchedulesByRoleAndDateRangeAsync(role, fromDate, toDate);
+            var result = new List<ScheduleResponseDTO>();
+
+            foreach (var s in schedules)
+            {
+                var dto = new ScheduleResponseDTO
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = s.User.Name,
+                    Role = s.Role,
+                    RoomId = s.RoomId,
+                    RoomName = await GetRoomNameAsync(s.RoomId),
+                    RoomType = s.RoomType,
+                    Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
+                    TimeSlotId = s.TimeSlotId,
+                    Status = s.Status
+                };
+                result.Add(dto);
+            }
+
+            return result;
         }
 
         public async Task<List<ScheduleResponseDTO>> GetAllSchedules(DateTime fromDate, DateTime toDate)
@@ -69,17 +119,27 @@ namespace SEP490_BE.Services.ScheduleServices
             }
 
             var schedules = await _scheduleRepository.GetAllSchedulesByDateRangeAsync(fromDate, toDate);
-            return schedules.Select(s => new ScheduleResponseDTO
+            var result = new List<ScheduleResponseDTO>();
+
+            foreach (var s in schedules)
             {
-                Id = s.Id,
-                UserId = s.UserId,
-                Role = s.Role,
-                RoomId = s.RoomId,
-                RoomType = s.RoomType,
-                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
-                TimeSlotId = s.TimeSlotId,
-                Status = s.Status
-            }).ToList();
+                var dto = new ScheduleResponseDTO
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = s.User.Name,
+                    Role = s.Role,
+                    RoomId = s.RoomId,
+                    RoomName = await GetRoomNameAsync(s.RoomId),
+                    RoomType = s.RoomType,
+                    Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
+                    TimeSlotId = s.TimeSlotId,
+                    Status = s.Status
+                };
+                result.Add(dto);
+            }
+
+            return result;
         }
 
         public async Task<List<ScheduleResponseDTO>> CreateScheduleRange(CreateScheduleRangeDTO request)
@@ -191,17 +251,20 @@ namespace SEP490_BE.Services.ScheduleServices
                 throw;
             }
 
-            return schedules.Select(s => new ScheduleResponseDTO
+            return await Task.WhenAll(schedules.Select(async s => new ScheduleResponseDTO
             {
                 Id = s.Id,
                 UserId = s.UserId,
+                UserName = user.Name, // Đã có sẵn user
                 Role = s.Role,
                 RoomId = s.RoomId,
+                RoomName = await GetRoomNameAsync(s.RoomId), // Gọi async từng phòng
                 RoomType = s.RoomType,
                 Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = s.TimeSlotId,
                 Status = s.Status
-            }).ToList();
+            })).ContinueWith(t => t.Result.ToList());
+
         }
 
         public async Task<ScheduleResponseDTO> CreateSchedule(CreateScheduleDTO request)
@@ -309,13 +372,16 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 Id = schedule.Id,
                 UserId = schedule.UserId,
+                UserName = user.Name, // user đã có
                 Role = schedule.Role,
                 RoomId = schedule.RoomId,
+                RoomName = await GetRoomNameAsync(schedule.RoomId), // async
                 RoomType = schedule.RoomType,
                 Date = schedule.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = schedule.TimeSlotId,
                 Status = schedule.Status
             };
+
         }
         public async Task<ScheduleResponseDTO> UpdateSchedule(string id, UpdateScheduleDTO request)
         {
@@ -370,13 +436,16 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 Id = schedule.Id,
                 UserId = schedule.UserId,
+                UserName = schedule.User.Name, 
                 Role = schedule.Role,
                 RoomId = schedule.RoomId,
+                RoomName = await GetRoomNameAsync(schedule.RoomId), // async
                 RoomType = schedule.RoomType,
                 Date = schedule.Date.ToLocalTime().ToString("dd/MM/yyyy"),
                 TimeSlotId = schedule.TimeSlotId,
                 Status = schedule.Status
             };
+
         }
 
         public async Task DeleteSchedule(string id)
@@ -424,6 +493,62 @@ namespace SEP490_BE.Services.ScheduleServices
             }
             return false;
         }
+        private async Task<string> GetRoomNameAsync(string roomId)
+        {
+            var roomType = await DetectRoomTypeAsync(roomId);
+            return roomType switch
+            {
+                "EXAMINATION" => (await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Id == roomId))?.Name ?? "Unknown Room",
+                "LABORATORY" => (await _context.LaboratoryRooms.FirstOrDefaultAsync(r => r.Id == roomId))?.Name ?? "Unknown Room",
+                _ => "Unknown Room"
+            };
+        }
+        public async Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime fromDate, DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+            }
+
+            if (string.IsNullOrWhiteSpace(role) || (role != "DOCTOR" && role != "TECHNICIAN"))
+            {
+                throw new Exceptions.ArgumentException("Role phải là 'DOCTOR' hoặc 'TECHNICIAN'.");
+            }
+
+            var schedules = await _scheduleRepository.GetAllSchedulesByDateRangeAsync(fromDate, toDate);
+
+            var roleSchedules = schedules.Where(s => s.Role == role).ToList();
+            var totalDays = (toDate - fromDate).Days + 1;
+
+            var totalUsers = roleSchedules
+                .Select(s => s.UserId)
+                .Distinct()
+                .Count();
+
+            var totalRooms = roleSchedules
+                .Select(s => s.RoomId)
+                .Where(r => r != null)
+                .Distinct()
+                .Count();
+
+            var totalShifts = roleSchedules
+                .Select(s => s.TimeSlotId)
+                .Where(t => t != null)
+                .Distinct()
+                .Count();
+
+            var shiftsPerDay = totalDays > 0 ? (double)totalShifts / totalDays : 0;
+
+            return new ScheduleStatisticsDTO
+            {
+                Role = role,
+                TotalDoctors = totalUsers,
+                TotalRooms = totalRooms,
+                TotalShifts = totalShifts,
+                ShiftsPerDay = Math.Round(shiftsPerDay, 2)
+            };
+        }
+
     }
     public enum ScheduleStatus
     {

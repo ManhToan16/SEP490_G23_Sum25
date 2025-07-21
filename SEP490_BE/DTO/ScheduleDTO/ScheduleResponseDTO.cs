@@ -4,8 +4,11 @@
     {
         public string Id { get; set; } = null!;
         public string UserId { get; set; } = null!;
+        public string UserName { get; set; } = null!;
         public string Role { get; set; } = null!;
         public string RoomId { get; set; } = null!;
+        public string RoomName { get; set; } = null!;
+
         public string RoomType { get; set; } = null!;
         public string Date { get; set; }
         public string TimeSlotId { get; set; } = null!;

@@ -38,6 +38,13 @@ namespace SEP490_BE.Repositories.ScheduleRepositories
                 .Where(s => s.Date >= fromDate.Date && s.Date <= toDate.Date)
                 .ToListAsync();
         }
+        public async Task<List<Schedule>> GetSchedulesByRoleAndDateRangeAsync(string role, DateTime fromDate, DateTime toDate)
+        {
+            return await _context.Schedules
+                .Include(s => s.User)
+                .Where(s => s.Role == role && s.Date >= fromDate && s.Date <= toDate)
+                .ToListAsync();
+        }
 
         public async Task InsertRangeAsync(List<Schedule> schedules)
         {
