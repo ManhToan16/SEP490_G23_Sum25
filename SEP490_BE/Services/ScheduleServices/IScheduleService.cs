@@ -11,6 +11,7 @@ namespace SEP490_BE.Services.ScheduleServices
         Task<List<ScheduleResponseDTO>> CreateScheduleRange(CreateScheduleRangeDTO request);
         Task<ScheduleResponseDTO> CreateSchedule(CreateScheduleDTO request);
         Task<ScheduleResponseDTO> UpdateSchedule(string id, UpdateScheduleDTO request);
+        Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime fromDate, DateTime toDate);
         Task DeleteSchedule(string id);
     }
 }

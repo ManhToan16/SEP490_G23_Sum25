@@ -503,6 +503,52 @@ namespace SEP490_BE.Services.ScheduleServices
                 _ => "Unknown Room"
             };
         }
+        public async Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime fromDate, DateTime toDate)
+        {
+            if (fromDate > toDate)
+            {
+                throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+            }
+
+            if (string.IsNullOrWhiteSpace(role) || (role != "DOCTOR" && role != "TECHNICIAN"))
+            {
+                throw new Exceptions.ArgumentException("Role phải là 'DOCTOR' hoặc 'TECHNICIAN'.");
+            }
+
+            var schedules = await _scheduleRepository.GetAllSchedulesByDateRangeAsync(fromDate, toDate);
+
+            var roleSchedules = schedules.Where(s => s.Role == role).ToList();
+            var totalDays = (toDate - fromDate).Days + 1;
+
+            var totalUsers = roleSchedules
+                .Select(s => s.UserId)
+                .Distinct()
+                .Count();
+
+            var totalRooms = roleSchedules
+                .Select(s => s.RoomId)
+                .Where(r => r != null)
+                .Distinct()
+                .Count();
+
+            var totalShifts = roleSchedules
+                .Select(s => s.TimeSlotId)
+                .Where(t => t != null)
+                .Distinct()
+                .Count();
+
+            var shiftsPerDay = totalDays > 0 ? (double)totalShifts / totalDays : 0;
+
+            return new ScheduleStatisticsDTO
+            {
+                Role = role,
+                TotalDoctors = totalUsers,
+                TotalRooms = totalRooms,
+                TotalShifts = totalShifts,
+                ShiftsPerDay = Math.Round(shiftsPerDay, 2)
+            };
+        }
+
     }
     public enum ScheduleStatus
     {

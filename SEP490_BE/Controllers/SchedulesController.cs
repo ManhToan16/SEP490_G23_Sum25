@@ -91,7 +91,7 @@ namespace SEP490_BE.Controllers
         [HttpPost("range")]
         public async Task<IActionResult> CreateScheduleRange(
             [FromBody] CreateScheduleRangeDTO request)
-        {          
+        {
             var schedules = await _scheduleService.CreateScheduleRange(request);
             foreach (var schedule in schedules)
             {
@@ -110,7 +110,7 @@ namespace SEP490_BE.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateSchedule(
            [FromBody] CreateScheduleDTO request)
-        {          
+        {
             var schedule = await _scheduleService.CreateSchedule(request);
             await _notificationHubService.SendScheduleUpdate(schedule);
             return Ok(new ApiResponse
@@ -138,7 +138,7 @@ namespace SEP490_BE.Controllers
             });
         }
         [Authorize(Roles = "ADMIN")]
-        [HttpDelete("{id}")]        
+        [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteSchedule(string id)
         {
             //var adminId = User?.Identity?.Name;
@@ -163,6 +163,21 @@ namespace SEP490_BE.Controllers
                 Data = null
             });
         }
+        [HttpGet("statistics/{role}")]
+        public async Task<IActionResult> GetScheduleStatistics(
+            string role,
+            [FromQuery] DateTime fromDate,
+            [FromQuery] DateTime toDate)
+        {
+            var statistics = await _scheduleService.GetScheduleStatisticsByRole(role,fromDate, toDate);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = statistics
+            });
 
+        }
     }
 }
