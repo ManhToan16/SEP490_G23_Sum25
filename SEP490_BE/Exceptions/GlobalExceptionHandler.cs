@@ -32,7 +32,8 @@ namespace SEP490_BE.Exceptions
                     ex is InvalidOperationException ||
                     ex is ArgumentNullException ||
                     ex is BadHttpRequestException ||
-                    ex is ArgumentException)
+                    ex is ArgumentException||
+                    ex is ArgumentOutOfRangeException)
                 {
                     statusCode = 400;
                     message = string.IsNullOrEmpty(ex.Message) ? MessageConstants.VALIDATION_ERROR : ex.Message;
