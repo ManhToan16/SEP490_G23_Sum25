@@ -16,11 +16,13 @@ using SEP490_BE.Repositories.CategoryRepositories;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
+using SEP490_BE.Repositories.LaboratoryResultRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.MaterialRepositories;
 using SEP490_BE.Repositories.MedicalRecordRepositories;
 using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
+using SEP490_BE.Repositories.PrescriptionRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
@@ -39,11 +41,14 @@ using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Services.ExaminationResultServices;
 using SEP490_BE.Services.ExaminationRoomServices;
+using SEP490_BE.Services.FileServices;
+using SEP490_BE.Services.LaboratoryResultServices;
 using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Services.MaterialServices;
 using SEP490_BE.Services.MedicalRecordServices;
 using SEP490_BE.Services.MedicineServices;
 using SEP490_BE.Services.PatientProfileServices;
+using SEP490_BE.Services.PrescriptionServices;
 using SEP490_BE.Services.ScheduleChangeServices;
 using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
@@ -175,6 +180,9 @@ builder.Services.AddScoped<IMaterialService, MaterialService>();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
 builder.Services.AddScoped<IExaminationResultService, ExaminationResultService>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();    
+builder.Services.AddScoped<ILaboratoryResultService, LaboratoryResultService>();
+builder.Services.AddScoped<IFileService, FileService>();
 
 
 
@@ -200,6 +208,9 @@ builder.Services.AddScoped<IMaterialRepository, MaterialRepository>();
 builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
 builder.Services.AddScoped<IMedicalRecordRepository, MedicalRecordRepository>();
 builder.Services.AddScoped<IExaminationResultRepository, ExaminationResultRepository>();
+builder.Services.AddScoped<ILaboratoryFileRepository, LaboratoryFileRepository>();
+builder.Services.AddScoped<ILaboratoryResultRepository, LaboratoryResultRepository>();
+builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 
 
 
@@ -219,8 +230,6 @@ app.UseMiddleware<UnsupportedMediaTypeMiddleware>();
 
 app.UseMiddleware<GlobalExceptionHandler>();
 
-app.UseMiddleware<NotFoundMiddleware>();
-
 app.UseHttpsRedirection();
 
 // tạm thời để dev
@@ -230,7 +239,7 @@ app.UseCors("AllowAllOrigins");
 
 app.UseRouting();
 
-
+app.UseStaticFiles();
 
 app.UseAuthentication();
 
@@ -242,6 +251,8 @@ app.UseEndpoints(endpoints =>
     endpoints.MapHub<KhanhAnHub>("/khanhanHub");
 });
 app.MapControllers();
+
+app.UseMiddleware<NotFoundMiddleware>();
 
 app.Run();
 

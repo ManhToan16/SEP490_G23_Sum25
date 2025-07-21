@@ -14,7 +14,9 @@ namespace SEP490_BE.Repositories.ExaminationResultRepositories
 
         public async Task<ExaminationResult?> FindByIdAsync(string id)
         {
-            return await _context.ExaminationResults.FindAsync(id);
+            return await _context.ExaminationResults
+                .Include(p => p.Visit)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<List<ExaminationResult>> FindByMedicalRecordIdAsync(string medicalRecordId)
@@ -40,6 +42,10 @@ namespace SEP490_BE.Repositories.ExaminationResultRepositories
                 .FirstOrDefaultAsync(er => er.AccessCode == accessCode);
         }
 
+        public async Task<ExaminationResult?> FindByVisitIdAsync(string visitId)
+        {
+            return await _context.ExaminationResults.FirstOrDefaultAsync(er => er.VisitId == visitId);
+        }
     }
 
 }

@@ -89,6 +89,20 @@ namespace SEP490_BE.Controllers
                 Data = new[] { result }
             });
         }
+
+        [Authorize]
+        [HttpGet("visit/{visitId}")]
+        public async Task<ActionResult<ApiResponse>> GetByVisitId(string visitId)
+        {
+            var result = await _service.GetByVisitId(visitId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
     }
 
 }

@@ -5,6 +5,7 @@ namespace SEP490_BE.Repositories.ExaminationResultRepositories
     public interface IExaminationResultRepository
     {
         Task<ExaminationResult?> FindByIdAsync(string id);
+        Task<ExaminationResult?> FindByVisitIdAsync(string id);
         Task<List<ExaminationResult>> FindByMedicalRecordIdAsync(string medicalRecordId);
         Task InsertAsync(ExaminationResult result);
         Task UpdateAsync(ExaminationResult result);

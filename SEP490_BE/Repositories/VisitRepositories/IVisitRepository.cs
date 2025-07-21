@@ -16,6 +16,7 @@ namespace SEP490_BE.Repositories.VisitRepositories
                 int pageSize);
 
         Task<Visit?> FindByAppointmentId(string appointmentId);
+        Task<List<Visit>> GetByPatientProfile(string patientProfileId);
 
 
     }
