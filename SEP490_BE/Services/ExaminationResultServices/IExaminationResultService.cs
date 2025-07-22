@@ -8,6 +8,7 @@ namespace SEP490_BE.Services.ExaminationResultServices
         Task<ExaminationResultResponseDTO> Update(string id, ExaminationResultRequestDTO request);
         Task<List<ExaminationResultResponseDTO>> GetByMedicalRecordId(string medicalRecordId);
         Task<ExaminationResultResponseDTO> GetById(string id);
+        Task<ExaminationResultResponseDTO> GetByVisitId(string VisitId);
         Task<ExaminationResultResponseDTO?> FindByAccessCode(string accessCode);
 
     }

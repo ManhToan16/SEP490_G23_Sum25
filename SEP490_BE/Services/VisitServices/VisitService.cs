@@ -288,6 +288,28 @@ namespace SEP490_BE.Services.VisitServices
             };
         }
 
+        public async Task<List<VisitResponseDTO>> GetByPatientProfileId(string patientProfileId)
+        {
+            var visits = await _visitRepository.GetByPatientProfile(patientProfileId);
+            var patient = await _context.PatientProfiles.FindAsync(patientProfileId);
+            var patientName = patient?.Name ?? "";
+
+            return visits.Select(visit => new VisitResponseDTO
+            {
+                VisitId = visit.Id,
+                ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom?.Name ?? "",
+                AppointmentId = visit.AppointmentId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor?.Name ?? "",
+                PatientProfileId = visit.PatientProfileId,
+                PatientName = patientName,
+                QueueNumber = visit.QueueNumber,
+                TotalPrice = visit.TotalPrice ?? 0,
+                Status = visit.Status ?? "",
+                IsPrioritized = visit.IsPrioritized ?? false
+            }).ToList();
+        }
 
     }
 }

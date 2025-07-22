@@ -29,6 +29,9 @@ namespace SEP490_BE.Services.ExaminationResultServices
             var visit = await _context.Visits.FindAsync(visitId)
                 ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
+            var existExamResult = await _repository.FindByVisitIdAsync(visitId);
+            if (existExamResult != null) { throw new ConflictDataException(MessageConstants.EXAMINATION_RESULT_CONFLICT); }
+
             var patient = await _context.PatientProfiles.FindAsync(visit.PatientProfileId)
                 ?? throw new ResourceNotFoundException(MessageConstants.PATIENT_PROTILE_NOT_FOUND);
 
@@ -99,6 +102,14 @@ namespace SEP490_BE.Services.ExaminationResultServices
             return await ToResponseDTO(result);
         }
 
+        public async Task<ExaminationResultResponseDTO> GetByVisitId(string VisitId)
+        {
+            var result = await _repository.FindByVisitIdAsync(VisitId)
+                ?? throw new ResourceNotFoundException(MessageConstants.EXAMINATION_RESULT_NOT_FOUND);
+
+            return await ToResponseDTO(result);
+        }
+
         public async Task<ExaminationResultResponseDTO?> FindByAccessCode(string accessCode)
         {
             var result = await _repository.FindByAccessCodeAsync(accessCode);
@@ -144,6 +155,7 @@ namespace SEP490_BE.Services.ExaminationResultServices
             return accessCode;
         }
 
+        
     }
 
 }
