@@ -6,6 +6,7 @@ import authSlice from "./slices/authSlice";
 import uiSlice from "./slices/uiSlice";
 import dataSlice from "./slices/dataSlice";
 import doctorProfileSlice from "./slices/doctorProfileSlice";
+import scheduleSlice from "./slices/scheduleSlice";
 
 // Simple store configuration
 export const store = configureStore({
@@ -14,6 +15,7 @@ export const store = configureStore({
     ui: uiSlice,
     data: dataSlice,
     doctorProfile: doctorProfileSlice,
+    schedule: scheduleSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
