@@ -109,5 +109,20 @@ namespace SEP490_BE.Controllers
                 Data = new[] { pagination }
             });
         }
+
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Doctor)]
+        [Consumes("multipart/form-data")]
+        [HttpPost("{doctorProfileId}/upload-avatar")]
+        public async Task<ActionResult<ApiResponse>> UploadAvatar(string doctorProfileId, [FromForm] IFormFile avatar)
+        {
+            var result = await _doctorProfileService.UploadAvatar(doctorProfileId, avatar);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status201Created,
+                Success = true,
+                Message = MessageConstants.UPLOAD_SUCCESS,
+                Data = new[] { result }
+            });
+        }
     }
 }

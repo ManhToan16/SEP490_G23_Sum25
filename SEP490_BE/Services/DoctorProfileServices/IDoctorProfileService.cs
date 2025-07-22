@@ -15,5 +15,6 @@ namespace SEP490_BE.Services.DoctorProfileServices
         Task<DoctorProfileResponseDTO> Create(CreateDoctorProfileDTO request);
         Task<DoctorProfileResponseDTO> Update(string id, UpdateDoctorProfileDTO request);
         Task Delete(string id);
+        Task<DoctorProfileResponseDTO> UploadAvatar(string doctorProfileId, IFormFile avatar);
     }
 }

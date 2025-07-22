@@ -7,6 +7,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AssignmentRepositories;
+using SEP490_BE.Repositories.LaboratoryResultRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
@@ -22,6 +23,7 @@ namespace SEP490_BE.Services.AssignmentServices
         private readonly IServiceRepository _serviceRepository;
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IAppointmentRepository _appointmentRepository;
+        private readonly ILaboratoryResultRepository _laboratoryResultRepository;
 
         public AssignmentService(
             IAssignmentRepository assignmentRepository,
@@ -29,7 +31,8 @@ namespace SEP490_BE.Services.AssignmentServices
             IVisitRepository visitRepository,
             IServiceRepository serviceRepository,
             IAppointmentRepository appointmentRepository,
-            KhanhAnNeurologyClinicContext context)
+            KhanhAnNeurologyClinicContext context,
+            ILaboratoryResultRepository laboratoryResultRepository)
         {
             _assignmentRepository = assignmentRepository;
             _laboratoryRoomRepository = laboratoryRoomRepository;
@@ -37,6 +40,7 @@ namespace SEP490_BE.Services.AssignmentServices
             _serviceRepository = serviceRepository;
             _appointmentRepository = appointmentRepository;
             _context = context;
+            _laboratoryResultRepository = laboratoryResultRepository;
         }
 
         public async Task<Pagination<AssignmentResponseDTO>> GetAssignments(string laboratoryRoomId, string? status, DateTime date, int pageNumber, int pageSize)
@@ -240,7 +244,10 @@ namespace SEP490_BE.Services.AssignmentServices
             var visit = await _visitRepository.FindById(assignment.VisitId)
                 ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
-            // Logic không thể hoàn thành chỉ định khi chưa có kết quả xn labo result
+            var laboResult = await _laboratoryResultRepository.GetByAssignmentIdAsync(assignment.Id);
+            if (laboResult == null) {
+                throw new Exceptions.ArgumentException("Chỉ định khi chưa có phiếu kết quả xét nghiệm");
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
