@@ -96,7 +96,7 @@ namespace SEP490_BE.Controllers
         }
 
         [Authorize]
-        [HttpGet("appointmentId/{appointmentId}")]
+        [HttpGet("appointment/{appointmentId}")]
         public async Task<ActionResult<ApiResponse>> GetByAppointmentId(string appointmentId)
         {
             var result = await _visitService.GetByAppointmentId(appointmentId);
@@ -109,5 +109,18 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize]
+        [HttpGet("patient-profile/{patientProfileId}")]
+        public async Task<ActionResult<ApiResponse>> GetByPatientProfile(string patientProfileId)
+        {
+            var result = await _visitService.GetByPatientProfileId(patientProfileId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
     }
 }

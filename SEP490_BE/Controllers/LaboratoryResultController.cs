@@ -1,0 +1,164 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using SEP490_BE.Constants;
+using SEP490_BE.DTO.LaboratoryResultDTO;
+using SEP490_BE.DTO;
+using SEP490_BE.Services.LaboratoryResultServices;
+using SEP490_BE.Entities;
+using SEP490_BE.Exceptions;
+
+namespace SEP490_BE.Controllers
+{
+    [ApiController]
+    [Route("api/[controller]")]
+    public class LaboratoryResultController : ControllerBase
+    {
+        private readonly ILaboratoryResultService _service;
+
+        public LaboratoryResultController(ILaboratoryResultService service)
+        {
+            _service = service;
+        }
+
+        [Authorize(Roles = RoleConstants.Technician)]
+        [HttpPost("assignment/{assignmentId}")]
+        public async Task<ActionResult<ApiResponse>> Create(string assignmentId)
+        {
+            var result = await _service.CreateByAssignmentId(assignmentId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status201Created,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+
+        //[Authorize]
+        [HttpGet("examination-result/{examinationResultId}")]
+        public async Task<ActionResult<ApiResponse>> GetByExaminationResultId(string examinationResultId)
+        {
+            var results = await _service.GetListByExaminationId(examinationResultId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = results
+            });
+        }
+
+        [Authorize]
+        [HttpGet("assignment/{assignmentId}")]
+        public async Task<ActionResult<ApiResponse>> GetByAssignmentId(string assignmentId)
+        {
+            var result = await _service.GetByAssignmentId(assignmentId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+
+        [Authorize]
+        [HttpGet("{id}")]
+        public async Task<ActionResult<ApiResponse>> GetById(string id)
+        {
+            var result = await _service.GetById(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+
+        [Authorize(Roles = RoleConstants.Technician)]
+        [HttpPut("{id}")]
+        public async Task<ActionResult<ApiResponse>> Update(string id, [FromBody] LaboratoryResultRequestDTO request)
+        {
+            var result = await _service.UpdateById(id, request);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+
+        //[Authorize(Roles = RoleConstants.Technician)]
+        //[Consumes("multipart/form-data")]
+        //[HttpPost("{laboratoryResultId}/upload-file")]
+        //public async Task<ActionResult<ApiResponse>> UploadFile(string laboratoryResultId, [FromForm] IFormFile file)
+        //{
+        //    var result = await _service.UploadFile(laboratoryResultId, file);
+        //    return Ok(new ApiResponse
+        //    {
+        //        StatusCode = StatusCodes.Status201Created,
+        //        Success = true,
+        //        Message = MessageConstants.UPLOAD_SUCCESS,
+        //        Data = new[] { result }
+        //    });
+        //}
+
+        //public async Task<LaboratoryFilesResponseDTO> UploadFile(string laboratoryResultId, IFormFile file)
+        //{
+        //    var result = await _resultRepo.GetByIdAsync(laboratoryResultId)
+        //        ?? throw new ResourceNotFoundException(MessageConstants.LABORATORY_RESULT_NOT_FOUND);
+
+        //    var url = await _fileService.SaveFileAsync(file, $"uploads/laboratory/");
+
+        //    var labFile = new LaboratoryFile
+        //    {
+        //        Id = Guid.NewGuid().ToString(),
+        //        LaboratoryResultId = laboratoryResultId,
+        //        Url = url
+        //    };
+
+        //    await _fileRepo.AddAsync(labFile);
+
+        //    var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+        //    return new LaboratoryFilesResponseDTO
+        //    {
+        //        Id = labFile.Id,
+        //        LaboratoryResultId = laboratoryResultId,
+        //        Url = $"{backendUrl}/{url.TrimStart('/')}"
+        //    };
+        //}
+
+        [Authorize(Roles = RoleConstants.Technician)]
+        [Consumes("multipart/form-data")]
+        [HttpPost("{laboratoryResultId}/upload-files")]
+        public async Task<ActionResult<ApiResponse>> UploadFiles(string laboratoryResultId, [FromForm] List<IFormFile> files)
+        {
+            var result = await _service.UploadFiles(laboratoryResultId, files);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status201Created,
+                Success = true,
+                Message = MessageConstants.UPLOAD_SUCCESS,
+                Data = result
+            });
+        }
+
+
+        [Authorize(Roles = RoleConstants.Technician)]
+        [HttpDelete("delete-file/{fileId}")]
+        public async Task<ActionResult<ApiResponse>> DeleteFile(string fileId)
+        {
+            await _service.DeleteFileById(fileId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.DELETE_SUCCESS
+            });
+        }
+    }
+
+}

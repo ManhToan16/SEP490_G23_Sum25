@@ -3,7 +3,7 @@
     public class MessageConstants
     {
         #region System Exception
-        public const string UNCATEGORIZED_ERROR = "Đã xảy ra lỗi không xác định.";
+        public const string UNCATEGORIZED_ERROR = "Đã xảy ra lỗi.";
         public const string VALIDATION_ERROR = "Dữ liệu không hợp lệ.";
         public const string CONFLICT_ERROR = "Dữ liệu bị xung đột.";
         public const string UNAUTHENTICATED_ERROR = "Chưa xác thực người dùng.";
@@ -110,8 +110,24 @@
 
         #region Exam Result
         public const string EXAMINATION_RESULT_NOT_FOUND = "Không tìm thấy phiếu kết quả khám tổng quát.";
+        public const string EXAMINATION_RESULT_CONFLICT = "Phiếu kết quả khám tổng quát đã được tạo trước đó.";
         public const string EXAMINATION_RESULT_INVALID_UPDATE = "Không thể cập nhật phiếu kết quả khám tổng quát đã HOÀN THÀNH.";
         public const string EXAMINATION_RESULT_MEDICAL_RECORD_NOT_FOUND = "Bệnh nhân chưa có hồ sơ bệnh án, hãy tạo hồ sơ bệnh án cho bệnh nhân trước.";
         #endregion
+
+        #region Prescription
+        public const string PRESCRIPTION_NOT_FOUND = "Không tìm thấy đơn thuốc.";
+        public const string PRESCRIPTION_INVALID_UPDATE = "Không thể cập nhật phiếu đơn thuốc.";
+        #endregion
+
+        #region Labo Result
+        public const string LABORATORY_RESULT_NOT_FOUND = "Không tìm thấy phiếu kết quả xét nghiệm.";
+        public const string LABORATORY_RESULT_INVALID_UPDATE = "Không thể cập nhật kết quả xét nghiệm";
+        #endregion
+
+        #region File
+        public const string UPLOAD_SUCCESS = "Tải tệp lên thành công.";
+        #endregion
+
     }
 }
