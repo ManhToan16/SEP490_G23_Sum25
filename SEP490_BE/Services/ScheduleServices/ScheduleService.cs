@@ -560,7 +560,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 .Count();
 
             var totalShifts = roleSchedules
-                .Select(s => s.TimeSlotId)
+                .Select(s => s.Id)
                 .Where(t => t != null)
                 .Distinct()
                 .Count();
