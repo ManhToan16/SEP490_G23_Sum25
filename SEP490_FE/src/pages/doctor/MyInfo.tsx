@@ -179,22 +179,22 @@ const DoctorProfile: React.FC = () => {
               Hủy
             </button>
           )}
-          <button
-            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-            disabled={loading}
+        <button
+          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+          disabled={loading}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : isEditing ? (
-              <Save size={20} />
-            ) : (
-              <Edit3 size={20} />
-            )}
-            <span>{loading ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Chỉnh sửa'}</span>
-          </button>
+        >
+          {loading ? (
+            <Loader2 className="animate-spin" size={20} />
+          ) : isEditing ? (
+            <Save size={20} />
+          ) : (
+            <Edit3 size={20} />
+          )}
+          <span>{loading ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Chỉnh sửa'}</span>
+        </button>
+          </div>
         </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Basic Info */}
@@ -240,7 +240,7 @@ const DoctorProfile: React.FC = () => {
                 </span>
               </div>
             </div>
-          </div>
+              </div>
 
           {/* Contact Info Card */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
@@ -267,9 +267,9 @@ const DoctorProfile: React.FC = () => {
                   }
                 </span>
               </div>
+              </div>
             </div>
           </div>
-        </div>
 
         {/* Right Column - Editable Profile Info */}
         <div className="lg:col-span-2">
@@ -285,11 +285,11 @@ const DoctorProfile: React.FC = () => {
                   Trình độ chuyên môn *
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    name="qualifications"
-                    value={formData.qualifications}
-                    onChange={handleInputChange}
+                <input
+                  type="text"
+                  name="qualifications"
+                  value={formData.qualifications}
+                  onChange={handleInputChange}
                     placeholder="VD: Thạc sĩ Y học thần kinh - Đại học Y Dược TP.HCM"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -308,16 +308,16 @@ const DoctorProfile: React.FC = () => {
                   Số năm kinh nghiệm *
                 </label>
                 {isEditing ? (
-                  <input
-                    type="number"
-                    name="yearsOfExperience"
-                    value={formData.yearsOfExperience}
-                    onChange={handleInputChange}
-                    min="0"
+                <input
+                  type="number"
+                  name="yearsOfExperience"
+                  value={formData.yearsOfExperience}
+                  onChange={handleInputChange}
+                  min="0"
                     max="50"
                     placeholder="VD: 5"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                />
                 ) : (
                   <p className="text-gray-900 py-2">
                     {formData.yearsOfExperience || 0} năm
@@ -331,11 +331,11 @@ const DoctorProfile: React.FC = () => {
                   Tiểu sử chuyên môn
                 </label>
                 {isEditing ? (
-                  <textarea
-                    name="biography"
-                    value={formData.biography}
-                    onChange={handleInputChange}
-                    rows={4}
+                <textarea
+                  name="biography"
+                  value={formData.biography}
+                  onChange={handleInputChange}
+                  rows={4}
                     placeholder="VD: Bác sĩ chuyên điều trị các bệnh về thần kinh trung ương và tâm lý như rối loạn lo âu, trầm cảm, và rối loạn giấc ngủ."
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   />

@@ -49,6 +49,7 @@ export const ROUTES = {
     ACCOUNT_MANAGEMENT: '/admin/accounts',
     CLINIC_MANAGEMENT: '/admin/clinic',
     DOCTOR_FEEDBACK_LIST: '/admin/doctor-feedback',
+    DOCTOR_SCHEDULE_MANAGE: '/admin/schedule-manage',
     SYSTEM_LOGS: '/admin/logs',
   },
 
@@ -93,6 +94,7 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.ADMIN.CLINIC_MANAGEMENT, label: 'Quản lý phòng khám', icon: 'Building' },
     { path: ROUTES.ADMIN.DOCTOR_FEEDBACK_LIST, label: 'Phản hồi bác sĩ', icon: 'MessageSquare' },
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
+    {path: ROUTES.ADMIN.DOCTOR_SCHEDULE_MANAGE, label: 'Lịch làm việc', icon:'Library' }
   ],
 } as const;
 
