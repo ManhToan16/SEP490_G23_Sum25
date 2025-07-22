@@ -161,6 +161,35 @@ namespace SEP490_BE.Services.UserServices
                 Role = role[0]
             };
         }
+        public async Task<List<UserResponseDTO>> GetUserByRole(string role)
+        {
+            var users = await _userRepository.FindByRole(role);
+            if (users == null)
+            {
+                throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
+            }
+            var result = new List<UserResponseDTO>();
+
+            foreach (var user in users)
+            {
+                var userRoles = await _roleRepository.FindRolesByUser(user.Id); 
+
+                result.Add(new UserResponseDTO
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    PhoneNumber = user.PhoneNumber,
+                    Email = user.Email,
+                    Address = user.Address,
+                    Gender = user.Gender,
+                    DateOfBirth = user.DateOfBirth,
+                    IsActive = user.IsActive,
+                    Role = role 
+                });
+            }
+
+            return result;
+        }
 
         public async Task<UserResponseDTO> Update(string id, UpdateUserDTO request)
         {

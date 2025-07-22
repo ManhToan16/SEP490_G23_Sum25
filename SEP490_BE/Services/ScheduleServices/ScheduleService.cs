@@ -22,7 +22,7 @@ namespace SEP490_BE.Services.ScheduleServices
             _userRepository = userRepository;
         }
 
-        public async Task<List<ScheduleResponseDTO>> GetSchedulesByUserId(string userId, DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByUserId(string userId, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -58,7 +58,7 @@ namespace SEP490_BE.Services.ScheduleServices
             return result;
         }
 
-        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -92,7 +92,7 @@ namespace SEP490_BE.Services.ScheduleServices
 
             return result;
         }
-        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRole(string role, DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRole(string role, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -133,7 +133,7 @@ namespace SEP490_BE.Services.ScheduleServices
             return result;
         }
 
-        public async Task<List<ScheduleResponseDTO>> GetAllSchedules(DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetAllSchedules(DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -525,7 +525,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 _ => "Unknown Room"
             };
         }
-        public async Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime fromDate, DateTime toDate)
+        public async Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -536,11 +536,17 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 throw new Exceptions.ArgumentException("Role phải là 'DOCTOR' hoặc 'TECHNICIAN'.");
             }
-
+            if (!fromDate.HasValue || !toDate.HasValue)
+            {
+                var today = DateTime.Today;
+                int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+                fromDate = today.AddDays(-diff).Date;
+                toDate = fromDate.Value.AddDays(6).Date;
+            }
             var schedules = await _scheduleRepository.GetAllSchedulesByDateRangeAsync(fromDate, toDate);
 
             var roleSchedules = schedules.Where(s => s.Role == role).ToList();
-            var totalDays = (toDate - fromDate).Days + 1;
+            var totalDays = (toDate.Value - fromDate.Value).Days + 1;
 
             var totalUsers = roleSchedules
                 .Select(s => s.UserId)
