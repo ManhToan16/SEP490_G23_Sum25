@@ -97,8 +97,18 @@ namespace SEP490_BE.Services.ScheduleServices
             if (fromDate > toDate)
             {
                 throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
-            }          
-
+            }
+            ValidateRole(role);
+            void ValidateRole(string inputRole)
+            {
+                var validRoles = new HashSet<string> { "TECHNICIAN", "NURSE", "DOCTOR" };
+                if (!validRoles.Contains(inputRole.ToUpper()))
+                {
+                    throw new ResourceNotFoundException(
+                        $"Vai trò không hợp lệ: {inputRole}. Vai trò hợp lệ gồm: TECHNICIAN, NURSE, DOCTOR."
+                    );
+                }
+            }
             var schedules = await _scheduleRepository.GetSchedulesByRoleAndDateRangeAsync(role, fromDate, toDate);
             var result = new List<ScheduleResponseDTO>();
 
