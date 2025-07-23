@@ -15,6 +15,12 @@ namespace SEP490_BE.Repositories.UserRepositories
         public async Task<User> FindById(string userId) => await _context.Users.FirstOrDefaultAsync(u => u.Id == userId);
         public async Task<User> FindByEmail(string email) => await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
         public async Task<User> FindByPhoneNumber(string phoneNumber) => await _context.Users.FirstOrDefaultAsync(u => u.PhoneNumber == phoneNumber);
+        public async Task<List<User>> FindByRole(string role)
+        {
+            return await _context.Users
+        .Where(u => u.UserRoles.Any(r => r.RoleName == role))
+        .ToListAsync();
+        }
         public async Task<(List<UserResponseDTO> Users, int TotalItems)> FindAll(
                 string? role,
                 string? email,

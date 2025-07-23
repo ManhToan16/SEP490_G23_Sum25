@@ -3,6 +3,7 @@ using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ScheduleRepositories;
+using SEP490_BE.Repositories.UserRepositories;
 
 namespace SEP490_BE.Services.ScheduleServices
 {
@@ -10,20 +11,27 @@ namespace SEP490_BE.Services.ScheduleServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IScheduleRepository _scheduleRepository;
+        private readonly IUserRepository _userRepository;     
 
         public ScheduleService(
             KhanhAnNeurologyClinicContext context,
-            IScheduleRepository scheduleRepository)
+            IScheduleRepository scheduleRepository,IUserRepository userRepository)
         {
             _context = context;
             _scheduleRepository = scheduleRepository;
+            _userRepository = userRepository;
         }
 
-        public async Task<List<ScheduleResponseDTO>> GetSchedulesByUserId(string userId, DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByUserId(string userId, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
                 throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
+            }
+            var user = await _userRepository.FindById(userId);
+            if (user == null)
+            {
+                throw new ResourceNotFoundException($"Không tìm thấy người dùng với ID: {userId}");
             }
 
             var schedules = await _scheduleRepository.GetSchedulesByUserAndDateRangeAsync(userId, fromDate, toDate);
@@ -50,13 +58,17 @@ namespace SEP490_BE.Services.ScheduleServices
             return result;
         }
 
-        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
                 throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
             }
-
+            var room= await GetRoomNameAsync(roomId);
+            if (string.IsNullOrEmpty(room))
+            {
+                throw new ResourceNotFoundException($"Không tìm thấy phòng với ID: {roomId}");
+            }
             var schedules = await _scheduleRepository.GetSchedulesByRoomAndDateRangeAsync(roomId, fromDate, toDate);
             var result = new List<ScheduleResponseDTO>();
 
@@ -80,13 +92,23 @@ namespace SEP490_BE.Services.ScheduleServices
 
             return result;
         }
-        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRole(string role, DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetSchedulesByRole(string role, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
                 throw new Exceptions.ArgumentException("Ngày bắt đầu phải trước hoặc bằng ngày kết thúc.");
             }
-
+            ValidateRole(role);
+            void ValidateRole(string inputRole)
+            {
+                var validRoles = new HashSet<string> { "TECHNICIAN", "NURSE", "DOCTOR" };
+                if (!validRoles.Contains(inputRole.ToUpper()))
+                {
+                    throw new ResourceNotFoundException(
+                        $"Vai trò không hợp lệ: {inputRole}. Vai trò hợp lệ gồm: TECHNICIAN, NURSE, DOCTOR."
+                    );
+                }
+            }
             var schedules = await _scheduleRepository.GetSchedulesByRoleAndDateRangeAsync(role, fromDate, toDate);
             var result = new List<ScheduleResponseDTO>();
 
@@ -111,7 +133,7 @@ namespace SEP490_BE.Services.ScheduleServices
             return result;
         }
 
-        public async Task<List<ScheduleResponseDTO>> GetAllSchedules(DateTime fromDate, DateTime toDate)
+        public async Task<List<ScheduleResponseDTO>> GetAllSchedules(DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -503,7 +525,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 _ => "Unknown Room"
             };
         }
-        public async Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime fromDate, DateTime toDate)
+        public async Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime? fromDate, DateTime? toDate)
         {
             if (fromDate > toDate)
             {
@@ -514,11 +536,17 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 throw new Exceptions.ArgumentException("Role phải là 'DOCTOR' hoặc 'TECHNICIAN'.");
             }
-
+            if (!fromDate.HasValue || !toDate.HasValue)
+            {
+                var today = DateTime.Today;
+                int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+                fromDate = today.AddDays(-diff).Date;
+                toDate = fromDate.Value.AddDays(6).Date;
+            }
             var schedules = await _scheduleRepository.GetAllSchedulesByDateRangeAsync(fromDate, toDate);
 
             var roleSchedules = schedules.Where(s => s.Role == role).ToList();
-            var totalDays = (toDate - fromDate).Days + 1;
+            var totalDays = (toDate.Value - fromDate.Value).Days + 1;
 
             var totalUsers = roleSchedules
                 .Select(s => s.UserId)
@@ -532,7 +560,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 .Count();
 
             var totalShifts = roleSchedules
-                .Select(s => s.TimeSlotId)
+                .Select(s => s.Id)
                 .Where(t => t != null)
                 .Distinct()
                 .Count();

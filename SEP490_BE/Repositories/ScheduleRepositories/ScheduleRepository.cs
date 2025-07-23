@@ -12,37 +12,42 @@ namespace SEP490_BE.Repositories.ScheduleRepositories
             _context = context;
         }
 
-        public async Task<List<Schedule>> GetSchedulesByUserAndDateRangeAsync(string userId, DateTime fromDate, DateTime toDate)
+        public async Task<List<Schedule>> GetSchedulesByUserAndDateRangeAsync(string userId, DateTime? fromDate, DateTime? toDate)
         {
-           
             return await _context.Schedules
                 .Include(s => s.User)
-                .Where(s => s.UserId == userId && s.Date >= fromDate.Date && s.Date <= toDate.Date)
+                .Where(s => s.UserId == userId &&
+                            (!fromDate.HasValue || s.Date >= fromDate.Value.Date) &&
+                            (!toDate.HasValue || s.Date <= toDate.Value.Date))
                 .ToListAsync();
         }
 
-        public async Task<List<Schedule>> GetSchedulesByRoomAndDateRangeAsync(string roomId, DateTime fromDate, DateTime toDate)
+        public async Task<List<Schedule>> GetSchedulesByRoomAndDateRangeAsync(string roomId, DateTime? fromDate, DateTime? toDate)
         {
          
             return await _context.Schedules
                 .Include(s => s.User)
-                .Where(s => s.RoomId == roomId && s.Date >= fromDate.Date && s.Date <= toDate.Date)
+                .Where(s => s.RoomId == roomId && (!fromDate.HasValue || s.Date >= fromDate.Value.Date) && (!toDate.HasValue || s.Date <= toDate.Value.Date))
                 .ToListAsync();
         }
 
-        public async Task<List<Schedule>> GetAllSchedulesByDateRangeAsync(DateTime fromDate, DateTime toDate)
+        public async Task<List<Schedule>> GetAllSchedulesByDateRangeAsync(DateTime? fromDate, DateTime? toDate)
         {
-          
             return await _context.Schedules
                 .Include(s => s.User)
-                .Where(s => s.Date >= fromDate.Date && s.Date <= toDate.Date)
+                .Where(s =>
+                    (!fromDate.HasValue || s.Date >= fromDate.Value.Date) &&
+                    (!toDate.HasValue || s.Date <= toDate.Value.Date)
+                )
                 .ToListAsync();
         }
-        public async Task<List<Schedule>> GetSchedulesByRoleAndDateRangeAsync(string role, DateTime fromDate, DateTime toDate)
+
+        public async Task<List<Schedule>> GetSchedulesByRoleAndDateRangeAsync(string role, DateTime? fromDate, DateTime? toDate)
         {
             return await _context.Schedules
                 .Include(s => s.User)
-                .Where(s => s.Role == role && s.Date >= fromDate && s.Date <= toDate)
+                .Where(s => s.Role == role && (!fromDate.HasValue || s.Date >= fromDate.Value.Date) &&
+                            (!toDate.HasValue || s.Date <= toDate.Value.Date))
                 .ToListAsync();
         }
 

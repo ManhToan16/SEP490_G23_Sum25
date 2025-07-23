@@ -8,6 +8,8 @@ namespace SEP490_BE.Repositories.UserRepositories
         Task<User> FindByEmail(string phoneNumber);
         Task<User> FindByPhoneNumber(string phoneNumber);
         Task<User> FindById(string UserId);
+        Task<List<User>> FindByRole(string role);
+
         Task<(List<UserResponseDTO> Users, int TotalItems)> FindAll(
             string? role,
             string? email,

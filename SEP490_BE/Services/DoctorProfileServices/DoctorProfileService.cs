@@ -4,6 +4,8 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.DoctorProfileRepositories;
 using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Constants;
+using SEP490_BE.Services.FileServices;
 
 namespace SEP490_BE.Services.DoctorProfileServices
 {
@@ -11,13 +13,19 @@ namespace SEP490_BE.Services.DoctorProfileServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IDoctorProfileRepository _doctorProfileRepository;
+        private readonly IFileService _fileService;
+        private readonly IConfiguration _configuration;
 
         public DoctorProfileService(
             KhanhAnNeurologyClinicContext context,
-            IDoctorProfileRepository doctorProfileRepository)
+            IDoctorProfileRepository doctorProfileRepository,
+            IFileService fileService,
+            IConfiguration configuration)
         {
             _context = context;
             _doctorProfileRepository = doctorProfileRepository;
+            _fileService = fileService;
+            _configuration = configuration;
         }
 
         public async Task<Pagination<DoctorProfileResponseDTO>> GetAll(
@@ -183,5 +191,35 @@ namespace SEP490_BE.Services.DoctorProfileServices
             await _doctorProfileRepository.DeleteAsync(doctorProfile);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<DoctorProfileResponseDTO> UploadAvatar(string doctorProfileId, IFormFile avatar)
+        {
+            var doctorProfile = await _doctorProfileRepository.FindByIdAsync(doctorProfileId)
+                ?? throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ");
+
+            if (doctorProfile.Avatar != null)
+            {
+                await _fileService.DeleteFileAsync(doctorProfile.Avatar);
+            }
+
+            var url = await _fileService.SaveFileAsync(avatar, $"uploads/doctorProfile/");
+            doctorProfile.Avatar = url;
+
+            await _doctorProfileRepository.UpdateAsync(doctorProfile);
+            await _context.SaveChangesAsync();
+
+            var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+
+            return new DoctorProfileResponseDTO
+            {
+                Id = doctorProfile.Id,
+                DoctorId = doctorProfile.DoctorId,
+                Qualifications = doctorProfile.Qualifications,
+                YearsOfExperience = doctorProfile.YearsOfExperience,
+                Biography = doctorProfile.Biography,
+                Avatar = $"{backendUrl}/{url.TrimStart('/')}"
+            };
+        }
+
     }
 }

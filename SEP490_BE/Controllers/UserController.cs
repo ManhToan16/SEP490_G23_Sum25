@@ -36,7 +36,6 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet]
         public async Task<ActionResult<ApiResponse>> GetAll(
                 [FromQuery] string? role,
@@ -47,6 +46,18 @@ namespace SEP490_BE.Controllers
                 [FromQuery] int pageSize = 10)
         {
             var result = await _userService.GetAll(role, email, phoneNumber, name, pageNumber, pageSize);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+        [HttpGet("role/{role}")]
+        public async Task<ActionResult<ApiResponse>> GetByRole(string role)
+        {
+            var result = await _userService.GetUserByRole(role);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
