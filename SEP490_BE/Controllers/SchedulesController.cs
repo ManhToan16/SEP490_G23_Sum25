@@ -25,15 +25,29 @@ namespace SEP490_BE.Controllers
             _scheduleService = scheduleService;
             _notificationHubService = notificationHubService;
         }
+        private (DateTime fromDate, DateTime toDate) GetCurrentWeekRange()
+        {
+            var today = DateTime.Today;
+            int diff = (7 + (today.DayOfWeek - DayOfWeek.Monday)) % 7;
+            var startOfWeek = today.AddDays(-diff).Date;
+            var endOfWeek = startOfWeek.AddDays(6).Date;
+            return (startOfWeek, endOfWeek);
+        }
 
 
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetSchedulesByUserId(
             string userId,
-            [FromQuery] DateTime fromDate,
-            [FromQuery] DateTime toDate)
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate)
         {
-            var schedules = await _scheduleService.GetSchedulesByUserId(userId, fromDate, toDate);
+            var (from, to) = (fromDate, toDate) switch
+            {
+                (null, null) => GetCurrentWeekRange(),
+                (null, _) or (_, null) => throw new Exceptions.ArgumentException("Cần nhập cả ngày bắt đầu và ngày kết thúc."),
+                _ => (fromDate.Value, toDate.Value)
+            };
+            var schedules = await _scheduleService.GetSchedulesByUserId(userId, from, to);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -46,10 +60,16 @@ namespace SEP490_BE.Controllers
         [HttpGet("room/{roomId}")]
         public async Task<IActionResult> GetSchedulesByRoomId(
             string roomId,
-            [FromQuery] DateTime fromDate,
-            [FromQuery] DateTime toDate)
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate)
         {
-            var schedules = await _scheduleService.GetSchedulesByRoomId(roomId, fromDate, toDate);
+            var (from, to) = (fromDate, toDate) switch
+            {
+                (null, null) => GetCurrentWeekRange(),
+                (null, _) or (_, null) => throw new Exceptions.ArgumentException("Cần nhập cả ngày bắt đầu và ngày kết thúc."),
+                _ => (fromDate.Value, toDate.Value)
+            };
+            var schedules = await _scheduleService.GetSchedulesByRoomId(roomId, from, to);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -61,10 +81,16 @@ namespace SEP490_BE.Controllers
         [HttpGet("role/{roleName}")]
         public async Task<IActionResult> GetSchedulesByRole(
            string roleName,
-           [FromQuery] DateTime fromDate,
-           [FromQuery] DateTime toDate)
+           [FromQuery] DateTime? fromDate,
+           [FromQuery] DateTime? toDate)
         {
-            var schedules = await _scheduleService.GetSchedulesByRole(roleName, fromDate, toDate);
+            var (from, to) = (fromDate, toDate) switch
+            {
+                (null, null) => GetCurrentWeekRange(),
+                (null, _) or (_, null) => throw new Exceptions.ArgumentException("Cần nhập cả ngày bắt đầu và ngày kết thúc."),
+                _ => (fromDate.Value, toDate.Value)
+            };
+            var schedules = await _scheduleService.GetSchedulesByRole(roleName, from, to);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -73,12 +99,19 @@ namespace SEP490_BE.Controllers
                 Data = schedules
             });
         }
+
         [HttpGet("range")]
         public async Task<IActionResult> GetAllSchedules(
-            [FromQuery] DateTime fromDate,
-            [FromQuery] DateTime toDate)
+            [FromQuery] DateTime? fromDate,
+            [FromQuery] DateTime? toDate)
         {
-            var schedules = await _scheduleService.GetAllSchedules(fromDate, toDate);
+            var (from, to) = (fromDate, toDate) switch
+            {
+                (null, null) => GetCurrentWeekRange(),
+                (null, _) or (_, null) => throw new Exceptions.ArgumentException("Cần nhập cả ngày bắt đầu và ngày kết thúc."),
+                _ => (fromDate.Value, toDate.Value)
+            };
+            var schedules = await _scheduleService.GetAllSchedules(from, to);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -86,6 +119,28 @@ namespace SEP490_BE.Controllers
                 Message = MessageConstants.GET_SUCCESS,
                 Data = schedules
             });
+        }
+        [HttpGet("statistics/{role}")]
+        public async Task<IActionResult> GetScheduleStatistics(
+          string role,
+          [FromQuery] DateTime? fromDate,
+          [FromQuery] DateTime? toDate)
+        {
+            var (from, to) = (fromDate, toDate) switch
+            {
+                (null, null) => GetCurrentWeekRange(),
+                (null, _) or (_, null) => throw new Exceptions.ArgumentException("Cần nhập cả ngày bắt đầu và ngày kết thúc."),
+                _ => (fromDate.Value, toDate.Value)
+            };
+            var statistics = await _scheduleService.GetScheduleStatisticsByRole(role, from, to);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = statistics
+            });
+
         }
         [Authorize(Roles = "ADMIN")]
         [HttpPost("range")]
@@ -163,21 +218,6 @@ namespace SEP490_BE.Controllers
                 Data = null
             });
         }
-        [HttpGet("statistics/{role}")]
-        public async Task<IActionResult> GetScheduleStatistics(
-            string role,
-            [FromQuery] DateTime fromDate,
-            [FromQuery] DateTime toDate)
-        {
-            var statistics = await _scheduleService.GetScheduleStatisticsByRole(role,fromDate, toDate);
-            return Ok(new ApiResponse
-            {
-                StatusCode = StatusCodes.Status200OK,
-                Success = true,
-                Message = MessageConstants.GET_SUCCESS,
-                Data = statistics
-            });
-
-        }
+      
     }
 }

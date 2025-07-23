@@ -16,6 +16,10 @@ const DoctorFeedbackList = React.lazy(
   () => import("@/pages/admin/DoctorFeedbackList")
 );
 const Logs = React.lazy(() => import("@/pages/admin/Logs"));
+const PatientListAdmin = React.lazy(
+  () => import("@/pages/admin/PatientListAdmin")
+);
+
 
 const AdminRoutes: React.FC = () => {
   return (
@@ -29,6 +33,7 @@ const AdminRoutes: React.FC = () => {
         {/* <Route path="materials" element={<MaterialManagement/>}/> */}
         <Route path="material-types" element={<MaterialTypeManagement/>}/>
         <Route path="logs" element={<Logs />} />
+        <Route path="patients" element={<PatientListAdmin />} />
       </Routes>
     </Suspense>
   );

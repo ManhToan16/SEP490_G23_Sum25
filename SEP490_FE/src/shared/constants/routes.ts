@@ -53,6 +53,7 @@ export const ROUTES = {
     SYSTEM_LOGS: '/admin/logs',
     MATERIAL_MANAGEMENT: '/admin/materials',
     MATERIAL_TYPE_MANAGEMENT: '/admin/material-types',
+    PATIENT_LIST: '/admin/patients', // Thêm dòng này
   },
 
   // Error routes
@@ -105,6 +106,8 @@ export const NAVIGATION_ITEMS = {
       ]
     },
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
+    { path: ROUTES.ADMIN.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' }, // Thêm dòng này
+    {path: ROUTES.ADMIN.DOCTOR_SCHEDULE_MANAGE, label: 'Lịch làm việc', icon:'Library' }
   ],
 } as const;
 

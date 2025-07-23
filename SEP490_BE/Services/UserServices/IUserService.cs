@@ -14,6 +14,7 @@ namespace SEP490_BE.Services.UserServices
             int pageNumber,
             int pageSize);
         Task<UserResponseDTO> GetUserById(string id);
+        Task<List<UserResponseDTO>> GetUserByRole(string role);
         Task<UserResponseDTO> Create(CreateUserDTO request);
         Task<UserResponseDTO> Update(string id, UpdateUserDTO request);
         Task Delete(string id);
