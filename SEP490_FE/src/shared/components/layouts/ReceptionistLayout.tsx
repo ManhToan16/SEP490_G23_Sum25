@@ -19,7 +19,9 @@ const ReceptionistLayout: React.FC<ReceptionistLayoutProps> = ({
       header={<ReceptionistHeader />}
       sidebar={<ReceptionistSidebar />}
     >
-      {children}
+      <div className="flex-1 p-6">
+        {children}
+      </div>
     </BaseLayout>
   );
 };

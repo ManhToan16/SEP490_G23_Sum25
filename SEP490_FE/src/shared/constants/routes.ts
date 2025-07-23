@@ -50,6 +50,7 @@ export const ROUTES = {
     CLINIC_MANAGEMENT: '/admin/clinic',
     DOCTOR_FEEDBACK_LIST: '/admin/doctor-feedback',
     SYSTEM_LOGS: '/admin/logs',
+    PATIENT_LIST: '/admin/patients', // Thêm dòng này
   },
 
   // Error routes
@@ -93,6 +94,7 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.ADMIN.CLINIC_MANAGEMENT, label: 'Quản lý phòng khám', icon: 'Building' },
     { path: ROUTES.ADMIN.DOCTOR_FEEDBACK_LIST, label: 'Phản hồi bác sĩ', icon: 'MessageSquare' },
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
+    { path: ROUTES.ADMIN.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' }, // Thêm dòng này
   ],
 } as const;
 
