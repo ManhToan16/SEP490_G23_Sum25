@@ -2,6 +2,7 @@
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 
@@ -12,14 +13,16 @@ namespace SEP490_BE.Services.ScheduleServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IUserRepository _userRepository;     
+        private readonly IScheduleChangeRepository _scheduleChangeRepository;
 
         public ScheduleService(
             KhanhAnNeurologyClinicContext context,
-            IScheduleRepository scheduleRepository,IUserRepository userRepository)
+            IScheduleRepository scheduleRepository,IUserRepository userRepository, IScheduleChangeRepository scheduleChangeRepository)
         {
             _context = context;
             _scheduleRepository = scheduleRepository;
             _userRepository = userRepository;
+            _scheduleChangeRepository = scheduleChangeRepository;
         }
 
         public async Task<List<ScheduleResponseDTO>> GetSchedulesByUserId(string userId, DateTime? fromDate, DateTime? toDate)
@@ -483,6 +486,12 @@ namespace SEP490_BE.Services.ScheduleServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                await _scheduleChangeRepository.DeleteByScheduleAsync(
+           schedule.UserId,
+           schedule.Id,
+           schedule.Date,
+           schedule.TimeSlotId
+       );
                 await _scheduleRepository.DeleteAsync(id);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

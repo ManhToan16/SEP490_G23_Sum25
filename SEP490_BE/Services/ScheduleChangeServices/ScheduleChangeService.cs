@@ -203,14 +203,56 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             return new ScheduleChangeResponseDTO
             {
                 Id = request.Id,
-                RequesterId = request.RequesterId,
-                RequesterScheduleId = request.RequesterScheduleId,
-                TargetUserId = request.TargetUserId,
-                TargetScheduleId = request.TargetScheduleId,
                 Reason = request.Reason,
                 Status = request.Status,
+                RequesterId = request.RequesterId,
+                TargetUserId = request.TargetUserId,
+                RequesterScheduleId = request.RequesterScheduleId,
+                TargetScheduleId = request.TargetScheduleId,
                 RequesterName = request.Requester?.Name,
-                TargetUserName = request.TargetUser?.Name
+                TargetUserName = request.TargetUser?.Name,
+                RequesterDate = request.RequesterSchedule.Date,
+                RequesterTimeSlotId = request.RequesterSchedule.TimeSlotId,
+                TargetDate = request.TargetSchedule.Date,
+                TargetTimeSlotId = request.TargetSchedule.TimeSlotId
+            };
+        }
+        public async Task<List<ScheduleChangeResponseDTO>> GetByRequesterIdAsync(string requesterId)
+        {
+            var requests = await _changeRequestRepository.GetByRequesterIdAsync(requesterId);
+            if (requests == null || !requests.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy yêu cầu.");
+            }
+            return requests.Select(MapToDto).ToList();
+        }
+
+        public async Task<List<ScheduleChangeResponseDTO>> GetByTargetUserIdAsync(string targetUserId)
+        {
+            var requests = await _changeRequestRepository.GetByTargetUserIdAsync(targetUserId);
+            if (requests == null || !requests.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy yêu cầu.");
+            }
+            return requests.Select(MapToDto).ToList();
+        }
+        private ScheduleChangeResponseDTO MapToDto(ScheduleChangeRequest r)
+        {
+            return new ScheduleChangeResponseDTO
+            {
+                Id = r.Id,
+                Reason = r.Reason,
+                Status = r.Status,
+                RequesterId = r.RequesterId,
+                TargetUserId = r.TargetUserId,
+                RequesterScheduleId = r.RequesterScheduleId,
+                TargetScheduleId = r.TargetScheduleId,
+                RequesterName = r.Requester?.Name,
+                TargetUserName = r.TargetUser?.Name,
+                RequesterDate = r.RequesterSchedule.Date ,
+                RequesterTimeSlotId = r.RequesterSchedule.TimeSlotId ,
+                TargetDate = r.TargetSchedule.Date ,
+                TargetTimeSlotId = r.TargetSchedule.TimeSlotId 
             };
         }
     }
