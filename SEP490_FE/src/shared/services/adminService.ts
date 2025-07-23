@@ -68,7 +68,36 @@ export const adminService = {
     }
   },
 
+  getPatientList: async (
+    params: {
+      name?: string;
+      dateOfBirth?: string;
+      citizenId?: string;
+      pageNumber?: number;
+      pageSize?: number;
+    } = {}
+  ) => {
+    try {
+      const { name, dateOfBirth, citizenId, pageNumber = 1, pageSize = 10 } = params;
+      let url = `/PatientProfile?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+      if (name) url += `&name=${encodeURIComponent(name)}`;
+      if (dateOfBirth) url += `&dateOfBirth=${encodeURIComponent(dateOfBirth)}`;
+      if (citizenId) url += `&citizenId=${encodeURIComponent(citizenId)}`;
+      const response = await api.get(url);
+      // Dữ liệu trả về là mảng, lấy phần tử đầu tiên
+      const pageData = Array.isArray(response.data) ? response.data[0] : undefined;
+      return {
+        items: pageData?.items || [],
+        totalItems: pageData?.totalItems || 0,
+        pageNumber: pageData?.pageNumber || 1,
+        pageSize: pageData?.pageSize || 10,
+      };
+    } catch (error: any) {
+      console.error("Error fetching patient list:", error?.response?.data?.message || error.message);
   // Lấy danh sách ca làm việc
+    }
+ 
+  },
   getTimeSlots: async () => {
     try {
       const response = await api.get("/TimeSlots");
@@ -78,7 +107,23 @@ export const adminService = {
       throw error;
     }
   },
-
+  createPatient: async (patient: {
+    name: string;
+    citizenId: string;
+    phoneNumber: string;
+    email: string;
+    dateOfBirth: string; // Định dạng: "YYYY-MM-DD"
+    gender: string;
+    address?: string;
+  }) => {
+    try {
+      const response = await api.post("/PatientProfile", patient);
+      // Trả về bệnh nhân mới tạo
+      return response.data?.data?.[0];
+    } catch (error: any) {
+      console.error("Error creating patient:", error?.response?.data?.message || error.message);
+    }
+  },
   // Lấy danh sách lịch làm việc theo role và khoảng thời gian
   getSchedulesByRole: async (role: string, fromDate: string, toDate: string) => {
     try {
@@ -106,6 +151,26 @@ export const adminService = {
     }
   },
 
+  updatePatient: async (
+    id: string,
+    patient: {
+      name: string;
+      citizenId: string;
+      phoneNumber: string;
+      email: string;
+      dateOfBirth: string; // "YYYY-MM-DD" hoặc ISO string
+      gender: string;
+      address?: string;
+    }
+  ) => {
+    try {
+      const response = await api.put(`/PatientProfile/${id}`, patient);
+      // Trả về bệnh nhân đã cập nhật
+      return response.data?.data?.[0];
+    } catch (error: any) {
+      console.error("Error updating patient:", error?.response?.data?.message || error.message);
+    }
+  },
   // Cập nhật lịch làm việc
   updateSchedule: async (scheduleId: string, scheduleData: any) => {
     try {
@@ -117,6 +182,15 @@ export const adminService = {
     }
   },
 
+  getPatientById: async (id: string) => {
+    try {
+      const response = await api.get(`/PatientProfile/${id}`);
+      // Trả về object bệnh nhân đầu tiên trong mảng Data
+      return response.data?.data?.[0];
+    } catch (error: any) {
+      console.error("Error fetching patient by id:", error?.response?.data?.message || error.message);
+    }
+  },
   // Xóa lịch làm việc
   deleteSchedule: async (scheduleId: string) => {
     try {
