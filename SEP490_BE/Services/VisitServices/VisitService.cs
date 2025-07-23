@@ -7,6 +7,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
+using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
@@ -25,6 +26,7 @@ namespace SEP490_BE.Services.VisitServices
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IVisitRepository _visitRepository;
+        private readonly IExaminationResultRepository _examinationResultRepository;
 
         public VisitService(
             KhanhAnNeurologyClinicContext context,
@@ -33,7 +35,8 @@ namespace SEP490_BE.Services.VisitServices
             IAppointmentRepository appointmentRepository,
             IUserRepository userRepository,
             IEmailService emailService,
-            IVisitRepository visitRepository)
+            IVisitRepository visitRepository,
+            IExaminationResultRepository examinationResultRepository)
         {
             _context = context;
             _authService = authService;
@@ -42,6 +45,7 @@ namespace SEP490_BE.Services.VisitServices
             _userRepository = userRepository;
             _emailService = emailService;
             _visitRepository = visitRepository;
+            _examinationResultRepository = examinationResultRepository;
         }
         public async Task<VisitResponseDTO> Create(VisitRequestDTO request)
         {
@@ -176,13 +180,17 @@ namespace SEP490_BE.Services.VisitServices
                 .Where(a => a.VisitId == visit.Id && a.Status != AssignmentStatus.COMPLETED)
                 .ToListAsync();
             if (incompleteAssignments.Any())
-                throw new InvalidOperationException(MessageConstants.VISIT_INVALID_COMPLETED);
+                throw new ArgumentException(MessageConstants.VISIT_INVALID_COMPLETED);
 
             visit.Status = VisitStatus.COMPLETED;
             visit.Appointment.Status = AppointmentStatus.COMPLETED;
 
-            // Logic: không thể complete visit khi chưa có phiếu kết quả khám exam result
-            string accessCode = "(Sẽ bổ sung access code sau)";
+            var examResult = await _examinationResultRepository.FindByVisitIdAsync(id);
+            if (examResult == null)
+            {
+                throw new ArgumentException("Lượt khám chưa có kết quả khám tổng quát");
+            }
+            string accessCode = examResult.AccessCode;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try

@@ -1,5 +1,4 @@
-
 import PatientListCommon from '@/shared/components/patient/PatientListCommon';
-export default function PatientList() {
+export default function PatientListAdmin() {
   return <PatientListCommon />;
-}
+} 
