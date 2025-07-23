@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -155,6 +156,14 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 #endregion
+
+#region Hangfire
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("MyDB")));
+builder.Services.AddHangfireServer();
+#endregion
+
+
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 #region Scope
@@ -253,6 +262,15 @@ app.UseEndpoints(endpoints =>
 app.MapControllers();
 
 app.UseMiddleware<NotFoundMiddleware>();
+
+app.UseHangfireDashboard("/hangfire");
+
+RecurringJob.AddOrUpdate<IAppointmentService>(
+    "auto-expire-appointments",
+    service => service.AutoExpired(),
+    "59 23 * * *", // cron expression: 23:59 mỗi ngày
+    TimeZoneInfo.Local
+);
 
 app.Run();
 
