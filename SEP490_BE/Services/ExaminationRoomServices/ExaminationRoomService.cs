@@ -60,12 +60,10 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
         public async Task<ExaminationRoomResponseDTO> Create(CreateExaminationRoomDTO request)
         {
-            var existingRoom = await _examinationRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
-            if (existingRoom != null)
+            if (await IsExaminationRoomExistsAsync(request.Name))
             {
-                throw new ConflictDataException("Phòng khám lâm sàng đã tồn tại");
+                throw new InvalidOperationException("Phòng khám đã tồn tại.");
             }
-
             var room = new ExaminationRoom
             {
                 Id = Guid.NewGuid().ToString(),
@@ -92,6 +90,11 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 Name = room.Name,
                 Description = room.Description
             };
+        }
+        public async Task<bool> IsExaminationRoomExistsAsync(string name)
+        {
+            return await _context.ExaminationRooms
+                .AnyAsync(r => r.Name.ToLower().Trim() == name.ToLower().Trim());
         }
 
         public async Task<ExaminationRoomResponseDTO> Update(string id, UpdateExaminationRoomDTO request)

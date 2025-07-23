@@ -3,6 +3,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ServiceRepositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace SEP490_BE.Services.ServiceServices
 {
@@ -64,10 +65,9 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
-            var existingService = await _serviceRepository.FindByIdAsync(Guid.NewGuid().ToString());
-            if (existingService != null)
+            if (await IsServiceExistsAsync(request.Name, request.LaboratoryRoomId))
             {
-                throw new ConflictDataException("Dịch vụ đã tồn tại.");
+                throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
             }
 
             var room = await _context.LaboratoryRooms.FindAsync(request.LaboratoryRoomId);
@@ -106,6 +106,12 @@ namespace SEP490_BE.Services.ServiceServices
                 Price = service.Price,
                 Description = service.Description
             };
+        }
+        public async Task<bool> IsServiceExistsAsync(string name, string laboratoryRoomId)
+        {
+            return await _context.Services.AnyAsync(s =>
+                s.Name.ToLower().Trim() == name.ToLower().Trim() &&
+                s.LaboratoryRoomsId == laboratoryRoomId);
         }
 
         public async Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request)
