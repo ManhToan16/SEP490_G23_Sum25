@@ -70,9 +70,13 @@ const LoginModal = ({ onClose }) => {
 
       onClose();
     } catch (error) {
+      let msg = error?.response?.data?.Message || error?.response?.data?.message || error.message || 'Thông tin không hợp lệ';
+      if (error?.response?.status === 403 && !msg.includes('Tài khoản bạn đã bị chặn')) {
+        msg += ' Tài khoản bạn đã bị chặn.';
+      }
       toast({
         title: 'Lỗi đăng nhập',
-        description: error.message || 'Thông tin không hợp lệ',
+        description: msg,
       });
     }
   };

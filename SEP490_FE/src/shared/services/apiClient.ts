@@ -41,7 +41,7 @@ apiClient.interceptors.response.use(
     // Trả về error message đơn giản
     const message =
       error.response?.data?.message || error.message || "Có lỗi xảy ra";
-    return Promise.reject(new Error(message));
+    return Promise.reject(error);
   }
 );
 
