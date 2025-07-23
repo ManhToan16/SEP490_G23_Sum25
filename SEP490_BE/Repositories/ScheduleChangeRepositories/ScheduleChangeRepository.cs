@@ -16,7 +16,8 @@ namespace SEP490_BE.Repositories.ScheduleChangeRepositories
         {
             return await _context.ScheduleChangeRequests
                 .Include(r => r.Requester)
-                .Include(r => r.TargetUser)
+                .Include(r => r.TargetUser).Include(r => r.RequesterSchedule)
+        .Include(r => r.TargetSchedule)
                 .FirstOrDefaultAsync(r => r.Id == id);
         }
 
@@ -41,5 +42,41 @@ namespace SEP490_BE.Repositories.ScheduleChangeRepositories
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task DeleteByScheduleAsync(string requesterId, string scheduleId, DateTime date, string timeSlotId)
+        {
+            var requestsToDelete = await _context.ScheduleChangeRequests
+                .Include(r => r.RequesterSchedule)
+                .Where(r =>
+                    r.RequesterId == requesterId &&
+                    r.RequesterScheduleId == scheduleId &&
+                    r.RequesterSchedule != null &&
+                    r.RequesterSchedule.Date == date &&
+                    r.RequesterSchedule.TimeSlotId == timeSlotId
+                ).ToListAsync();
+
+            _context.ScheduleChangeRequests.RemoveRange(requestsToDelete);
+            await _context.SaveChangesAsync();
+        }
+        public async Task<List<ScheduleChangeRequest>> GetByRequesterIdAsync(string requesterId)
+        {
+            return await _context.ScheduleChangeRequests
+                .Include(r => r.Requester)
+                .Include(r => r.TargetUser)
+                .Include(r => r.RequesterSchedule)
+        .Include(r => r.TargetSchedule)
+                .Where(r => r.RequesterId == requesterId)
+                .ToListAsync();
+        }
+        public async Task<List<ScheduleChangeRequest>> GetByTargetUserIdAsync(string targetUserId)
+        {
+            return await _context.ScheduleChangeRequests
+                .Include(r => r.Requester)
+                .Include(r => r.TargetUser)
+                .Include(r => r.RequesterSchedule)
+        .Include(r => r.TargetSchedule)
+                .Where(r => r.TargetUserId == targetUserId)
+                .ToListAsync();
+        }
+
     }
 }
