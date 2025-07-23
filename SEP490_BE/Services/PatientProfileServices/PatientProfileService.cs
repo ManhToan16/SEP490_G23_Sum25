@@ -4,6 +4,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.DTO.PatientProfileDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.MedicalRecordRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
@@ -16,13 +17,16 @@ namespace SEP490_BE.Services.PatientProfileServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IPatientProfileRepository _patientProfileRepository;
+        private readonly IMedicalRecordRepository _medicalRecordRepository;
 
         public PatientProfileService(
             KhanhAnNeurologyClinicContext context,
-            IPatientProfileRepository patientProfileRepository)
+            IPatientProfileRepository patientProfileRepository,
+            IMedicalRecordRepository medicalRecordRepository)
         {
             _context = context;
             _patientProfileRepository = patientProfileRepository;
+            _medicalRecordRepository = medicalRecordRepository;
         }
 
         public async Task<PatientProfileResponseDTO> Create(PatientProfileRequestDTO request)
@@ -32,9 +36,11 @@ namespace SEP490_BE.Services.PatientProfileServices
             {
                 throw new ConflictDataException(MessageConstants.PATIENT_PROTILE_EXISTS);
             }
-            var entity = new PatientProfile
+
+            var patientProfileId = Guid.NewGuid().ToString();
+            var patientProfile = new PatientProfile
             {
-                Id = Guid.NewGuid().ToString(),
+                Id = patientProfileId,
                 Name = request.Name,
                 CitizenId = request.CitizenId,
                 PhoneNumber = request.PhoneNumber,
@@ -43,9 +49,32 @@ namespace SEP490_BE.Services.PatientProfileServices
                 Gender = request.Gender,
                 Address = request.Address
             };
-            await _patientProfileRepository.Add(entity);
-            await _context.SaveChangesAsync();
-            return MapToResponse(entity);
+            var medicalRecord = new MedicalRecord
+            {
+                Id = Guid.NewGuid().ToString(),
+                PatientProfileId = patientProfileId,
+                MedicalHistory = "",
+                Allergies = "",
+                SurgicalHistory = "",
+                Treatment = "",
+                CurrentMedications = "",
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _patientProfileRepository.Add(patientProfile);
+                await _medicalRecordRepository.InsertAsync(medicalRecord);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            return MapToResponse(patientProfile);
         }
 
         public async Task<Pagination<PatientProfileResponseDTO>> GetAll(string? name, DateTime? dateOfBirth, string? citizenId, int pageNumber, int pageSize)
