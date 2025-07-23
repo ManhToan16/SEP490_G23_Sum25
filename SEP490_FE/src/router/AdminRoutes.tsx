@@ -2,6 +2,7 @@ import React, { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import Loading from "@/shared/components/common/LoadingSpinner";
 import ScheduleManagement from "@/pages/admin/ScheduleManagement";
+import MaterialTypeManagement from "@/pages/admin/MaterialTypeManagement";
 
 // Lazy load admin pages
 const Dashboard = React.lazy(() => import("@/pages/admin/Dashboard"));
@@ -25,6 +26,8 @@ const AdminRoutes: React.FC = () => {
         <Route path="clinic" element={<ClinicManagement />} />
         <Route path="doctor-feedback" element={<DoctorFeedbackList />} />
         <Route path="schedule-manage" element={<ScheduleManagement/>}/>
+        {/* <Route path="materials" element={<MaterialManagement/>}/> */}
+        <Route path="material-types" element={<MaterialTypeManagement/>}/>
         <Route path="logs" element={<Logs />} />
       </Routes>
     </Suspense>

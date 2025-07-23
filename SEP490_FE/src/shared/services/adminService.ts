@@ -185,4 +185,58 @@ export const adminService = {
       throw error;
     }
   },
+
+  // Quản lý loại vật tư (Category)
+  getMaterialTypeList: async (pageNumber = 1, pageSize = 10) => {
+    try {
+      const response = await api.get(`/Categories?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      // API trả về data là mảng, lấy phần tử đầu tiên
+      const pageData = response.data?.data?.[0];
+      return {
+        items: pageData?.items || [],
+        totalItems: pageData?.totalItems || 0,
+        pageNumber: pageData?.pageNumber || 1,
+        pageSize: pageData?.pageSize || 10,
+      };
+    } catch (error: any) {
+      console.error("Error fetching material type list:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
+  getMaterialTypeDetail: async (id: string) => {
+    try {
+      const response = await api.get(`/Categories/${id}`);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error fetching material type detail:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
+  createMaterialType: async (data: { name: string; description: string }) => {
+    try {
+      const response = await api.post('/Categories', data);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error creating material type:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
+  updateMaterialType: async (id: string, data: { name: string; description: string }) => {
+    try {
+      const response = await api.put(`/Categories/${id}`, data);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error updating material type:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
+  deleteMaterialType: async (id: string) => {
+    try {
+      const response = await api.delete(`/Categories/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting material type:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
 };

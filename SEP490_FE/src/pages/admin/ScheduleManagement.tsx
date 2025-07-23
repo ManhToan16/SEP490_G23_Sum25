@@ -621,7 +621,7 @@ const ScheduleManagement: React.FC = () => {
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Compact Header */}
       <div className="flex-shrink-0 bg-white border-b border-gray-200 px-6 py-3">
-        <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
         <div>
               <h1 className="text-2xl font-poppins font-bold text-clinic-navy">
@@ -757,7 +757,7 @@ const ScheduleManagement: React.FC = () => {
                     <span className="text-sm font-normal text-gray-600 ml-2">
                       ({currentWeekRange.start} - {currentWeekRange.end})
                     </span>
-                  </h2>
+        </h2>
         </div>
                 <div className="flex-1 overflow-auto">
                   <Table className="min-w-full">
