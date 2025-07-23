@@ -606,5 +606,26 @@ namespace SEP490_BE.Services.AppointmentServices
         {
             throw new NotImplementedException();
         }
+
+        public async Task AutoExpired()
+        {
+            var today = DateTime.Today;
+
+            var appointments = await _context.Appointments
+                .Where(a =>
+                    a.Date.Date == today &&
+                    (a.Status == AppointmentStatus.WAITING_FOR_CHECK_IN ||
+                     a.Status == AppointmentStatus.WAITING_FOR_CONFIRMATION))
+                .ToListAsync();
+
+            foreach (var appointment in appointments)
+            {
+                appointment.Status = AppointmentStatus.CANCELLED;
+                await _appointmentRepository.Update(appointment);
+            }
+            await _context.SaveChangesAsync();
+        }
+
+
     }
 }
