@@ -163,6 +163,8 @@ builder.Services.AddHangfire(config =>
 builder.Services.AddHangfireServer();
 #endregion
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
