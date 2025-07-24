@@ -152,5 +152,13 @@ namespace SEP490_BE.Controllers
                 Data = new[] { result }
             });
         }
+
+        [HttpGet("{id}/invoice")]
+        public async Task<IActionResult> PrintInvoice(string id)
+        {
+            var pdfBytes = await _appointmentService.GenerateInvoicePdf(id);
+            return File(pdfBytes, "application/pdf", $"HoaDon_{id}.pdf");
+        }
+
     }
 }

@@ -68,13 +68,11 @@ apiClient.interceptors.response.use(
       message = error.message;
     }
 
-    // Create custom error with response attached
-    const customError: CustomError = new Error(message);
-    customError.response = error.response;
-    customError.status = error.response?.status;
-    customError.statusText = error.response?.statusText;
-    
-    return Promise.reject(customError);
+
+    // Trả về error message đơn giản
+     message =
+      error.response?.data?.message || error.message || "Có lỗi xảy ra";
+    return Promise.reject(error);
   }
 );
 
