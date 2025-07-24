@@ -41,6 +41,7 @@
 	<ItemGroup>
 	  <Folder Include="Entities\" />
 	  <Folder Include="wwwroot\" />
+	  <Folder Include="wwwroot\" />
 	</ItemGroup>
 	<ItemGroup>
 	  <None Update=".gitignore">
