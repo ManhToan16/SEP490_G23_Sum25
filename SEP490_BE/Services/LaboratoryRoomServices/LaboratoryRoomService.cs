@@ -3,6 +3,7 @@ using SEP490_BE.DTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using Microsoft.EntityFrameworkCore;
 
 namespace SEP490_BE.Services.LaboratoryRoomServices
 {
@@ -57,12 +58,10 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
         public async Task<LaboratoryRoomResponseDTO> Create(CreateLaboratoryRoomDTO request)
         {
-            var existingRoom = await _laboratoryRoomRepository.FindByIdAsync(Guid.NewGuid().ToString());
-            if (existingRoom != null)
+            if (await IsLaboratoryRoomExistsAsync(request.Name))
             {
-                throw new ConflictDataException("Phòng cận lâm sàng đã tồn tại");
+                throw new InvalidOperationException("Phòng xét nghiệm đã tồn tại.");
             }
-
             var room = new LaboratoryRoom
             {
                 Id = Guid.NewGuid().ToString(),
@@ -89,6 +88,11 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
                 Name = room.Name,
                 Description = room.Description
             };
+        }
+        public async Task<bool> IsLaboratoryRoomExistsAsync(string name)
+        {
+            return await _context.LaboratoryRooms
+                .AnyAsync(r => r.Name.ToLower().Trim() == name.ToLower().Trim());
         }
 
         public async Task<LaboratoryRoomResponseDTO> Update(string id, UpdateLaboratoryRoomDTO request)

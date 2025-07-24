@@ -32,7 +32,10 @@ namespace SEP490_BE.Services.MaterialServices
             {
                 throw new ResourceNotFoundException("Nhà cung cấp không tồn tại.");
             }
-
+            if (await IsMaterialExistsAsync(request.Name, request.CategoryId, request.SupplierId))
+            {
+                throw new InvalidOperationException("Vật tư đã tồn tại.");
+            }
             var material = new Material
             {
                 Id = Guid.NewGuid().ToString(),
@@ -60,6 +63,13 @@ namespace SEP490_BE.Services.MaterialServices
             }
             return MapToResponseDTO(material);
 
+        }
+        public async Task<bool> IsMaterialExistsAsync(string name, string categoryId, string supplierId)
+        {
+            return await _context.Materials.AnyAsync(m =>
+                m.Name.ToLower() == name.ToLower().Trim() &&
+                m.CategoryId == categoryId &&
+                m.SupplierId == supplierId);
         }
 
         public async Task<MaterialResponseDTO> UpdateMaterial(string id, UpdateMaterialDTO request)

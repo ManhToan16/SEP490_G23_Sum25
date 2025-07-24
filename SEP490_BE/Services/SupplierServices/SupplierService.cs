@@ -19,7 +19,9 @@ namespace SEP490_BE.Services.SupplierServices
 
         public async Task<SupplierResponseDTO> CreateSupplier(CreateSupplierDTO request)
         {
-
+            var isExists = await IsSupplierExistsAsync(request.Name, request.Email);
+            if (isExists)
+                throw new InvalidOperationException("Nhà cung cấp đã tồn tại.");
             var supplier = new Supplier
             {
                 Id = Guid.NewGuid().ToString(),
@@ -43,6 +45,11 @@ namespace SEP490_BE.Services.SupplierServices
                 throw;
             }
             return await MapToResponseDTO(supplier);
+        }
+        public async Task<bool> IsSupplierExistsAsync(string name, string email)
+        {
+            return await _context.Suppliers
+                .AnyAsync(s => s.Name == name || s.Email == email);
         }
 
         public async Task<SupplierResponseDTO> UpdateSupplier(string id, UpdateSupplierDTO request)
