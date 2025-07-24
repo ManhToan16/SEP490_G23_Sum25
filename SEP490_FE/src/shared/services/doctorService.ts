@@ -11,6 +11,16 @@ export const doctorService = {
     }
   },
 
+  getAll: async () => {
+    try {
+      const response = await api.get("/Doctor/Profiles");
+      return response?.data[0]?.items || [];
+    } catch (error: any) {
+      console.error("Error fetching doctors:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
+
   // Tạo doctor profile
   createDoctorProfile: async (profileData: any) => {
     try {
