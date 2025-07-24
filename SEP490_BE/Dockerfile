@@ -48,8 +48,8 @@ COPY --from=build /app/publish .
 # Copy Templates directory
 COPY Templates/ ./Templates/
 
-# Copy wwwroot directory for static files
-COPY wwwroot/ ./wwwroot/
+# Tạo thư mục uploads trong container (sẽ được mount từ bên ngoài)
+RUN mkdir -p /opt/khanhan/uploads
 
 # Tạo thư mục logs
 RUN mkdir -p /app/logs
