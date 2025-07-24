@@ -56,8 +56,8 @@ const PatientListCommon: React.FC = () => {
     setError('');
     try {
       const res = await adminService.getPatientList({ pageNumber: page, pageSize: PAGE_SIZE, name: searchName });
-      setPatients(Array.isArray(res.items) ? res.items : []);
-      setTotalItems(res.totalItems || 0);
+      setPatients(Array.isArray(res.data.items) ? res.data.items : []);
+      setTotalItems(res.data.totalItems || 0);
     } catch (err) {
       setPatients([]);
       setError('Lỗi tải dữ liệu bệnh nhân');
