@@ -30,38 +30,53 @@ const initialState: ScheduleState = {
 // Async thunks
 export const fetchSchedulesByRole = createAsyncThunk(
   "schedule/fetchByRole",
-  async ({ role, fromDate, toDate }: { role: string; fromDate: string; toDate: string }) => {
-    const response = await adminService.getSchedulesByRole(role, fromDate, toDate);
-    return response;
+  async ({ role, fromDate, toDate }: { role: string; fromDate: string; toDate: string }, { rejectWithValue }) => {
+    try {
+      const response = await adminService.getSchedulesByRole(role, fromDate, toDate);
+      return response;
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải lịch làm việc";
+      return rejectWithValue(message);
+    }
   }
 );
 
 export const createSchedule = createAsyncThunk(
   "schedule/create",
-  async (scheduleData: {
-    userId: string;
-    roomId: string;
-    timeSlotId: string;
-    date: string;
-  }) => {
-    const response = await adminService.createSchedule(scheduleData);
-    return response;
+  async (scheduleData: any, { rejectWithValue }) => {
+    try {
+      const response = await adminService.createSchedule(scheduleData);
+      return response;
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể tạo lịch làm việc";
+      return rejectWithValue(message);
+    }
   }
 );
 
 export const updateSchedule = createAsyncThunk(
   "schedule/update",
-  async ({ scheduleId, scheduleData }: { scheduleId: string; scheduleData: any }) => {
-    const response = await adminService.updateSchedule(scheduleId, scheduleData);
-    return response;
+  async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
+    try {
+      const response = await adminService.updateSchedule(id, data);
+      return response;
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể cập nhật lịch làm việc";
+      return rejectWithValue(message);
+    }
   }
 );
 
 export const deleteSchedule = createAsyncThunk(
   "schedule/delete",
-  async (scheduleId: string) => {
-    await adminService.deleteSchedule(scheduleId);
-    return scheduleId;
+  async (id: string, { rejectWithValue }) => {
+    try {
+      await adminService.deleteSchedule(id);
+      return id;
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể xóa lịch làm việc";
+      return rejectWithValue(message);
+    }
   }
 );
 
@@ -90,7 +105,7 @@ const scheduleSlice = createSlice({
       })
       .addCase(fetchSchedulesByRole.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to fetch schedules";
+        state.error = action.payload as string || "Failed to fetch schedules";
       });
 
     // Create schedule
@@ -105,7 +120,7 @@ const scheduleSlice = createSlice({
       })
       .addCase(createSchedule.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to create schedule";
+        state.error = action.payload as string || "Failed to create schedule";
       });
 
     // Update schedule
@@ -123,7 +138,7 @@ const scheduleSlice = createSlice({
       })
       .addCase(updateSchedule.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to update schedule";
+        state.error = action.payload as string || "Failed to update schedule";
       });
 
     // Delete schedule
@@ -138,7 +153,7 @@ const scheduleSlice = createSlice({
       })
       .addCase(deleteSchedule.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.error.message || "Failed to delete schedule";
+        state.error = action.payload as string || "Failed to delete schedule";
       });
   },
 });

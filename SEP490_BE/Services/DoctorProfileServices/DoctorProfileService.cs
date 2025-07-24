@@ -6,6 +6,8 @@ using SEP490_BE.Repositories.DoctorProfileRepositories;
 using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Constants;
 using SEP490_BE.Services.FileServices;
+using SEP490_BE.Repositories.AuditLogRepositories;
+using SEP490_BE.Services.AuthServices;
 
 namespace SEP490_BE.Services.DoctorProfileServices
 {
@@ -15,17 +17,23 @@ namespace SEP490_BE.Services.DoctorProfileServices
         private readonly IDoctorProfileRepository _doctorProfileRepository;
         private readonly IFileService _fileService;
         private readonly IConfiguration _configuration;
+        private readonly IAuditLogRepository _auditLogRepository;
+        private readonly IAuthService _authService;
+        private readonly ILogger<DoctorProfileService> _logger;
 
         public DoctorProfileService(
             KhanhAnNeurologyClinicContext context,
             IDoctorProfileRepository doctorProfileRepository,
             IFileService fileService,
-            IConfiguration configuration)
+            IConfiguration configuration,IAuditLogRepository auditLogRepository,IAuthService authService, ILogger<DoctorProfileService> logger)
         {
             _context = context;
             _doctorProfileRepository = doctorProfileRepository;
             _fileService = fileService;
             _configuration = configuration;
+            _auditLogRepository = auditLogRepository;
+            _authService = authService;
+            _logger = logger;
         }
 
         public async Task<Pagination<DoctorProfileResponseDTO>> GetAll(
@@ -110,12 +118,20 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 Biography = request.Biography,
                 Avatar = request.Avatar
             };
-
+            var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _doctorProfileRepository.InsertAsync(doctorProfile);
                 await _context.SaveChangesAsync();
+                await _auditLogRepository.LogAsync(
+    userId: sessionUser.Id,
+    action: "CREATE",
+    tableName: "DoctorProfiles",
+    recordId: doctorProfile.Id,
+    oldData: null,
+    newData: doctorProfile
+);
                 await transaction.CommitAsync();
             }
             catch
@@ -150,17 +166,31 @@ namespace SEP490_BE.Services.DoctorProfileServices
             {
                 throw new UnauthorizedAccessException("Chỉ những người dùng có vai trò BÁC SĨ mới được cập nhật hồ sơ.");
             }
-
+            var oldData = new
+            {
+                doctorProfile.Qualifications,
+                doctorProfile.YearsOfExperience,
+                doctorProfile.Biography,
+                doctorProfile.Avatar
+            };
             doctorProfile.Qualifications = request.Qualifications;
             doctorProfile.YearsOfExperience = request.YearsOfExperience;
             doctorProfile.Biography = request.Biography;
             doctorProfile.Avatar = request.Avatar;
-
+            var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _doctorProfileRepository.UpdateAsync(doctorProfile);
                 await _context.SaveChangesAsync();
+                await _auditLogRepository.LogAsync(
+    userId: sessionUser.Id,
+    action: "UPDATE",
+    tableName: "DoctorProfiles",
+    recordId: doctorProfile.Id,
+    oldData: oldData,
+    newData: doctorProfile
+);
                 await transaction.CommitAsync();
             }
             catch
@@ -187,39 +217,62 @@ namespace SEP490_BE.Services.DoctorProfileServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ\"");
             }
-
+            var sessionUser = await _authService.GetAuthenticatedUser();
             await _doctorProfileRepository.DeleteAsync(doctorProfile);
             await _context.SaveChangesAsync();
+            await _auditLogRepository.LogAsync(
+    userId: sessionUser.Id,
+    action: "DELETE",
+    tableName: "DoctorProfiles",
+    recordId: doctorProfile.Id,
+    oldData: doctorProfile,
+    newData: null
+);
         }
 
         public async Task<DoctorProfileResponseDTO> UploadAvatar(string doctorProfileId, IFormFile avatar)
         {
+            _logger.LogInformation("Bắt đầu upload avatar cho doctorProfileId = {DoctorProfileId}", doctorProfileId);
+
             var doctorProfile = await _doctorProfileRepository.FindByIdAsync(doctorProfileId)
                 ?? throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ");
 
-            if (doctorProfile.Avatar != null)
+            try
             {
-                await _fileService.DeleteFileAsync(doctorProfile.Avatar);
+                if (!string.IsNullOrEmpty(doctorProfile.Avatar))
+                {
+                    _logger.LogInformation("Xóa avatar cũ tại đường dẫn: {OldAvatarUrl}", doctorProfile.Avatar);
+                    await _fileService.DeleteFileAsync(doctorProfile.Avatar);
+                }
+
+                var url = await _fileService.SaveFileAsync(avatar, "uploads/doctorProfile/");
+                doctorProfile.Avatar = url;
+
+                await _doctorProfileRepository.UpdateAsync(doctorProfile);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Upload avatar thành công cho doctorProfileId = {DoctorProfileId}. Đường dẫn mới: {NewAvatarUrl}", doctorProfileId, url);
+
+                var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+
+                return new DoctorProfileResponseDTO
+                {
+                    Id = doctorProfile.Id,
+                    DoctorId = doctorProfile.DoctorId,
+                    Qualifications = doctorProfile.Qualifications,
+                    YearsOfExperience = doctorProfile.YearsOfExperience,
+                    Biography = doctorProfile.Biography,
+                    Avatar = $"{backendUrl}/{url.TrimStart('/')}"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi upload avatar cho doctorProfileId = {DoctorProfileId}", doctorProfileId);
+                throw;
             }
 
-            var url = await _fileService.SaveFileAsync(avatar, $"uploads/doctorProfile/");
-            doctorProfile.Avatar = url;
-
-            await _doctorProfileRepository.UpdateAsync(doctorProfile);
-            await _context.SaveChangesAsync();
-
-            var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
-
-            return new DoctorProfileResponseDTO
-            {
-                Id = doctorProfile.Id,
-                DoctorId = doctorProfile.DoctorId,
-                Qualifications = doctorProfile.Qualifications,
-                YearsOfExperience = doctorProfile.YearsOfExperience,
-                Biography = doctorProfile.Biography,
-                Avatar = $"{backendUrl}/{url.TrimStart('/')}"
-            };
         }
+
 
     }
 }

@@ -2,11 +2,19 @@ import { api } from "./apiClient";
 
 // Đơn giản hóa Patient Service
 export const patientService = {
-  // Lấy danh sách bệnh nhân
-  getPatients: async (params?: any) => {
+  getAllServices: async (pageNumber = 1, pageSize = 6) => {
     try {
-      return await api.get("/patients", params);
+      const response = await api.get("/Services", {
+        pageNumber,
+        pageSize
+      });
+      const data = response?.data[0] || {};
+      return {
+        items: data.items || [],
+        totalItems: data.totalItems || 0,
+      };
     } catch (error) {
+      console.error("Error fetching services:", error.message);
       throw error;
     }
   },

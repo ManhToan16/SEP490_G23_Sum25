@@ -79,6 +79,7 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     } = {};
     
     // Validate required fields
+
     if (!formData.name) newErrors.name = "Vui lòng nhập họ tên";
     if (!formData.email) newErrors.email = "Vui lòng nhập email";
     if (!formData.phoneNumber) newErrors.phoneNumber = "Vui lòng nhập số điện thoại";
@@ -113,6 +114,7 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     toast({
       title: `${user ? 'Cập nhật' : 'Thêm'} thành công!`,
       description: `${getUserTypeDisplay(userType)} đã được ${user ? 'cập nhật' : 'thêm'} vào hệ thống.`,
+      variant: 'success',
     });
   };
 

@@ -26,9 +26,20 @@
             if (!allowedExtensions.Contains(ext))
                 throw new Exception("Tệp không hợp lệ. Vui lòng chọn tệp có đuôi [.pdf, .jpg, .jpeg, .png, .dcm, .xlsx].");
 
+            // Đảm bảo WebRootPath tồn tại
+            if (string.IsNullOrEmpty(_env.WebRootPath))
+            {
+                _env.WebRootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+            }
+
             var fullPath = Path.Combine(_env.WebRootPath, relativePath);
             var directory = Path.GetDirectoryName(fullPath)!;
-            Directory.CreateDirectory(directory);
+            
+            // Tạo thư mục nếu chưa tồn tại
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
             var fileName = Guid.NewGuid().ToString() + ext;
             var savedPath = Path.Combine(directory, fileName);

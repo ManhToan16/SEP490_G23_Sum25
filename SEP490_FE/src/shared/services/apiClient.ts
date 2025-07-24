@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Đơn giản hóa API client
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api",
+  baseURL: (import.meta as any).env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api",
   timeout: 30000,
   headers: {
     "Content-Type": "application/json",
@@ -24,6 +24,13 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Định nghĩa custom error để gắn thêm response
+interface CustomError extends Error {
+  response?: any;
+  status?: number;
+  statusText?: string;
+}
+
 // Response interceptor - handle errors
 apiClient.interceptors.response.use(
   (response) => {
@@ -32,11 +39,35 @@ apiClient.interceptors.response.use(
   (error) => {
     console.error("Response error:", error);
 
+    // Handle specific HTTP status codes
     if (error.response?.status === 401) {
       // Token expired, redirect to login
       localStorage.removeItem("clinic_auth_token");
       localStorage.removeItem("clinic_user_data");
+      // Optional: redirect to login page
+      // window.location.href = '/login';
     }
+
+    // Extract the most detailed error message
+    let message = "Có lỗi xảy ra";
+    
+    if (error.response?.data) {
+      // Try different possible message fields from backend
+      if (typeof error.response.data === 'string') {
+        message = error.response.data;
+      } else if (error.response.data.Message) {
+        message = error.response.data.Message;
+      } else if (error.response.data.message) {
+        message = error.response.data.message;
+      } else if (error.response.data.error) {
+        message = error.response.data.error;
+      } else if (error.response.data.errors && Array.isArray(error.response.data.errors)) {
+        message = error.response.data.errors.join(', ');
+      }
+    } else if (error.message) {
+      message = error.message;
+    }
+
 
     // Trả về error message đơn giản
     const message =

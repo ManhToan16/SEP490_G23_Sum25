@@ -28,6 +28,7 @@ const LoginModal = ({ onClose }) => {
       toast({
         title: 'Lỗi đăng nhập',
         description: 'Vui lòng điền đầy đủ thông tin',
+        variant: 'destructive',
       });
       return;
     }
@@ -45,6 +46,7 @@ const LoginModal = ({ onClose }) => {
       toast({
         title: "Đăng nhập thành công!",
         description: `Chào mừng ${user?.role}`,
+        variant: 'success',
       });
 
       // Điều hướng dựa trên role hoặc userType đã chọn
@@ -87,6 +89,7 @@ const LoginModal = ({ onClose }) => {
       toast({
         title: 'Lỗi',
         description: 'Vui lòng nhập email',
+        variant: 'destructive',
       });
       return;
     }
@@ -96,6 +99,7 @@ const LoginModal = ({ onClose }) => {
       toast({
         title: 'Thành công',
         description: 'Vui lòng kiểm tra email để đặt lại mật khẩu.',
+        variant: 'success',
       });
       setShowForgotModal(false);
       setForgotEmail("");
@@ -103,6 +107,7 @@ const LoginModal = ({ onClose }) => {
       toast({
         title: 'Lỗi',
         description: err?.response?.data?.message || 'Có lỗi xảy ra!',
+        variant: 'destructive',
       });
     } finally {
       setForgotLoading(false);
