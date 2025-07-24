@@ -254,6 +254,10 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 _logger.LogInformation("Upload avatar thành công cho doctorProfileId = {DoctorProfileId}. Đường dẫn mới: {NewAvatarUrl}", doctorProfileId, url);
 
                 var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+                var finalUrl = $"{backendUrl}/{url.TrimStart('/')}";
+                
+                _logger.LogInformation("BackendUrl từ config: {BackendUrl}", backendUrl);
+                _logger.LogInformation("Final Avatar URL: {FinalUrl}", finalUrl);
 
                 return new DoctorProfileResponseDTO
                 {
@@ -262,7 +266,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                     Qualifications = doctorProfile.Qualifications,
                     YearsOfExperience = doctorProfile.YearsOfExperience,
                     Biography = doctorProfile.Biography,
-                    Avatar = $"{backendUrl}/{url.TrimStart('/')}"
+                    Avatar = finalUrl
                 };
             }
             catch (Exception ex)
