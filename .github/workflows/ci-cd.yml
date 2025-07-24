@@ -76,6 +76,12 @@ jobs:
         
         echo "📋 Changed files:"
         echo "$CHANGED_FILES"
+        
+        # Debug: Show what was detected
+        echo "🔍 Detection Results:"
+        echo "  Frontend changed: ${{ steps.changes.outputs.frontend }}"
+        echo "  Backend changed: ${{ steps.changes.outputs.backend }}"
+        echo "  Infrastructure changed: ${{ steps.changes.outputs.infrastructure }}"
 
   # ===============================================
   # JOB 1: BUILD & TEST FRONTEND
@@ -204,7 +210,9 @@ jobs:
           ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-      if: needs.detect-changes.outputs.backend-changed == 'true'
+      if: |
+        needs.detect-changes.outputs.backend-changed == 'true' ||
+        needs.detect-changes.outputs.infrastructure-changed == 'true'
 
   # ===============================================
   # JOB 4: DEPLOY TO PRODUCTION
@@ -360,6 +368,10 @@ jobs:
           
           if [ "${{ needs.detect-changes.outputs.backend-changed }}" == "true" ]; then
             echo "🔧 Pulling backend image..."
+            docker pull quanghd/be:latest
+          elif [ "${{ needs.detect-changes.outputs.infrastructure-changed }}" == "true" ]; then
+            echo "🏗️ Infrastructure changed, pulling all images..."
+            docker pull quanghd/fe:latest
             docker pull quanghd/be:latest
           else
             echo "⏭️ Skipping backend pull (no changes)"
