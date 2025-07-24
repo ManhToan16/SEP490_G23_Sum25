@@ -1,10 +1,13 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Services.AuthServices;
 
 namespace SEP490_BE.Services.ScheduleServices
 {
@@ -14,15 +17,19 @@ namespace SEP490_BE.Services.ScheduleServices
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IUserRepository _userRepository;     
         private readonly IScheduleChangeRepository _scheduleChangeRepository;
+        private readonly IAuthService _authService;
+        private readonly IAuditLogRepository _logRepository;
 
         public ScheduleService(
             KhanhAnNeurologyClinicContext context,
-            IScheduleRepository scheduleRepository,IUserRepository userRepository, IScheduleChangeRepository scheduleChangeRepository)
+            IScheduleRepository scheduleRepository,IUserRepository userRepository, IScheduleChangeRepository scheduleChangeRepository, IAuthService authService,IAuditLogRepository logRepository)
         {
             _context = context;
             _scheduleRepository = scheduleRepository;
             _userRepository = userRepository;
             _scheduleChangeRepository = scheduleChangeRepository;
+            _authService = authService;
+            _logRepository = logRepository;
         }
 
         public async Task<List<ScheduleResponseDTO>> GetSchedulesByUserId(string userId, DateTime? fromDate, DateTime? toDate)
@@ -379,18 +386,34 @@ namespace SEP490_BE.Services.ScheduleServices
                 TimeSlotId = request.TimeSlotId,
                 Status = "SCHEDULED"
             };
-
+            var scheduleLogDto = new
+            {
+                schedule.Id,
+                schedule.Date,
+                schedule.TimeSlotId,
+                schedule.RoomId,
+                schedule.UserId
+            };
+            var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _scheduleRepository.InsertRangeAsync(new List<Schedule> { schedule });
                 await _context.SaveChangesAsync();
+                await _logRepository.LogAsync(
+                    userId: sessionUser.Id,
+                    action: "CREATE",
+                    tableName: "Schedules",
+                    recordId: schedule.Id,
+                    oldData: null,
+                    newData: scheduleLogDto
+                );
                 await transaction.CommitAsync();
             }
-            catch
+            catch(Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw;
+                throw (ex);
             }
 
             return new ScheduleResponseDTO
@@ -417,7 +440,12 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy lịch.");
             }
-
+            var oldData = new
+            {
+                schedule.RoomId,
+                schedule.TimeSlotId,
+                schedule.Status,
+            };
             if (request.RoomId != null)
             {
                 var room = await DetectRoomTypeAsync(request.RoomId);
@@ -443,13 +471,29 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 schedule.Status = request.Status;
             }
-
+            var newData = new
+            {
+                schedule.RoomId,
+                schedule.TimeSlotId,
+                schedule.Status,
+                schedule.RoomType
+            };
+            var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _scheduleRepository.UpdateAsync(schedule);
                 await _context.SaveChangesAsync();
+                await _logRepository.LogAsync(
+        userId: sessionUser.Id,
+        action: "UPDATE",
+        tableName: "Schedules",
+        recordId: schedule.Id,
+        oldData: oldData,
+        newData: newData
+    );
                 await transaction.CommitAsync();
+                
             }
             catch
             {
@@ -492,8 +536,19 @@ namespace SEP490_BE.Services.ScheduleServices
            schedule.Date,
            schedule.TimeSlotId
        );
+                var sessionUser = await _authService.GetAuthenticatedUser();
+
                 await _scheduleRepository.DeleteAsync(id);
                 await _context.SaveChangesAsync();
+                await _logRepository.LogAsync(
+                    userId: sessionUser.Id,
+                    action: "DELETE",
+                    tableName: "Schedules",
+                    recordId: schedule.Id,
+                    oldData: schedule,
+                    newData: null
+                );
+
                 await transaction.CommitAsync();
             }
             catch

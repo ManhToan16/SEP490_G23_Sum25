@@ -2,8 +2,10 @@
 using SEP490_BE.DTO.ScheduleChangeDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
+using SEP490_BE.Services.AuthServices;
 
 namespace SEP490_BE.Services.ScheduleChangeServices
 {
@@ -12,15 +14,21 @@ namespace SEP490_BE.Services.ScheduleChangeServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IScheduleRepository _scheduleRepository;
         private readonly IScheduleChangeRepository _changeRequestRepository;
+        private readonly IAuthService _authService;
+        private readonly IAuditLogRepository _logRepository;
 
         public ScheduleChangeRequestService(
             KhanhAnNeurologyClinicContext context,
             IScheduleRepository scheduleRepository,
-            IScheduleChangeRepository changeRequestRepository)
+            IScheduleChangeRepository changeRequestRepository,
+            IAuditLogRepository logRepository,
+            IAuthService authService)
         {
             _context = context;
             _scheduleRepository = scheduleRepository;
             _changeRequestRepository = changeRequestRepository;
+            _logRepository = logRepository;
+            _authService = authService;
         }
 
         public async Task<ScheduleChangeResponseDTO> CreateRequest(string requesterId, CreateScheduleChangeDTO request)
@@ -68,11 +76,13 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                 Reason = request.Reason,
                 Status = "PENDING"
             };
-
+            var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _changeRequestRepository.AddAsync(requestEntity);
+                await _context.SaveChangesAsync();
+                await _logRepository.LogAsync(sessionUser.Id, "CREATE", "ScheduleChangeRequests", requestEntity.Id, null, requestEntity);
                 await transaction.CommitAsync();
 
                 var createdRequest = await _changeRequestRepository.FindByIdAsync(requestEntity.Id);
@@ -121,6 +131,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             targetSchedule.UserId = tempUserId;
 
             request.Status = "APPROVED";
+            var sessionUser = await _authService.GetAuthenticatedUser();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -128,6 +139,8 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                 await _scheduleRepository.UpdateAsync(requesterSchedule);
                 await _scheduleRepository.UpdateAsync(targetSchedule);
                 await _changeRequestRepository.UpdateAsync(request);
+                await _context.SaveChangesAsync();
+                await _logRepository.LogAsync(sessionUser.Id, "APPROVE", "ScheduleChangeRequests", request.Id, null, request);
                 await transaction.CommitAsync();
 
                 var updatedRequest = await _changeRequestRepository.FindByIdAsync(request.Id);
@@ -164,11 +177,14 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             }
 
             request.Status = "REJECTED";
+            var sessionUser = await _authService.GetAuthenticatedUser();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _changeRequestRepository.UpdateAsync(request);
+                await _context.SaveChangesAsync();
+                await _logRepository.LogAsync(sessionUser.Id, "REJECT", "ScheduleChangeRequests", request.Id, null, request);
                 await transaction.CommitAsync();
 
                 var updatedRequest = await _changeRequestRepository.FindByIdAsync(request.Id);
