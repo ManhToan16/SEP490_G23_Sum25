@@ -8,5 +8,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
         Task<ScheduleChangeResponseDTO> ApproveRequest(string requestId);
         Task<ScheduleChangeResponseDTO> RejectRequest(string requestId);
         Task<ScheduleChangeResponseDTO> GetRequestById(string requestId);
+        Task<List<ScheduleChangeResponseDTO>> GetByRequesterIdAsync(string requesterId);
+        Task<List<ScheduleChangeResponseDTO>> GetByTargetUserIdAsync(string targetUserId);
     }
 }

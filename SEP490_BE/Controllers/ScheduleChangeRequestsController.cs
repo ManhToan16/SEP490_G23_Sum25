@@ -90,5 +90,29 @@ namespace SEP490_BE.Controllers
                 Data = new[] { changeRequest }
             });
         }
+        [HttpGet("requester/{requesterId}")]
+        public async Task<IActionResult> GetByRequesterId(string requesterId)
+        {
+            var changeRequest = await _scheduleChangeRequestService.GetByRequesterIdAsync(requesterId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { changeRequest }
+            });
+        }
+        [HttpGet("target/{targetId}")]
+        public async Task<IActionResult> GetByTargetUserId(string targetId)
+        {
+            var changeRequest = await _scheduleChangeRequestService.GetByTargetUserIdAsync(targetId);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { changeRequest }
+            });
+        }
     }
 }

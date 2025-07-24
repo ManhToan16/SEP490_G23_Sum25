@@ -24,7 +24,6 @@ namespace SEP490_BE.Services.AppointmentServices
         Task<AppointmentResponseDTO> Cancel(string id);
         Task PrintInvoice(string id);
         Task<AppointmentResponseDTO> MarkAsPaid(string id);
-
-
+        Task AutoExpired();
     }
 }
