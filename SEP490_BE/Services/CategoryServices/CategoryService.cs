@@ -20,7 +20,10 @@ namespace SEP490_BE.Services.CategoryServices
 
         public async Task<CategoryResponseDTO> CreateCategory(CreateCategoryDTO request)
         {
-
+            if (await IsCategoryExistsAsync(request.Name))
+            {
+                throw new InvalidOperationException("Danh mục đã tồn tại.");
+            }
             var category = new Category
             {
                 Id = Guid.NewGuid().ToString(),
@@ -44,6 +47,12 @@ namespace SEP490_BE.Services.CategoryServices
             return MapToResponseDTO(category);
 
         }
+        public async Task<bool> IsCategoryExistsAsync(string name)
+        {
+            return await _context.Categories
+                .AnyAsync(c => c.Name.ToLower() == name.ToLower());
+        }
+
 
         public async Task<CategoryResponseDTO> UpdateCategory(string id, UpdateCategoryDTO request)
         {           
