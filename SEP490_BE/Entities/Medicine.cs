@@ -12,10 +12,10 @@ namespace SEP490_BE.Entities
 
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;
-        public string? ActiveIngredients { get; set; }
-        public string? Strength { get; set; }
-        public string? Packaging { get; set; }
-        public string? Unit { get; set; }
+        public string ActiveIngredients { get; set; } = null!;
+        public string Strength { get; set; } = null!;
+        public string Packaging { get; set; } = null!;
+        public string Unit { get; set; } = null!;
         public string? Description { get; set; }
 
         public virtual ICollection<PrescriptionItem> PrescriptionItems { get; set; }

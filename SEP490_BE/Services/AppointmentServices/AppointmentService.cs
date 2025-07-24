@@ -13,6 +13,12 @@ using SEP490_BE.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Services.EmailServices;
 using SEP490_BE.Repositories.VisitRepositories;
+using SEP490_BE.Services.AssignmentServices;
+using SEP490_BE.Services.VisitServices;
+using QuestPDF.Fluent;
+using QuestPDF.Helpers;
+using SEP490_BE.Controllers;
+using QuestPDF.Infrastructure;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -27,6 +33,8 @@ namespace SEP490_BE.Services.AppointmentServices
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IVisitRepository _visitRepository;
+        private readonly IVisitService _visitService;
+        private readonly IAssignmentService _assignmentService; private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
@@ -36,7 +44,11 @@ namespace SEP490_BE.Services.AppointmentServices
             IAppointmentRepository appointmentRepository,
             IUserRepository userRepository,
             IEmailService emailService,
-            IVisitRepository visitRepository)
+            IVisitRepository visitRepository,
+            IVisitService visitService,
+            IAssignmentService assignmentService,
+            ILogger<AppointmentService> logger
+            )
         {
             _context = context;
             _authService = authService;
@@ -46,6 +58,9 @@ namespace SEP490_BE.Services.AppointmentServices
             _userRepository = userRepository;
             _emailService = emailService;
             _visitRepository = visitRepository;
+            _visitService = visitService;
+            _assignmentService = assignmentService;
+            _logger = logger;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -601,11 +616,6 @@ namespace SEP490_BE.Services.AppointmentServices
                 CreatedAt = appointment.CreatedAt
             };
         }
-        
-        public Task PrintInvoice(string id)
-        {
-            throw new NotImplementedException();
-        }
 
         public async Task AutoExpired()
         {
@@ -625,6 +635,144 @@ namespace SEP490_BE.Services.AppointmentServices
             }
             await _context.SaveChangesAsync();
         }
+
+        public async Task<byte[]> GenerateInvoicePdf(string appointmentId)
+        {
+            var appointment = await GetById(appointmentId);
+            if(appointment.Status != AppointmentStatus.PENDING)
+            {
+                throw new Exceptions.ArgumentException("Lỗi khi in hoá đơn.");
+            }
+            var visit = await _visitService.GetByAppointmentId(appointmentId);
+            var assignments = await _assignmentService.GetByVisitId(visit.VisitId);
+
+            IContainer CellStyle(IContainer container) =>
+                    container.BorderBottom(0.5f)
+                                .BorderColor(Colors.Grey.Lighten2)
+                                .PaddingVertical(5);
+
+            var document = Document.Create(container =>
+            {
+                container.Page(page =>
+                {
+                    page.Margin(40);
+                    page.Size(PageSizes.A4);
+
+                    // ======= HEADER =======
+                    page.Header().Column(headerCol =>
+                    {
+                        headerCol.Item().AlignCenter().Text("PHÒNG KHÁM NỘI THẦN KINH KHÁNH AN")
+                            .FontSize(12).Bold().FontColor(Colors.Black);
+
+                        headerCol.Item().AlignCenter().Text("HÓA ĐƠN KHÁM BỆNH")
+                            .FontSize(16).Bold().FontColor(Colors.Black);
+
+                        headerCol.Item().PaddingBottom(30);
+                    });
+
+                    // ======= CONTENT =======
+                    page.Content().Column(col =>
+                    {
+                        col.Spacing(5);
+
+                        // ==== Thông tin lịch hẹn ====
+                        col.Item().Text($"Ngày khám: {appointment.Date:dd/MM/yyyy}");
+                        col.Item().Text($"Bệnh nhân: {appointment.Name} ({appointment.Gender}, {appointment.DateOfBirth:dd/MM/yyyy})");
+                        col.Item().Text($"Email: {appointment.Email}   SĐT: {appointment.PhoneNumber}");
+                        col.Item().Text($"Triệu chứng: {appointment.Symptom}");
+
+                        // ==== Thông tin khám ====
+                        col.Item().PaddingVertical(10).Text("Thông tin khám").FontSize(14).Bold();
+                        col.Item().Text($"Phòng khám: {visit.ExaminationRoomName ?? "Không rõ"}");
+                        col.Item().Text($"Bác sĩ khám: {visit.AssignedDoctorName ?? "Không rõ"}");
+                        col.Item().Text($"Số thứ tự: {visit.QueueNumber} {(visit.IsPrioritized ? "(Ưu tiên)" : "")}");
+                        col.Item().Text($"Giá tiền: {(visit.TotalPrice):#,##0} đ");
+
+
+                        // ==== Danh sách dịch vụ ====
+                        col.Item().PaddingVertical(10).Text("Danh sách dịch vụ").FontSize(14).Bold();
+
+                        col.Item().Table(table =>
+                        {
+                            table.ColumnsDefinition(columns =>
+                            {
+                                columns.RelativeColumn();      // Dịch vụ
+                                columns.RelativeColumn();      // Phòng
+                                columns.ConstantColumn(100);   // Giá
+                            });
+
+                            table.Header(header =>
+                            {
+                                header.Cell().Element(CellStyle).Text("Dịch vụ").Bold();
+                                header.Cell().Element(CellStyle).Text("Phòng").Bold();
+                                header.Cell().Element(CellStyle).Text("Giá").Bold();
+                            });
+
+                            if (assignments != null && assignments.Any())
+                            {
+                                foreach (var a in assignments)
+                                {
+                                    var labRoom = a.LaboratoryRoomName ?? "Không rõ";
+
+                                    if (a.AssignmentServices != null && a.AssignmentServices.Any())
+                                    {
+                                        foreach (var s in a.AssignmentServices)
+                                        {
+                                            var serviceName = s?.ServiceName ?? "Không rõ";
+                                            var price = s?.Price ?? 0;
+
+                                            table.Cell().Element(CellStyle).Text(serviceName);
+                                            table.Cell().Element(CellStyle).Text(labRoom);
+                                            table.Cell().Element(CellStyle).Text($"{price:#,##0} đ");
+                                        }
+                                    }
+                                    else
+                                    {
+                                        table.Cell().Element(CellStyle).Text("Không có dịch vụ").Italic();
+                                        table.Cell().Element(CellStyle).Text(labRoom);
+                                        table.Cell().Element(CellStyle).Text("0 đ");
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                table.Cell().ColumnSpan(3).AlignCenter().Text("Không có dịch vụ nào được chỉ định.").Italic();
+                            }
+
+                            IContainer CellStyle(IContainer container) =>
+                                container.BorderBottom(0.5f).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5);
+                        });
+
+                        col.Item().PaddingTop(10).LineHorizontal(1);
+                        col.Item().AlignRight().PaddingTop(5)
+                            .Text($"Tổng tiền: {(appointment.TotalPrice ?? 0):#,##0} đ")
+                            .FontSize(14).Bold().FontColor(Colors.Black);
+                    });
+
+                    // ======= FOOTER =======
+                    page.Footer().AlignCenter().Text(txt =>
+                    {
+                        txt.Span("Cảm ơn quý khách đã đến khám tại Phòng khám Khánh An. ").Italic();
+                        txt.Span("Chúc quý khách nhiều sức khỏe!").Bold();
+                    });
+                });
+            });
+
+
+            try
+            {
+                var pdfBytes = document.GeneratePdf();
+                return pdfBytes;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo hóa đơn cho appointment {AppointmentId}", appointmentId);
+                throw;
+            }
+        }
+
+
+
 
 
     }
