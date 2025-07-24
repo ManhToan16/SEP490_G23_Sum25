@@ -16,7 +16,6 @@ namespace SEP490_BE.Controllers
         {
             _medicalRecordService = medicalRecordService;
         }
-// áaaa
         [Authorize(Roles = RoleConstants.Doctor + "," + RoleConstants.Admin)]
         [Consumes("multipart/form-data")]
         [HttpPost("{medicalRecordId}/upload-document")]

@@ -33,13 +33,12 @@ jobs:
     outputs:
       frontend-changed: ${{ steps.changes.outputs.frontend }}
       backend-changed: ${{ steps.changes.outputs.backend }}
-      infrastructure-changed: ${{ steps.changes.outputs.infrastructure }}
     
     steps:
     - name: 📥 Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history for change detection
+        fetch-depth: 0
         
     - name: 🔍 Check for changes
       id: changes
@@ -65,23 +64,8 @@ jobs:
           echo "⏭️ No backend changes"
         fi
         
-        # Check for infrastructure changes
-        if echo "$CHANGED_FILES" | grep -E "^(docker-compose\.yml|nginx/|\.github/workflows/)"; then
-          echo "infrastructure=true" >> $GITHUB_OUTPUT
-          echo "🏗️ Infrastructure changes detected"
-        else
-          echo "infrastructure=false" >> $GITHUB_OUTPUT
-          echo "⏭️ No infrastructure changes"
-        fi
-        
         echo "📋 Changed files:"
         echo "$CHANGED_FILES"
-        
-        # Debug: Show what was detected
-        echo "🔍 Detection Results:"
-        echo "  Frontend changed: ${{ steps.changes.outputs.frontend }}"
-        echo "  Backend changed: ${{ steps.changes.outputs.backend }}"
-        echo "  Infrastructure changed: ${{ steps.changes.outputs.infrastructure }}"
 
   # ===============================================
   # JOB 1: BUILD & TEST FRONTEND
@@ -170,8 +154,7 @@ jobs:
     if: |
       github.ref == 'refs/heads/main' && 
       (needs.detect-changes.outputs.frontend-changed == 'true' || 
-       needs.detect-changes.outputs.backend-changed == 'true' ||
-       needs.detect-changes.outputs.infrastructure-changed == 'true')
+       needs.detect-changes.outputs.backend-changed == 'true')
     
     steps:
     - name: 📥 Checkout code
@@ -210,9 +193,7 @@ jobs:
           ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
-      if: |
-        needs.detect-changes.outputs.backend-changed == 'true' ||
-        needs.detect-changes.outputs.infrastructure-changed == 'true'
+      if: needs.detect-changes.outputs.backend-changed == 'true'
 
   # ===============================================
   # JOB 4: DEPLOY TO PRODUCTION
@@ -224,8 +205,7 @@ jobs:
     if: |
       github.ref == 'refs/heads/main' && 
       (needs.detect-changes.outputs.frontend-changed == 'true' || 
-       needs.detect-changes.outputs.backend-changed == 'true' ||
-       needs.detect-changes.outputs.infrastructure-changed == 'true')
+       needs.detect-changes.outputs.backend-changed == 'true')
     
     steps:
     - name: 📥 Checkout code
@@ -369,10 +349,6 @@ jobs:
           if [ "${{ needs.detect-changes.outputs.backend-changed }}" == "true" ]; then
             echo "🔧 Pulling backend image..."
             docker pull quanghd/be:latest
-          elif [ "${{ needs.detect-changes.outputs.infrastructure-changed }}" == "true" ]; then
-            echo "🏗️ Infrastructure changed, pulling all images..."
-            docker pull quanghd/fe:latest
-            docker pull quanghd/be:latest
           else
             echo "⏭️ Skipping backend pull (no changes)"
           fi
@@ -396,12 +372,6 @@ jobs:
             docker rm clinic-backend 2>/dev/null || true
           fi
           
-          # If infrastructure changed, restart all
-          if [ "${{ needs.detect-changes.outputs.infrastructure-changed }}" == "true" ]; then
-            echo "🏗️ Infrastructure changed, restarting all containers..."
-            docker-compose down --remove-orphans || true
-          fi
-          
           # 6. Remove old images để tiết kiệm disk space
           echo "🧹 Cleaning up old images..."
           docker image prune -f || true
@@ -409,21 +379,14 @@ jobs:
           # 7. Start containers mới (selective)
           echo "🚀 Starting new containers..."
           
-          if [ "${{ needs.detect-changes.outputs.infrastructure-changed }}" == "true" ]; then
-            echo "🏗️ Starting all containers (infrastructure changed)..."
-            docker-compose up -d
-          else
-            echo "🎯 Starting only changed containers..."
-            
-            if [ "${{ needs.detect-changes.outputs.frontend-changed }}" == "true" ]; then
-              echo "🎨 Starting frontend container..."
-              docker-compose up -d clinic-frontend
-            fi
-            
-            if [ "${{ needs.detect-changes.outputs.backend-changed }}" == "true" ]; then
-              echo "🔧 Starting backend container..."
-              docker-compose up -d clinic-backend
-            fi
+          if [ "${{ needs.detect-changes.outputs.frontend-changed }}" == "true" ]; then
+            echo "🎨 Starting frontend container..."
+            docker-compose up -d clinic-frontend
+          fi
+          
+          if [ "${{ needs.detect-changes.outputs.backend-changed }}" == "true" ]; then
+            echo "🔧 Starting backend container..."
+            docker-compose up -d clinic-backend
           fi
           
           # 8. Wait for containers to start
@@ -438,7 +401,6 @@ jobs:
           echo "📊 Deployment Summary:"
           echo "  Frontend changed: ${{ needs.detect-changes.outputs.frontend-changed }}"
           echo "  Backend changed: ${{ needs.detect-changes.outputs.backend-changed }}"
-          echo "  Infrastructure changed: ${{ needs.detect-changes.outputs.infrastructure-changed }}"
           
           # 10. Check container logs nếu có vấn đề
           echo "📋 Container logs:"
@@ -547,11 +509,7 @@ jobs:
             echo "📚 API Docs: http://${{ secrets.HOST }}:5050/swagger"
           fi
           
-          if [ "${{ needs.detect-changes.outputs.infrastructure-changed }}" == "true" ]; then
-            echo "🏗️ Infrastructure updated"
-          fi
-          
-          if [ "${{ needs.detect-changes.outputs.frontend-changed }}" == "false" ] && [ "${{ needs.detect-changes.outputs.backend-changed }}" == "false" ] && [ "${{ needs.detect-changes.outputs.infrastructure-changed }}" == "false" ]; then
+          if [ "${{ needs.detect-changes.outputs.frontend-changed }}" == "false" ] && [ "${{ needs.detect-changes.outputs.backend-changed }}" == "false" ]; then
             echo "⏭️ No changes detected - deployment skipped"
           fi
         else
