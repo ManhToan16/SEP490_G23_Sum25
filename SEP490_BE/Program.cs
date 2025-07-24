@@ -166,6 +166,12 @@ builder.Services.AddHangfireServer();
 QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
 
 
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "dd-MM-yyyy HH:mm:ss ";
+    options.IncludeScopes = false;
+});
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 #region Scope
