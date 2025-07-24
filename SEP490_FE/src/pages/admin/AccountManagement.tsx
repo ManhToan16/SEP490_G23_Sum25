@@ -122,10 +122,10 @@ const AccountManagement: React.FC = () => {
       const response = await adminService.getListUsers(1, 100); // Load more users
       setUsers(response.users);
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: "Không thể tải danh sách người dùng",
-        variant: 'destructive',
+        description: error?.response?.data?.Message || error?.response?.data?.message || "Có lỗi xảy ra"
       });
     } finally {
       setLoading(false);
@@ -190,6 +190,7 @@ const AccountManagement: React.FC = () => {
   };
 
   const handleSaveUser = async (userType, userData) => {
+    // Kiểm tra trùng lặp khi tạo mới (nếu muốn kiểm tra phía client thì thêm ở đây)
     try {
       if (editingItem) {
         // Update existing user
@@ -208,17 +209,16 @@ const AccountManagement: React.FC = () => {
           variant: 'success',
         });
       }
-      
       // Reload users
       loadUsers();
       setIsFormOpen(false);
       setEditingItem(null);
       setShowForm(null);
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Có lỗi xảy ra",
-        variant: 'destructive',
+        description: error?.response?.data?.Message || error?.response?.data?.message || "Có lỗi xảy ra"
       });
     }
   };
@@ -237,6 +237,7 @@ const AccountManagement: React.FC = () => {
       });
       loadUsers();
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
         description: error?.response?.data?.message || "Không thể xóa người dùng",
@@ -259,6 +260,7 @@ const AccountManagement: React.FC = () => {
       });
       loadUsers();
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
         description: error?.response?.data?.message || "Không thể kích hoạt người dùng",
@@ -281,6 +283,7 @@ const AccountManagement: React.FC = () => {
       });
       loadUsers();
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
         description: error?.response?.data?.message || "Không thể vô hiệu hóa người dùng",
