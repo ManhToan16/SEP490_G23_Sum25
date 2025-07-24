@@ -99,6 +99,25 @@ namespace SEP490_BE.Services.MedicalRecordServices
             };
         }
 
+        // Thêm method upload vào MedicalRecordService
+        public async Task<string> UploadMedicalRecord(string medicalRecordId, IFormFile file)
+        {
+            var medicalRecord = await _repository.FindByIdAsync(medicalRecordId)
+                ?? throw new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh án");
+
+            // Tự động tạo folder /opt/khanhan/uploads/medicalRecords/
+            var url = await _fileService.SaveFileAsync(file, "medicalRecords/");
+            
+            // Cập nhật database
+            medicalRecord.DocumentUrl = url;
+            await _repository.UpdateAsync(medicalRecord);
+            
+            // Tạo URL đầy đủ
+            var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+            var finalUrl = $"{backendUrl}/uploads/{url.TrimStart('/')}";
+            
+            return finalUrl;
+        }
 
     }
 
