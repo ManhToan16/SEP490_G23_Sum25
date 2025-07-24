@@ -163,7 +163,12 @@ builder.Services.AddHangfire(config =>
 builder.Services.AddHangfireServer();
 #endregion
 
-
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "dd-MM-yyyy HH:mm:ss ";
+    options.IncludeScopes = false;
+});
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 #region Scope
