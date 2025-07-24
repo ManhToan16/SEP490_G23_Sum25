@@ -8,7 +8,7 @@ export const fetchPatients = createAsyncThunk(
   "data/fetchPatients",
   async (params: any = {}, { rejectWithValue }) => {
     try {
-      return await patientService.getPatients(params);
+      return await patientService.getPatientById(params);
     } catch (error: any) {
       const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách bệnh nhân";
       return rejectWithValue(message);
