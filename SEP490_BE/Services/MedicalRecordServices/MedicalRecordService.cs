@@ -4,6 +4,8 @@ using SEP490_BE.DTO.MedicalRecordDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.MedicalRecordRepositories;
+using SEP490_BE.Services.FileServices;
+using Microsoft.AspNetCore.Http;
 
 namespace SEP490_BE.Services.MedicalRecordServices
 {
@@ -11,11 +13,19 @@ namespace SEP490_BE.Services.MedicalRecordServices
     {
         private readonly IMedicalRecordRepository _repository;
         private readonly KhanhAnNeurologyClinicContext _context;
+        private readonly IFileService _fileService;
+        private readonly IConfiguration _configuration;
 
-        public MedicalRecordService(IMedicalRecordRepository repository, KhanhAnNeurologyClinicContext context)
+        public MedicalRecordService(
+            IMedicalRecordRepository repository, 
+            KhanhAnNeurologyClinicContext context,
+            IFileService fileService,
+            IConfiguration configuration)
         {
             _repository = repository;
             _context = context;
+            _fileService = fileService;
+            _configuration = configuration;
         }
 
         public async Task<MedicalRecordResponseDTO> Create(string patientProfileId, MedicalRecordRequestDTO request)
@@ -107,10 +117,6 @@ namespace SEP490_BE.Services.MedicalRecordServices
 
             // Tự động tạo folder /opt/khanhan/uploads/medicalRecords/
             var url = await _fileService.SaveFileAsync(file, "medicalRecords/");
-            
-            // Cập nhật database
-            medicalRecord.DocumentUrl = url;
-            await _repository.UpdateAsync(medicalRecord);
             
             // Tạo URL đầy đủ
             var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
