@@ -180,7 +180,7 @@ jobs:
             "SecretKey": "$JWT_SECRET_KEY"
           },
           "App": {
-            "BackendUrl": "$BACKEND_URL",
+            "BackendUrl": "https://be.khanhanclinic.io.vn",
             "UploadPath": "/opt/khanhan/uploads"
           },
           "Smtp": {
