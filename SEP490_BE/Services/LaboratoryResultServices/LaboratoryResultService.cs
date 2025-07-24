@@ -128,7 +128,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
 
             foreach (var file in files)
             {
-                var url = await _fileService.SaveFileAsync(file, "uploads/laboratory/");
+                var url = await _fileService.SaveFileAsync(file, "laboratory/");
                 var labFile = new LaboratoryFile
                 {
                     Id = Guid.NewGuid().ToString(),

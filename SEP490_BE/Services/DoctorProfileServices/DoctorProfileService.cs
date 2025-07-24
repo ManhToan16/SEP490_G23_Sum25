@@ -245,7 +245,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                     await _fileService.DeleteFileAsync(doctorProfile.Avatar);
                 }
 
-                var url = await _fileService.SaveFileAsync(avatar, "uploads/doctorProfile/");
+                var url = await _fileService.SaveFileAsync(avatar, "doctorProfile/");
                 doctorProfile.Avatar = url;
 
                 await _doctorProfileRepository.UpdateAsync(doctorProfile);
