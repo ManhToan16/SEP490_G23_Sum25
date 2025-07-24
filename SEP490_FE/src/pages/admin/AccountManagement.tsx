@@ -124,7 +124,8 @@ const AccountManagement: React.FC = () => {
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: "Không thể tải danh sách người dùng"
+        description: "Không thể tải danh sách người dùng",
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -195,14 +196,16 @@ const AccountManagement: React.FC = () => {
         await adminService.updateUser(editingItem.id, userData);
         toast({
           title: "Thành công",
-          description: "Cập nhật người dùng thành công"
+          description: "Cập nhật người dùng thành công",
+          variant: 'success',
         });
       } else {
         // Create new user
         await adminService.createUser(userData);
         toast({
           title: "Thành công", 
-          description: "Tạo người dùng mới thành công"
+          description: "Tạo người dùng mới thành công",
+          variant: 'success',
         });
       }
       
@@ -214,7 +217,8 @@ const AccountManagement: React.FC = () => {
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Có lỗi xảy ra"
+        description: error?.response?.data?.message || "Có lỗi xảy ra",
+        variant: 'destructive',
       });
     }
   };
@@ -228,13 +232,15 @@ const AccountManagement: React.FC = () => {
       await adminService.deleteUser(userId);
       toast({
         title: "Thành công",
-        description: "Xóa người dùng thành công"
+        description: "Xóa người dùng thành công",
+        variant: 'success',
       });
       loadUsers();
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể xóa người dùng"
+        description: error?.response?.data?.message || "Không thể xóa người dùng",
+        variant: 'destructive',
       });
     }
   };
@@ -248,13 +254,15 @@ const AccountManagement: React.FC = () => {
       await adminService.activateUser(userId);
       toast({
         title: "Thành công",
-        description: "Kích hoạt người dùng thành công"
+        description: "Kích hoạt người dùng thành công",
+        variant: 'success',
       });
       loadUsers();
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể kích hoạt người dùng"
+        description: error?.response?.data?.message || "Không thể kích hoạt người dùng",
+        variant: 'destructive',
       });
     }
   };
@@ -268,13 +276,15 @@ const AccountManagement: React.FC = () => {
       await adminService.deactivateUser(userId);
       toast({
         title: "Thành công",
-        description: "Vô hiệu hóa người dùng thành công"
+        description: "Vô hiệu hóa người dùng thành công",
+        variant: 'success',
       });
       loadUsers();
     } catch (error) {
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể vô hiệu hóa người dùng"
+        description: error?.response?.data?.message || "Không thể vô hiệu hóa người dùng",
+        variant: 'destructive',
       });
     }
   };
