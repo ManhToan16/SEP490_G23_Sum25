@@ -4,6 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/shared/components/ui/use-toast';
 import { adminService } from '@/shared/services/adminService';
 import { useSchedule } from '@/shared/hooks/business/useSchedule';
+import { useRealtimeSchedule } from '@/shared/hooks/business/useRealtimeSchedule';
 
 // Helper functions
 const getWeekNumber = (date: Date) => {
@@ -129,9 +130,24 @@ const StaffItem = memo(({
 StaffItem.displayName = 'StaffItem';
 
 const ScheduleManagement: React.FC = () => {
-  // States
-  const [selectedWeek, setSelectedWeek] = useState(getInitialWeekString);
-  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().split('T')[0].substring(0, 7));
+  // States with validation
+  const [selectedWeek, setSelectedWeek] = useState(() => {
+    try {
+      return getInitialWeekString();
+    } catch (error) {
+      console.error('Error getting initial week:', error);
+      return `${new Date().getFullYear()}-W01`;
+    }
+  });
+  
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    try {
+      return new Date().toISOString().split('T')[0].substring(0, 7);
+    } catch (error) {
+      console.error('Error getting initial month:', error);
+      return `${new Date().getFullYear()}-01`;
+    }
+  });
   const [viewMode, setViewMode] = useState<'week' | 'month'>('week');
   const [activeTab, setActiveTab] = useState<'doctors' | 'technicians' | 'nurses'>('doctors');
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -203,22 +219,70 @@ const ScheduleManagement: React.FC = () => {
     };
     const role = roleMap[activeTab];
     let fromDate, toDate;
-    if (viewMode === 'week') {
-      const weekStart = getDateFromWeekString(selectedWeek);
-      const startDate = new Date(weekStart);
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 6);
-      fromDate = startDate.toISOString().split('T')[0];
-      toDate = endDate.toISOString().split('T')[0];
-    } else {
-      const [year, month] = selectedMonth.split('-');
-      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
-      const endDate = new Date(parseInt(year), parseInt(month), 0);
-      fromDate = startDate.toISOString().split('T')[0];
-      toDate = endDate.toISOString().split('T')[0];
+    
+    try {
+      if (viewMode === 'week') {
+        const weekStart = getDateFromWeekString(selectedWeek);
+        const startDate = new Date(weekStart);
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + 6);
+        fromDate = startDate.toISOString().split('T')[0];
+        toDate = endDate.toISOString().split('T')[0];
+      } else {
+        // Month view
+        const [year, month] = selectedMonth.split('-');
+        const yearNum = parseInt(year);
+        const monthNum = parseInt(month);
+        
+        if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+          throw new Error(`Invalid month format: ${selectedMonth}`);
+        }
+        
+        const startDate = new Date(yearNum, monthNum - 1, 1);
+        const endDate = new Date(yearNum, monthNum, 0); // Last day of month
+        
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          throw new Error(`Invalid date calculation for month: ${selectedMonth}`);
+        }
+        
+        fromDate = startDate.toISOString().split('T')[0];
+        toDate = endDate.toISOString().split('T')[0];
+      }
+    } catch (error) {
+      console.error('Error calculating date range:', error);
+      // Fallback to current week
+      const today = new Date();
+      const monday = new Date(today);
+      const dayOfWeek = monday.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      monday.setDate(monday.getDate() - daysToMonday);
+      
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      
+      fromDate = monday.toISOString().split('T')[0];
+      toDate = sunday.toISOString().split('T')[0];
     }
+    
     return { role, fromDate, toDate };
   }, [activeTab, viewMode, selectedWeek, selectedMonth]);
+
+  // Get current schedule parameters for realtime
+  const { role, fromDate, toDate } = getCurrentScheduleParams();
+  
+  // Debug logging for params
+  useEffect(() => {
+    console.log('📅 Schedule params changed:', { role, fromDate, toDate, viewMode, activeTab });
+  }, [role, fromDate, toDate, viewMode, activeTab]);
+  
+  // Initialize realtime connection with stable params
+  const stableRealtimeParams = useMemo(() => ({
+    role,
+    fromDate,
+    toDate
+  }), [role, fromDate, toDate]);
+  
+  useRealtimeSchedule(stableRealtimeParams.role, stableRealtimeParams.fromDate, stableRealtimeParams.toDate);
 
   const refreshSchedules = useCallback(async () => {
     const { role, fromDate, toDate } = getCurrentScheduleParams();
@@ -362,6 +426,7 @@ const ScheduleManagement: React.FC = () => {
         toast({
           title: "Xung đột lịch làm việc",
           description: `Phòng này đã có người làm việc trong ${timeSlot?.name || timeSlotId} này`,
+          variant: 'warning',
         });
         return false;
       }
@@ -376,22 +441,19 @@ const ScheduleManagement: React.FC = () => {
       console.log('Creating schedule:', scheduleData);
       await addScheduleAPI(scheduleData);
 
-      const timeSlot = timeSlots.find(ts => ts.id === timeSlotId);
-      toast({
-        title: "Đã thêm lịch làm việc",
-        description: `${getStaffName(userId)} - ${timeSlot?.name || timeSlotId}`,
-      });
-
+      // Don't show toast here - realtime will handle it
       return true;
     } catch (error) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể thêm lịch làm việc";
       console.error('Error adding schedule:', error);
       toast({
         title: "Lỗi",
-        description: "Không thể thêm lịch làm việc",
+        description: message,
+        variant: 'destructive',
       });
       return false;
     }
-  }, [checkScheduleConflict, timeSlots, toast, addScheduleAPI, getStaffName]);
+  }, [checkScheduleConflict, timeSlots, toast, addScheduleAPI]);
 
   const handleRemoveScheduleConfirm = useCallback((scheduleId: string) => {
     setDeletingScheduleId(scheduleId);
@@ -402,21 +464,21 @@ const ScheduleManagement: React.FC = () => {
     setDeleteLoading(true);
     try {
       await removeScheduleAPI(deletingScheduleId);
-      toast({
-        title: "Đã xóa lịch làm việc",
-        description: "Lịch làm việc đã được xóa thành công",
-      });
+      // Don't show toast here - realtime will handle it
       setDeletingScheduleId(null);
-      await refreshSchedules();
+      // Don't refresh manually - realtime will handle it
     } catch (error) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể xóa lịch làm việc";
+      console.error('Error deleting schedule:', error);
       toast({
         title: "Lỗi",
-        description: "Không thể xóa lịch làm việc",
+        description: message,
+        variant: 'destructive',
       });
     } finally {
       setDeleteLoading(false);
     }
-  }, [deletingScheduleId, removeScheduleAPI, toast, refreshSchedules]);
+  }, [deletingScheduleId, removeScheduleAPI, toast]);
 
   const handleEditClick = useCallback((schedule: any) => {
     setEditingSchedule(schedule);
@@ -440,21 +502,21 @@ const ScheduleManagement: React.FC = () => {
       };
 
       await adminService.updateSchedule(editingSchedule.id, updateData);
-      toast({ 
-        title: 'Cập nhật thành công', 
-        description: 'Lịch làm việc đã được cập nhật.' 
-      });
+      // Don't show toast here - realtime will handle it
       setEditingSchedule(null);
-      await refreshSchedules();
+      // Don't refresh manually - realtime will handle it
     } catch (err) {
+      const message = err?.response?.data?.Message || err?.message || "Không thể cập nhật lịch làm việc.";
+      console.error('Error updating schedule:', err);
       toast({ 
         title: 'Lỗi', 
-        description: 'Không thể cập nhật lịch làm việc.' 
+        description: message, 
+        variant: 'destructive',
       });
     } finally {
       setEditLoading(false);
     }
-  }, [editingSchedule, editRoomId, editTimeSlotId, editStatus, toast, refreshSchedules]);
+  }, [editingSchedule, editRoomId, editTimeSlotId, editStatus, toast]);
 
   // Load time slots from API
   useEffect(() => {
@@ -465,10 +527,12 @@ const ScheduleManagement: React.FC = () => {
         console.log('Time slots:', data);
         setTimeSlots(data);
       } catch (error) {
+        const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách ca làm việc";
         console.error('Error loading time slots:', error);
         toast({
           title: "Lỗi tải dữ liệu",
-          description: "Không thể tải danh sách ca làm việc",
+          description: message,
+          variant: 'destructive',
         });
       } finally {
         setLoading(false);
@@ -478,78 +542,85 @@ const ScheduleManagement: React.FC = () => {
     loadTimeSlots();
   }, [toast]);
 
-  // Fetch statistics mỗi khi đổi tab
+  // Consolidated data loading effect with debounce
   useEffect(() => {
-    const fetchStats = async () => {
-      setStatsLoading(true);
-      try {
-        const roleApi = getRoleApi(activeTab);
-        const data = await adminService.getScheduleStatistics(roleApi);
-        setStatistics(data);
-      } catch (err) {
-        setStatistics(null);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-    fetchStats();
-  }, [activeTab]);
-
-  // Load schedules when role or date changes
-  useEffect(() => {
-    const loadSchedules = async () => {
-      try {
-        const { role, fromDate, toDate } = getCurrentScheduleParams();
-        const paramsKey = `${role}-${fromDate}-${toDate}`;
-        
-        if (!hasLoadedRef.current || currentParamsRef.current !== paramsKey) {
-          console.log(`Loading schedules for ${role} from ${fromDate} to ${toDate}`);
-          await loadSchedulesByRole(role, fromDate, toDate);
-          currentParamsRef.current = paramsKey;
-          hasLoadedRef.current = true;
-        }
-      } catch (error) {
-        console.error('Error loading schedules:', error);
-        toast({
-          title: "Lỗi tải dữ liệu",
-          description: "Không thể tải lịch làm việc",
-        });
-      }
-    };
-
-    loadSchedules();
-  }, [activeTab, getCurrentScheduleParams, loadSchedulesByRole, toast]);
-
-  // Load schedules when user changes date selection
-  useEffect(() => {
+    // Debounce to prevent rapid successive calls
     const timeoutId = setTimeout(() => {
-      const loadSchedulesForDate = async () => {
+      const loadAllData = async () => {
         try {
           const { role, fromDate, toDate } = getCurrentScheduleParams();
           const paramsKey = `${role}-${fromDate}-${toDate}`;
           
-          const isDefaultWeek = selectedWeek === getInitialWeekString();
-          const isDefaultMonth = selectedMonth === new Date().toISOString().split('T')[0].substring(0, 7);
+          // Validate date range
+          const fromDateObj = new Date(fromDate);
+          const toDateObj = new Date(toDate);
           
-          if ((!isDefaultWeek || !isDefaultMonth) && currentParamsRef.current !== paramsKey) {
+          if (isNaN(fromDateObj.getTime()) || isNaN(toDateObj.getTime())) {
+            console.error('Invalid date range:', { fromDate, toDate });
+            toast({
+              title: "Lỗi ngày tháng",
+              description: "Khoảng thời gian không hợp lệ",
+              variant: 'destructive',
+            });
+            return;
+          }
+          
+          if (fromDateObj > toDateObj) {
+            console.error('Invalid date range: fromDate > toDate:', { fromDate, toDate });
+            toast({
+              title: "Lỗi ngày tháng", 
+              description: "Ngày bắt đầu không thể sau ngày kết thúc",
+              variant: 'destructive',
+            });
+            return;
+          }
+          
+          // Only load if parameters changed
+          if (currentParamsRef.current !== paramsKey) {
             console.log(`Loading schedules for ${role} from ${fromDate} to ${toDate}`);
-            await loadSchedulesByRole(role, fromDate, toDate);
+            
+            // Load schedules and statistics in parallel
+            const [scheduleResult] = await Promise.allSettled([
+              loadSchedulesByRole(role, fromDate, toDate),
+              (async () => {
+                try {
+                  setStatsLoading(true);
+                  const data = await adminService.getScheduleStatistics(role);
+                  setStatistics(data);
+                } catch (err) {
+                  console.error('Error loading statistics:', err);
+                  setStatistics(null);
+                } finally {
+                  setStatsLoading(false);
+                }
+              })()
+            ]);
+            
+            if (scheduleResult.status === 'rejected') {
+              throw new Error(scheduleResult.reason);
+            }
+            
             currentParamsRef.current = paramsKey;
+            hasLoadedRef.current = true;
+          } else {
+            console.log('Skipping load - same parameters:', paramsKey);
           }
         } catch (error) {
-          console.error('Error loading schedules:', error);
-    toast({
+          const message = error?.response?.data?.Message || error?.message || "Không thể tải dữ liệu";
+          console.error('Error loading data:', error);
+          toast({
             title: "Lỗi tải dữ liệu",
-            description: "Không thể tải lịch làm việc",
+            description: message,
+            variant: 'destructive',
           });
         }
       };
 
-      loadSchedulesForDate();
-    }, 500);
+      loadAllData();
+    }, 300); // 300ms debounce
 
     return () => clearTimeout(timeoutId);
-  }, [selectedWeek, selectedMonth, viewMode, activeTab, getCurrentScheduleParams, loadSchedulesByRole, toast]);
+  }, [activeTab, selectedWeek, selectedMonth, viewMode, getCurrentScheduleParams, loadSchedulesByRole, toast]);
 
   // Fetch staff & room options when open modal
   useEffect(() => {
@@ -576,12 +647,19 @@ const ScheduleManagement: React.FC = () => {
           setRoomOptions([...examRooms, ...labRooms]);
         }
       } catch (err) {
+        const message = err?.response?.data?.Message || err?.message || 'Không thể tải danh sách nhân viên hoặc phòng';
+        console.error('Error loading staff and rooms:', err);
         setStaffOptions([]);
         setRoomOptions([]);
+        toast({
+          title: 'Lỗi',
+          description: message,
+          variant: 'destructive',
+        });
       }
     };
     fetchStaffAndRooms();
-  }, [selectedDay, selectedShift, activeTab]);
+  }, [selectedDay, selectedShift, activeTab, toast]);
 
   // Fetch room options when editing
   useEffect(() => {
@@ -600,11 +678,18 @@ const ScheduleManagement: React.FC = () => {
           setRoomOptions([...examRooms, ...labRooms]);
         }
       } catch (err) {
+        const message = err?.response?.data?.Message || err?.message || 'Không thể tải danh sách phòng';
+        console.error('Error loading rooms for edit:', err);
         setRoomOptions([]);
+        toast({
+          title: 'Lỗi',
+          description: message,
+          variant: 'destructive',
+        });
       }
     };
     fetchRoomsForEdit();
-  }, [editingSchedule, activeTab]);
+  }, [editingSchedule, activeTab, toast]);
 
   if (loading || scheduleLoading) {
     return (
@@ -668,6 +753,7 @@ const ScheduleManagement: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
+
             {/* View Mode */}
             <div className="flex bg-gray-100 rounded-lg p-1">
               <button
@@ -697,14 +783,28 @@ const ScheduleManagement: React.FC = () => {
             <input
               type="week"
               value={selectedWeek}
-              onChange={(e) => setSelectedWeek(e.target.value)}
+              onChange={(e) => {
+                const newWeek = e.target.value;
+                if (newWeek && newWeek.match(/^\d{4}-W\d{2}$/)) {
+                  setSelectedWeek(newWeek);
+                } else {
+                  console.error('Invalid week format:', newWeek);
+                }
+              }}
               className="px-2.5 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-clinic-blue"
             />
             ) : (
               <input
                 type="month"
                 value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
+                onChange={(e) => {
+                  const newMonth = e.target.value;
+                  if (newMonth && newMonth.match(/^\d{4}-\d{2}$/)) {
+                    setSelectedMonth(newMonth);
+                  } else {
+                    console.error('Invalid month format:', newMonth);
+                  }
+                }}
                 className="px-2.5 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-clinic-blue"
               />
             )}
@@ -891,7 +991,6 @@ const ScheduleManagement: React.FC = () => {
                                     className="w-full flex items-center justify-center space-x-1 p-1 border border-dashed border-gray-300 rounded text-gray-500 hover:border-clinic-blue hover:text-clinic-blue transition-colors text-xs"
                                   >
                                     <Plus size={8} />
-                                    {/* <span>+</span> */}
                                   </button>
                                 </div>
                               </>
@@ -942,7 +1041,13 @@ const ScheduleManagement: React.FC = () => {
                   className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-clinic-blue"
                 >
                   <option value="">-- Chọn nhân viên --</option>
-                  {staffOptions.map(staff => (
+                  {staffOptions
+                    .filter(staff => {
+                      // Lấy danh sách userId đã có lịch làm việc tại selectedDay + selectedShift
+                      const scheduledUserIds = getScheduleForDay(selectedDay, selectedShift).map(s => s.userId);
+                      return !scheduledUserIds.includes(staff.id);
+                    })
+                    .map(staff => (
                     <option key={staff.id} value={staff.id}>
                       {staff.name} - {staff.email}
                     </option>
@@ -996,7 +1101,7 @@ const ScheduleManagement: React.FC = () => {
                     if (success) {
                       setSelectedDay(null);
                       setSelectedShift(null);
-                      await refreshSchedules();
+                      // Don't refresh manually - realtime will handle it
                     }
                   }
                 }}

@@ -6,101 +6,110 @@ import { appointmentService } from "../../services/appointmentService";
 // Simple async actions sử dụng services
 export const fetchPatients = createAsyncThunk(
   "data/fetchPatients",
-  async (params?: any) => {
+  async (params: any = {}, { rejectWithValue }) => {
     try {
       return await patientService.getPatients(params);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể tải danh sách bệnh nhân");
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách bệnh nhân";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const fetchDoctors = createAsyncThunk(
   "data/fetchDoctors",
-  async (params?: any) => {
+  async (params: any = {}, { rejectWithValue }) => {
     try {
       return await doctorService.getDoctors(params);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể tải danh sách bác sĩ");
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách bác sĩ";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const fetchAppointments = createAsyncThunk(
   "data/fetchAppointments",
-  async (params?: any) => {
+  async (params: any = {}, { rejectWithValue }) => {
     try {
       return await appointmentService.getAppointments(params);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể tải danh sách lịch hẹn");
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách lịch hẹn";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const createPatient = createAsyncThunk(
   "data/createPatient",
-  async (patientData: any) => {
+  async (patientData: any, { rejectWithValue }) => {
     try {
       return await patientService.createPatient(patientData);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể tạo bệnh nhân");
+      const message = error?.response?.data?.Message || error?.message || "Không thể tạo bệnh nhân";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const updatePatient = createAsyncThunk(
   "data/updatePatient",
-  async ({ id, data }: { id: string; data: any }) => {
+  async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
     try {
       return await patientService.updatePatient(id, data);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể cập nhật bệnh nhân");
+      const message = error?.response?.data?.Message || error?.message || "Không thể cập nhật bệnh nhân";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const deletePatient = createAsyncThunk(
   "data/deletePatient",
-  async (id: string) => {
+  async (id: string, { rejectWithValue }) => {
     try {
       await patientService.deletePatient(id);
       return id;
     } catch (error: any) {
-      throw new Error(error.message || "Không thể xóa bệnh nhân");
+      const message = error?.response?.data?.Message || error?.message || "Không thể xóa bệnh nhân";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const createAppointment = createAsyncThunk(
   "data/createAppointment",
-  async (appointmentData: any) => {
+  async (appointmentData: any, { rejectWithValue }) => {
     try {
       return await appointmentService.createAppointment(appointmentData);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể tạo lịch hẹn");
+      const message = error?.response?.data?.Message || error?.message || "Không thể tạo lịch hẹn";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const updateAppointment = createAsyncThunk(
   "data/updateAppointment",
-  async ({ id, data }: { id: string; data: any }) => {
+  async ({ id, data }: { id: string; data: any }, { rejectWithValue }) => {
     try {
       return await appointmentService.updateAppointment(id, data);
     } catch (error: any) {
-      throw new Error(error.message || "Không thể cập nhật lịch hẹn");
+      const message = error?.response?.data?.Message || error?.message || "Không thể cập nhật lịch hẹn";
+      return rejectWithValue(message);
     }
   }
 );
 
 export const deleteAppointment = createAsyncThunk(
   "data/deleteAppointment",
-  async (id: string) => {
+  async (id: string, { rejectWithValue }) => {
     try {
       await appointmentService.deleteAppointment(id);
       return id;
     } catch (error: any) {
-      throw new Error(error.message || "Không thể xóa lịch hẹn");
+      const message = error?.response?.data?.Message || error?.message || "Không thể xóa lịch hẹn";
+      return rejectWithValue(message);
     }
   }
 );
@@ -173,7 +182,7 @@ const dataSlice = createSlice({
       })
       .addCase(fetchPatients.rejected, (state, action) => {
         state.loading.patients = false;
-        state.error = action.error.message || "Error fetching patients";
+        state.error = action.payload as string || "Error fetching patients";
       })
       // Fetch Doctors
       .addCase(fetchDoctors.pending, (state) => {
@@ -186,7 +195,7 @@ const dataSlice = createSlice({
       })
       .addCase(fetchDoctors.rejected, (state, action) => {
         state.loading.doctors = false;
-        state.error = action.error.message || "Error fetching doctors";
+        state.error = action.payload as string || "Error fetching doctors";
       })
       // Fetch Appointments
       .addCase(fetchAppointments.pending, (state) => {
@@ -199,11 +208,14 @@ const dataSlice = createSlice({
       })
       .addCase(fetchAppointments.rejected, (state, action) => {
         state.loading.appointments = false;
-        state.error = action.error.message || "Error fetching appointments";
+        state.error = action.payload as string || "Error fetching appointments";
       })
       // Create Patient
       .addCase(createPatient.fulfilled, (state, action) => {
         state.patients.push(action.payload);
+      })
+      .addCase(createPatient.rejected, (state, action) => {
+        state.error = action.payload as string || "Error creating patient";
       })
       // Update Patient
       .addCase(updatePatient.fulfilled, (state, action) => {
@@ -215,15 +227,24 @@ const dataSlice = createSlice({
           state.patients[index] = payload.data || payload;
         }
       })
+      .addCase(updatePatient.rejected, (state, action) => {
+        state.error = action.payload as string || "Error updating patient";
+      })
       // Delete Patient
       .addCase(deletePatient.fulfilled, (state, action) => {
         state.patients = state.patients.filter(
           (p: any) => p.id !== action.payload
         );
       })
+      .addCase(deletePatient.rejected, (state, action) => {
+        state.error = action.payload as string || "Error deleting patient";
+      })
       // Create Appointment
       .addCase(createAppointment.fulfilled, (state, action) => {
         state.appointments.push(action.payload.data || action.payload);
+      })
+      .addCase(createAppointment.rejected, (state, action) => {
+        state.error = action.payload as string || "Error creating appointment";
       })
       // Update Appointment
       .addCase(updateAppointment.fulfilled, (state, action) => {
@@ -235,11 +256,17 @@ const dataSlice = createSlice({
           state.appointments[index] = payload.data || payload;
         }
       })
+      .addCase(updateAppointment.rejected, (state, action) => {
+        state.error = action.payload as string || "Error updating appointment";
+      })
       // Delete Appointment
       .addCase(deleteAppointment.fulfilled, (state, action) => {
         state.appointments = state.appointments.filter(
           (a: any) => a.id !== action.payload
         );
+      })
+      .addCase(deleteAppointment.rejected, (state, action) => {
+        state.error = action.payload as string || "Error deleting appointment";
       });
   },
 });

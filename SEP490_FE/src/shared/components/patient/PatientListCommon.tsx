@@ -79,13 +79,13 @@ const PatientListCommon: React.FC = () => {
     setFormLoading(true);
     try {
       await adminService.createPatient(formData);
-      toast({ title: 'Thành công', description: 'Tạo bệnh nhân mới thành công!' });
+      toast({ title: 'Thành công', description: 'Tạo bệnh nhân mới thành công!', variant: 'success' });
       setShowModal(false);
       setFormData({ name: '', citizenId: '', phoneNumber: '', email: '', dateOfBirth: '', gender: 'Nam', address: '' });
       setPage(1);
       fetchPatients();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error?.response?.data?.message || error.message });
+      toast({ title: 'Lỗi', description: error?.response?.data?.message || error.message, variant: 'destructive' });
     } finally {
       setFormLoading(false);
     }
@@ -121,12 +121,12 @@ const PatientListCommon: React.FC = () => {
         gender: editFormData.gender,
         address: editFormData.address,
       });
-      toast({ title: 'Thành công', description: 'Cập nhật bệnh nhân thành công!' });
+      toast({ title: 'Thành công', description: 'Cập nhật bệnh nhân thành công!', variant: 'success' });
       setShowEditModal(false);
       setEditFormData({ id: '', name: '', citizenId: '', phoneNumber: '', email: '', dateOfBirth: '', gender: 'Nam', address: '' });
       fetchPatients();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error?.response?.data?.message || error.message });
+      toast({ title: 'Lỗi', description: error?.response?.data?.message || error.message, variant: 'destructive' });
     } finally {
       setEditFormLoading(false);
     }

@@ -13,7 +13,7 @@ export const useSchedule = () => {
   const { schedules, loading, error } = useAppSelector((state) => state.schedule);
 
   const loadSchedulesByRole = (role: string, fromDate: string, toDate: string) => {
-    return dispatch(fetchSchedulesByRole({ role, fromDate, toDate }));
+    return dispatch(fetchSchedulesByRole({ role, fromDate, toDate })).unwrap();
   };
 
   const addSchedule = (scheduleData: {
@@ -22,15 +22,15 @@ export const useSchedule = () => {
     timeSlotId: string;
     date: string;
   }) => {
-    return dispatch(createSchedule(scheduleData));
+    return dispatch(createSchedule(scheduleData)).unwrap();
   };
 
   const editSchedule = (scheduleId: string, scheduleData: any) => {
-    return dispatch(updateSchedule({ scheduleId, scheduleData }));
+    return dispatch(updateSchedule({ id: scheduleId, data: scheduleData })).unwrap();
   };
 
   const removeSchedule = (scheduleId: string) => {
-    return dispatch(deleteSchedule(scheduleId));
+    return dispatch(deleteSchedule(scheduleId)).unwrap();
   };
 
   const clearScheduleData = () => {

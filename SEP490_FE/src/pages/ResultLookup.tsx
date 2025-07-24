@@ -84,7 +84,7 @@ const ResultLookup = () => {
       toast({
         title: "Không tìm thấy kết quả",
         description: "Vui lòng kiểm tra lại mã hồ sơ",
-        // variant: "destructive"
+        variant: "destructive"
       });
       setSearchResult(null);
     }

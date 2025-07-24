@@ -2,10 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, X, Save } from 'lucide-react';
 import { adminService } from '@/shared/services/adminService';
+import { useToast } from "@/shared/components/ui/use-toast";
 
 const PAGE_SIZE = 10;
 
 const MaterialTypeManagement: React.FC = () => {
+  const { toast } = useToast();
   const [data, setData] = useState<any[]>([]);
   const [totalItems, setTotalItems] = useState(0);
   const [page, setPage] = useState(1);
@@ -18,12 +20,20 @@ const MaterialTypeManagement: React.FC = () => {
   const [saving, setSaving] = useState(false);
 
   const fetchData = async (pageNumber = 1) => {
-    setLoading(true);
     try {
+      setLoading(true);
       const res = await adminService.getMaterialTypeList(pageNumber, PAGE_SIZE);
       setData(res.items);
       setTotalItems(res.totalItems);
       setPage(res.pageNumber);
+    } catch (error: any) {
+      console.error('Error fetching material types:', error);
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách loại vật liệu";
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -61,6 +71,14 @@ const MaterialTypeManagement: React.FC = () => {
       }
       closeModal();
       fetchData(page);
+    } catch (error: any) {
+      console.error('Error submitting material type:', error);
+      const message = error?.response?.data?.Message || error?.message || "Không thể lưu loại vật liệu";
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -72,6 +90,14 @@ const MaterialTypeManagement: React.FC = () => {
       await adminService.deleteMaterialType(deleteId);
       setDeleteId(null);
       fetchData(page);
+    } catch (error: any) {
+      console.error('Error deleting material type:', error);
+      const message = error?.response?.data?.Message || error?.message || "Không thể xóa loại vật liệu";
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }

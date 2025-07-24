@@ -11,6 +11,7 @@ import {
   clearSuccess,
 } from "@/shared/store/slices/doctorProfileSlice";
 import { toast } from "sonner";
+import { useToast } from "@/shared/components/ui/use-toast";
 
 // Interface cho doctor profile response (inline type theo yêu cầu)
 interface DoctorProfileData {
@@ -39,6 +40,7 @@ const DoctorProfile: React.FC = () => {
     (state) => state.doctorProfile
   );
   const { user } = useAppSelector((state) => state.auth);
+  const { toast } = useToast();
 
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -103,12 +105,19 @@ const DoctorProfile: React.FC = () => {
   // Handle success/error messages
   useEffect(() => {
     if (success) {
-      toast.success("Cập nhật hồ sơ thành công!");
+      toast({
+        title: "Cập nhật hồ sơ thành công!",
+        variant: "success",
+      });
       setIsEditing(false);
       dispatch(clearSuccess());
     }
     if (error) {
-      toast.error(error);
+      toast({
+        title: "Lỗi",
+        description: error,
+        variant: "destructive",
+      });
       dispatch(clearError());
     }
   }, [success, error, dispatch]);
@@ -123,7 +132,11 @@ const DoctorProfile: React.FC = () => {
 
   const handleSave = () => {
     if (!doctorId) {
-      toast.error("Không tìm thấy thông tin người dùng");
+      toast({
+        title: "Lỗi",
+        description: "Không tìm thấy thông tin người dùng",
+        variant: "destructive",
+      });
       return;
     }
 
