@@ -256,6 +256,8 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
                 var finalUrl = $"{backendUrl}/uploads/{url.TrimStart('/')}";
                 
+
+                
                 _logger.LogInformation("BackendUrl từ config: {BackendUrl}", backendUrl);
                 _logger.LogInformation("Final Avatar URL: {FinalUrl}", finalUrl);
 
