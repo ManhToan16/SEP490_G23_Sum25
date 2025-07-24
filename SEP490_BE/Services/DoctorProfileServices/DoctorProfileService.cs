@@ -19,12 +19,13 @@ namespace SEP490_BE.Services.DoctorProfileServices
         private readonly IConfiguration _configuration;
         private readonly IAuditLogRepository _auditLogRepository;
         private readonly IAuthService _authService;
+        private readonly ILogger<DoctorProfileService> _logger;
 
         public DoctorProfileService(
             KhanhAnNeurologyClinicContext context,
             IDoctorProfileRepository doctorProfileRepository,
             IFileService fileService,
-            IConfiguration configuration,IAuditLogRepository auditLogRepository,IAuthService authService)
+            IConfiguration configuration,IAuditLogRepository auditLogRepository,IAuthService authService, ILogger<DoctorProfileService> logger)
         {
             _context = context;
             _doctorProfileRepository = doctorProfileRepository;
@@ -32,6 +33,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
             _configuration = configuration;
             _auditLogRepository = auditLogRepository;
             _authService = authService;
+            _logger = logger;
         }
 
         public async Task<Pagination<DoctorProfileResponseDTO>> GetAll(
@@ -230,32 +232,46 @@ namespace SEP490_BE.Services.DoctorProfileServices
 
         public async Task<DoctorProfileResponseDTO> UploadAvatar(string doctorProfileId, IFormFile avatar)
         {
+            _logger.LogInformation("Bắt đầu upload avatar cho doctorProfileId = {DoctorProfileId}", doctorProfileId);
+
             var doctorProfile = await _doctorProfileRepository.FindByIdAsync(doctorProfileId)
                 ?? throw new ResourceNotFoundException("Không tìm thấy hồ sơ bác sĩ");
 
-            if (doctorProfile.Avatar != null)
+            try
             {
-                await _fileService.DeleteFileAsync(doctorProfile.Avatar);
+                if (!string.IsNullOrEmpty(doctorProfile.Avatar))
+                {
+                    _logger.LogInformation("Xóa avatar cũ tại đường dẫn: {OldAvatarUrl}", doctorProfile.Avatar);
+                    await _fileService.DeleteFileAsync(doctorProfile.Avatar);
+                }
+
+                var url = await _fileService.SaveFileAsync(avatar, "uploads/doctorProfile/");
+                doctorProfile.Avatar = url;
+
+                await _doctorProfileRepository.UpdateAsync(doctorProfile);
+                await _context.SaveChangesAsync();
+
+                _logger.LogInformation("Upload avatar thành công cho doctorProfileId = {DoctorProfileId}. Đường dẫn mới: {NewAvatarUrl}", doctorProfileId, url);
+
+                var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+
+                return new DoctorProfileResponseDTO
+                {
+                    Id = doctorProfile.Id,
+                    DoctorId = doctorProfile.DoctorId,
+                    Qualifications = doctorProfile.Qualifications,
+                    YearsOfExperience = doctorProfile.YearsOfExperience,
+                    Biography = doctorProfile.Biography,
+                    Avatar = $"{backendUrl}/{url.TrimStart('/')}"
+                };
             }
-
-            var url = await _fileService.SaveFileAsync(avatar, $"uploads/doctorProfile/");
-            doctorProfile.Avatar = url;
-
-            await _doctorProfileRepository.UpdateAsync(doctorProfile);
-            await _context.SaveChangesAsync();
-
-            var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
-
-            return new DoctorProfileResponseDTO
+            catch (Exception ex)
             {
-                Id = doctorProfile.Id,
-                DoctorId = doctorProfile.DoctorId,
-                Qualifications = doctorProfile.Qualifications,
-                YearsOfExperience = doctorProfile.YearsOfExperience,
-                Biography = doctorProfile.Biography,
-                Avatar = $"{backendUrl}/{url.TrimStart('/')}"
-            };
+                _logger.LogError(ex, "Lỗi khi upload avatar cho doctorProfileId = {DoctorProfileId}", doctorProfileId);
+                throw;
+            }
         }
+
 
     }
 }
