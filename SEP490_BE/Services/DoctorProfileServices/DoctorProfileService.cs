@@ -208,7 +208,19 @@ namespace SEP490_BE.Services.DoctorProfileServices
             await _doctorProfileRepository.UpdateAsync(doctorProfile);
             await _context.SaveChangesAsync();
 
+            // Xử lý URL cho cả local và production
             var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+            string avatarUrl;
+            
+            if (string.IsNullOrEmpty(backendUrl))
+            {
+                // Fallback nếu không có BackendUrl config
+                avatarUrl = url;
+            }
+            else
+            {
+                avatarUrl = $"{backendUrl}/{url.TrimStart('/')}";
+            }
 
             return new DoctorProfileResponseDTO
             {
@@ -217,7 +229,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 Qualifications = doctorProfile.Qualifications,
                 YearsOfExperience = doctorProfile.YearsOfExperience,
                 Biography = doctorProfile.Biography,
-                Avatar = $"{backendUrl}/{url.TrimStart('/')}"
+                Avatar = avatarUrl
             };
         }
 

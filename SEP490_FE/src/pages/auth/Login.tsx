@@ -13,10 +13,12 @@ import {
 import { Alert, AlertDescription } from "@/shared/components/ui/alert";
 import Loading from "@/shared/components/common/LoadingSpinner";
 import { useAuth } from "@/shared/hooks/business/useAuth";
+import { useToast } from "@/shared/components/ui/use-toast";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { toast } = useToast();
   const {
     isAuthenticated,
     loading,
@@ -31,6 +33,17 @@ const Login: React.FC = () => {
     checkAuthentication();
   }, []);
 
+  // Show toast for errors
+  useEffect(() => {
+    if (error) {
+      toast({
+        title: "Lỗi đăng nhập",
+        description: error,
+        variant: "destructive",
+      });
+    }
+  }, [error, toast]);
+
   // Redirect if already authenticated
   if (isAuthenticated) {
     return <Navigate to="/patient/dashboard" replace />;
@@ -41,6 +54,11 @@ const Login: React.FC = () => {
     clearError();
 
     if (!email || !password) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -48,6 +66,11 @@ const Login: React.FC = () => {
     if (result.success) {
       // Redux will handle redirect through auth state
       console.log("Login successful!");
+      toast({
+        title: "Đăng nhập thành công!",
+        description: "Chào mừng bạn đến với hệ thống",
+        variant: "success",
+      });
     }
   };
 

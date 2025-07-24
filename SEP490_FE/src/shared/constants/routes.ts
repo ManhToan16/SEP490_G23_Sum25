@@ -51,6 +51,8 @@ export const ROUTES = {
     DOCTOR_FEEDBACK_LIST: '/admin/doctor-feedback',
     DOCTOR_SCHEDULE_MANAGE: '/admin/schedule-manage',
     SYSTEM_LOGS: '/admin/logs',
+    MATERIAL_MANAGEMENT: '/admin/materials',
+    MATERIAL_TYPE_MANAGEMENT: '/admin/material-types',
     PATIENT_LIST: '/admin/patients', // Thêm dòng này
   },
 
@@ -94,9 +96,17 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.ADMIN.ACCOUNT_MANAGEMENT, label: 'Quản lý tài khoản', icon: 'Users' },
     { path: ROUTES.ADMIN.CLINIC_MANAGEMENT, label: 'Quản lý phòng khám', icon: 'Building' },
     { path: ROUTES.ADMIN.DOCTOR_FEEDBACK_LIST, label: 'Phản hồi bác sĩ', icon: 'MessageSquare' },
+    { path: ROUTES.ADMIN.DOCTOR_SCHEDULE_MANAGE, label: 'Lịch làm việc', icon: 'Library' },
+    {
+      label: 'Quản lý kho',
+      icon: 'ClipboardList',
+      children: [
+        { path: ROUTES.ADMIN.MATERIAL_MANAGEMENT, label: 'Quản lý vật tư', icon: 'Box' },
+        { path: ROUTES.ADMIN.MATERIAL_TYPE_MANAGEMENT, label: 'Quản lý loại vật tư', icon: 'Layers' },
+      ]
+    },
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
     { path: ROUTES.ADMIN.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' }, // Thêm dòng này
-    {path: ROUTES.ADMIN.DOCTOR_SCHEDULE_MANAGE, label: 'Lịch làm việc', icon:'Library' }
   ],
 } as const;
 
