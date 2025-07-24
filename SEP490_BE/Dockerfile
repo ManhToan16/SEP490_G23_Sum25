@@ -48,6 +48,9 @@ COPY --from=build /app/publish .
 # Copy Templates directory
 COPY Templates/ ./Templates/
 
+# Copy wwwroot directory for static files
+COPY wwwroot/ ./wwwroot/
+
 # Tạo thư mục logs
 RUN mkdir -p /app/logs
 

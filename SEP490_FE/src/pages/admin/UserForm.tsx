@@ -69,7 +69,8 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     if (!formData.name || !formData.email || !formData.phoneNumber) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin bắt buộc"
+        description: "Vui lòng điền đầy đủ thông tin bắt buộc",
+        variant: 'destructive',
       });
       return;
     }
@@ -78,7 +79,8 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     if (!user && !formData.password) {
       toast({
         title: "Lỗi",
-        description: "Mật khẩu là bắt buộc khi tạo tài khoản mới"
+        description: "Mật khẩu là bắt buộc khi tạo tài khoản mới",
+        variant: 'destructive',
       });
       return;
     }
@@ -98,6 +100,7 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     toast({
       title: `${user ? 'Cập nhật' : 'Thêm'} thành công!`,
       description: `${getUserTypeDisplay(userType)} đã được ${user ? 'cập nhật' : 'thêm'} vào hệ thống.`,
+      variant: 'success',
     });
   };
 

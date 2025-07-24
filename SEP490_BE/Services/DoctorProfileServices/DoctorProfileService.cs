@@ -270,6 +270,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 _logger.LogError(ex, "Lỗi khi upload avatar cho doctorProfileId = {DoctorProfileId}", doctorProfileId);
                 throw;
             }
+
         }
 
 

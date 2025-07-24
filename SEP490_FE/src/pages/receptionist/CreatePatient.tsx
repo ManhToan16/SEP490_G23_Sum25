@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import { User, Mail, Phone, MapPin, Calendar, Save, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 const CreatePatient: React.FC = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -29,11 +31,38 @@ const CreatePatient: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock save logic
-    alert('Tạo bệnh nhân mới thành công!');
+    
+    // Validate required fields
+    if (!formData.fullName || !formData.phone) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng điền đầy đủ thông tin bắt buộc (Họ tên, Số điện thoại)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Mock save logic - replace with actual API call
+      // await patientService.createPatient(formData);
+      
+      toast({
+        title: "Thành công",
+        description: "Tạo bệnh nhân mới thành công!",
+        variant: "success",
+      });
     navigate('/receptionist/list');
+    } catch (error: any) {
+      console.error('Error creating patient:', error);
+      const message = error?.response?.data?.Message || error?.message || "Không thể tạo bệnh nhân mới";
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: "destructive",
+      });
+    }
   };
 
   return (
