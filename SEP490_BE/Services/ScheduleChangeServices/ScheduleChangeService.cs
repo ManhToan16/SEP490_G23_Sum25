@@ -47,10 +47,15 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy lịch làm việc tương ứng, hoặc người yêu cầu không có quyền sở hữu lịch này.");
             }
+            var targetSchedule = await _scheduleRepository.FindByIdAsync(request.TargetScheduleId);
+            if (targetSchedule == null)
+            {
+                throw new ResourceNotFoundException("Không tìm thấy lịch làm việc của người được chỉ định hoặc lịch không thuộc quyền sở hữu của người đó.");
+            }
             var requesterRole = requester.UserRoles.First().RoleName;
             var targetUser = await _context.Users
                 .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == request.TargetUserId);
+                .FirstOrDefaultAsync(u => u.Id == targetSchedule.UserId);
             if (targetUser == null || !targetUser.UserRoles.Any(ur => validRoles.Contains(ur.RoleName)))
             {
                 throw new ResourceNotFoundException("Người dùng được chỉ định phải là bác sĩ, kỹ thuật viên hoặc y tá.");
@@ -60,29 +65,36 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             {
                 throw new UnauthorizedAccessException("Chỉ người dùng có cùng chức danh mới được phép đổi lịch với nhau.");
             }
-            var targetSchedule = await _scheduleRepository.FindByIdAsync(request.TargetScheduleId);
-            if (targetSchedule == null || targetSchedule.UserId != request.TargetUserId)
-            {
-                throw new ResourceNotFoundException("Không tìm thấy lịch làm việc của người được chỉ định hoặc lịch không thuộc quyền sở hữu của người đó.");
-            }
+          
 
             var requestEntity = new ScheduleChangeRequest
             {
                 Id = Guid.NewGuid().ToString(),
                 RequesterId = requesterId,
                 RequesterScheduleId = request.RequesterScheduleId,
-                TargetUserId = request.TargetUserId,
+                TargetUserId = targetSchedule.UserId,
                 TargetScheduleId = request.TargetScheduleId,
                 Reason = request.Reason,
                 Status = "PENDING"
             };
+            var newData = new
+            {
+                requestEntity.Id,
+                requestEntity.RequesterId,
+                requestEntity.RequesterScheduleId,
+                targetSchedule.UserId,
+                requestEntity.TargetScheduleId,
+                requestEntity.Reason,
+                requestEntity.Status
+            };
+
             var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _changeRequestRepository.AddAsync(requestEntity);
                 await _context.SaveChangesAsync();
-                await _logRepository.LogAsync(sessionUser.Id, "CREATE", "ScheduleChangeRequests", requestEntity.Id, null, requestEntity);
+                await _logRepository.LogAsync(sessionUser.Id, "CREATE", "ScheduleChangeRequests", requestEntity.Id, null, newData);
                 await transaction.CommitAsync();
 
                 var createdRequest = await _changeRequestRepository.FindByIdAsync(requestEntity.Id);
@@ -96,19 +108,32 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                     Reason = createdRequest.Reason,
                     Status = createdRequest.Status,
                     RequesterName = createdRequest.Requester?.Name,
-                    TargetUserName = createdRequest.TargetUser?.Name
+                    RequesterTimeSlotId=createdRequest.RequesterSchedule.TimeSlotId,
+                    TargetUserName = createdRequest.TargetUser?.Name,
+                    TargetTimeSlotId = createdRequest.TargetSchedule.TimeSlotId
                 };
             }
-            catch
+            catch(Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw;
+                throw ex;
             }
         }
 
         public async Task<ScheduleChangeResponseDTO> ApproveRequest(string requestId)
         {
             var request = await _changeRequestRepository.FindByIdAsync(requestId);
+            var oldData = new
+            {
+                request.Id,
+                request.RequesterId,
+                request.RequesterScheduleId,
+                request.TargetUserId,
+                request.TargetScheduleId,
+                request.Reason,
+                request.Status
+            };
+
             if (request == null)
             {
                 throw new ResourceNotFoundException("Không tìm thấy yêu cầu.");
@@ -131,6 +156,17 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             targetSchedule.UserId = tempUserId;
 
             request.Status = "APPROVED";
+            var newData = new
+            {
+                request.Id,
+                request.RequesterId,
+                request.RequesterScheduleId,
+                request.TargetUserId,
+                request.TargetScheduleId,
+                request.Reason,
+                request.Status
+            };
+
             var sessionUser = await _authService.GetAuthenticatedUser();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -140,7 +176,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                 await _scheduleRepository.UpdateAsync(targetSchedule);
                 await _changeRequestRepository.UpdateAsync(request);
                 await _context.SaveChangesAsync();
-                await _logRepository.LogAsync(sessionUser.Id, "APPROVE", "ScheduleChangeRequests", request.Id, null, request);
+                await _logRepository.LogAsync(sessionUser.Id, "APPROVE", "ScheduleChangeRequests", request.Id, null, newData);
                 await transaction.CommitAsync();
 
                 var updatedRequest = await _changeRequestRepository.FindByIdAsync(request.Id);
@@ -154,7 +190,9 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                     Reason = updatedRequest.Reason,
                     Status = updatedRequest.Status,
                     RequesterName = updatedRequest.Requester?.Name,
-                    TargetUserName = updatedRequest.TargetUser?.Name
+                    RequesterTimeSlotId = updatedRequest.RequesterSchedule.TimeSlotId,
+                    TargetUserName = updatedRequest.TargetUser?.Name,
+                    TargetTimeSlotId = updatedRequest.TargetSchedule.TimeSlotId
                 };
             }
             catch
@@ -177,6 +215,16 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             }
 
             request.Status = "REJECTED";
+            var newData = new
+            {
+                request.Id,
+                request.RequesterId,
+                request.RequesterScheduleId,
+                request.TargetUserId,
+                request.TargetScheduleId,
+                request.Reason,
+                request.Status
+            };
             var sessionUser = await _authService.GetAuthenticatedUser();
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -184,7 +232,7 @@ namespace SEP490_BE.Services.ScheduleChangeServices
             {
                 await _changeRequestRepository.UpdateAsync(request);
                 await _context.SaveChangesAsync();
-                await _logRepository.LogAsync(sessionUser.Id, "REJECT", "ScheduleChangeRequests", request.Id, null, request);
+                await _logRepository.LogAsync(sessionUser.Id, "REJECT", "ScheduleChangeRequests", request.Id, null, newData);
                 await transaction.CommitAsync();
 
                 var updatedRequest = await _changeRequestRepository.FindByIdAsync(request.Id);
@@ -198,7 +246,9 @@ namespace SEP490_BE.Services.ScheduleChangeServices
                     Reason = updatedRequest.Reason,
                     Status = updatedRequest.Status,
                     RequesterName = updatedRequest.Requester?.Name,
-                    TargetUserName = updatedRequest.TargetUser?.Name
+                    RequesterTimeSlotId = updatedRequest.RequesterSchedule.TimeSlotId,
+                    TargetUserName = updatedRequest.TargetUser?.Name,
+                    TargetTimeSlotId = updatedRequest.TargetSchedule.TimeSlotId
                 };
             }
             catch
