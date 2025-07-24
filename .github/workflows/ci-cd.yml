@@ -312,6 +312,10 @@ jobs:
           docker exec clinic-backend ls -la /opt/khanhan/uploads/doctorProfile || echo "Doctor profile directory not accessible"
           docker exec clinic-backend ls -la /opt/khanhan/uploads/laboratory || echo "Laboratory directory not accessible"
           
+          # 12. Test static file serving
+          echo "📁 Testing static file serving..."
+          docker exec clinic-backend curl -f http://localhost:5050/uploads/doctorProfile/ || echo "Static file serving test failed"
+          
           echo "✅ Deployment completed successfully!"
         EOF
         

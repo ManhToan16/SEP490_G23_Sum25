@@ -61,6 +61,7 @@ using SEP490_BE.Services.VisitServices;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -256,7 +257,15 @@ app.UseCors("AllowAllOrigins");
 
 app.UseRouting();
 
+// Serve static files from wwwroot
 app.UseStaticFiles();
+
+// Serve static files from external uploads directory
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider("/opt/khanhan/uploads"),
+    RequestPath = "/uploads"
+});
 
 app.UseAuthentication();
 
