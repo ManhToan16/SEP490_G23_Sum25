@@ -12,6 +12,7 @@ namespace SEP490_BE.Services.ScheduleServices
         Task<ScheduleResponseDTO> CreateSchedule(CreateScheduleDTO request);
         Task<ScheduleResponseDTO> UpdateSchedule(string id, UpdateScheduleDTO request);
         Task<ScheduleStatisticsDTO> GetScheduleStatisticsByRole(string role, DateTime? fromDate, DateTime? toDate);
+        Task<List<ScheduleAssignment>> ReadScheduleExcelAsync(IFormFile file,string role);
         Task DeleteSchedule(string id);
     }
 }

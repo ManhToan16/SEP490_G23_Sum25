@@ -8,6 +8,8 @@ using SEP490_BE.Services.ScheduleServices;
 using Microsoft.AspNetCore.SignalR;
 using SEP490_BE.Hubs;
 using SEP490_BE.Entities;
+using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Repositories.RoleRepositories;
 
 namespace SEP490_BE.Controllers
 {
@@ -17,13 +19,18 @@ namespace SEP490_BE.Controllers
     {
         private readonly IScheduleService _scheduleService;
         private readonly INotificationHubService _notificationHubService;
+        private readonly KhanhAnNeurologyClinicContext _context;
+        private readonly IRoleRepository _roleRepository;
 
         public SchedulesController(
             IScheduleService scheduleService,
-            INotificationHubService notificationHubService)
+            INotificationHubService notificationHubService,
+            KhanhAnNeurologyClinicContext context,IRoleRepository roleRepository)
         {
             _scheduleService = scheduleService;
             _notificationHubService = notificationHubService;
+            _context = context;
+            _roleRepository = roleRepository;
         }
         private (DateTime fromDate, DateTime toDate) GetCurrentWeekRange()
         {
@@ -218,6 +225,46 @@ namespace SEP490_BE.Controllers
                 Data = null
             });
         }
-      
+        [HttpPost("import-create")]
+        public async Task<IActionResult> ImportAndCreateScheduleRange( IFormFile file,  string userId)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest("File Excel không hợp lệ.");
+
+            if (string.IsNullOrWhiteSpace(userId))
+                return BadRequest("UserId không được để trống.");
+            var roles = await _roleRepository.FindRolesByUser(userId);
+            if (roles == null || !roles.Any())
+                return BadRequest("Người dùng không có vai trò nào.");
+            var role = roles.First();
+            if (!(new[] { "DOCTOR", "TECHNICIAN","NURSE" }.Contains(role)))
+                return BadRequest("Chỉ cho phép nhập lịch cho DOCTOR hoặc TECHNICIAN.");
+            try
+            {
+                var assignments = await _scheduleService.ReadScheduleExcelAsync(file,role);
+
+                var dto = new CreateScheduleRangeDTO
+                {
+                    UserId = userId,
+                    ScheduleAssignments = assignments
+                };
+
+                var response = await _scheduleService.CreateScheduleRange(dto);
+
+                return Ok(new
+                {
+                    StatusCode = StatusCodes.Status200OK,
+                    Success = true,
+                    Message = MessageConstants.GET_SUCCESS,
+                    Data = response
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi khi tạo lịch từ Excel: {ex.Message}");
+            }
+        }
+
+
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using OfficeOpenXml;
 using SEP490_BE.DTO.ScheduleDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
@@ -283,19 +284,27 @@ namespace SEP490_BE.Services.ScheduleServices
                 throw;
             }
 
-            return await Task.WhenAll(schedules.Select(async s => new ScheduleResponseDTO
+            var responseList = new List<ScheduleResponseDTO>();
+            foreach (var s in schedules)
             {
-                Id = s.Id,
-                UserId = s.UserId,
-                UserName = user.Name, // Đã có sẵn user
-                Role = s.Role,
-                RoomId = s.RoomId,
-                RoomName = await GetRoomNameAsync(s.RoomId), // Gọi async từng phòng
-                RoomType = s.RoomType,
-                Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
-                TimeSlotId = s.TimeSlotId,
-                Status = s.Status
-            })).ContinueWith(t => t.Result.ToList());
+                var roomName = await GetRoomNameAsync(s.RoomId); // tuần tự
+                var response = new ScheduleResponseDTO
+                {
+                    Id = s.Id,
+                    UserId = s.UserId,
+                    UserName = user.Name,
+                    Role = s.Role,
+                    RoomId = s.RoomId,
+                    RoomName = roomName,
+                    RoomType = s.RoomType,
+                    Date = s.Date.ToLocalTime().ToString("dd/MM/yyyy"),
+                    TimeSlotId = s.TimeSlotId,
+                    Status = s.Status
+                };
+                responseList.Add(response);
+            }
+            return responseList;
+
 
         }
 
@@ -640,6 +649,74 @@ namespace SEP490_BE.Services.ScheduleServices
                 ShiftsPerDay = Math.Round(shiftsPerDay, 2)
             };
         }
+        public async Task<List<ScheduleAssignment>> ReadScheduleExcelAsync(IFormFile file, string role)
+        {
+            ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+            var scheduleList = new List<ScheduleAssignment>();
+
+            using var stream = new MemoryStream();
+            await file.CopyToAsync(stream);
+            using var package = new ExcelPackage(stream);
+
+            var worksheet = package.Workbook.Worksheets.FirstOrDefault();
+            if (worksheet == null)
+                throw new Exception("Không tìm thấy sheet nào trong file Excel.");
+
+            int rowCount = worksheet.Dimension?.Rows ?? 0;
+
+            for (int row = 2; row <= rowCount; row++)
+            {
+                try
+                {
+                    var dateStr = worksheet.Cells[row, 1].Value?.ToString();
+                    var roomName = worksheet.Cells[row, 2].Value?.ToString();
+                    var timeSlotId = worksheet.Cells[row, 3].Value?.ToString();
+
+                    if (string.IsNullOrWhiteSpace(dateStr) || string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(timeSlotId))
+                    {
+                        throw new Exception($"Dữ liệu thiếu ở dòng {row}");
+                    }
+
+                    string? roomId = null;
+
+                    if (role == "DOCTOR")
+                    {
+                        var room = await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                        if (room == null)
+                            throw new Exception($"Không tìm thấy phòng khám '{roomName}' tại dòng {row}");
+
+                        roomId = room.Id;
+                    }
+                    else if (role == "TECHNICIAN")
+                    {
+                        var room = await _context.LaboratoryRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                        if (room == null)
+                            throw new Exception($"Không tìm thấy phòng xét nghiệm '{roomName}' tại dòng {row}");
+
+                        roomId = room.Id;
+                    }
+                    else
+                    {
+                        throw new Exception("Chỉ hỗ trợ role DOCTOR hoặc TECHNICIAN.");
+                    }
+
+                    scheduleList.Add(new ScheduleAssignment
+                    {
+                        Date = DateTime.Parse(dateStr),
+                        RoomId = roomId,
+                        TimeSlotId = timeSlotId.Trim()
+                    });
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Lỗi tại dòng {row}: {ex.Message}");
+                }
+            }
+
+            return scheduleList;
+        }
+
+
 
     }
     public enum ScheduleStatus
