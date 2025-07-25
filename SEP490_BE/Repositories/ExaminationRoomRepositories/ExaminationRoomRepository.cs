@@ -18,6 +18,10 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
                 .Include(er => er.Visits)
                 .FirstOrDefaultAsync(er => er.Id == id);
         }
+        public async Task<bool> ExistsByNameAsync(string name)
+        {
+            return await _context.ExaminationRooms.AnyAsync(x => x.Name == name);
+        }
 
         public async Task<(List<ExaminationRoom> Rooms, int TotalItems)> FindAll(
             string? name,

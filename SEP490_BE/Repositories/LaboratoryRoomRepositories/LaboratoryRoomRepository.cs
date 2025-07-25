@@ -17,7 +17,10 @@ namespace SEP490_BE.Repositories.LaboratoryRoomRepositories
             return await _context.LaboratoryRooms
                 .FirstOrDefaultAsync(lr => lr.Id == id);
         }
-
+        public async Task<bool> ExistsByNameAsync(string name)
+        {
+            return await _context.LaboratoryRooms.AnyAsync(x => x.Name == name);
+        }
         public async Task<(List<LaboratoryRoom> Rooms, int TotalItems)> FindAll(
             string? name,
             string? description,
