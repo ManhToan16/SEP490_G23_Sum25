@@ -1,7 +1,8 @@
 # Build results
 bin/
 obj/
-
+# Ignore test project
+/Test/
 # Secrets
 appsettings.json
 appsettings.Development.json
