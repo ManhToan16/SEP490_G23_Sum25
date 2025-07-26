@@ -4,6 +4,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ServiceRepositories;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace SEP490_BE.Services.ServiceServices
 {
@@ -65,7 +66,7 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
-            if (await IsServiceExistsAsync(request.Name, request.LaboratoryRoomId))
+            if ( await _serviceRepository.ExistsByNameAsync(request.Name, request.LaboratoryRoomId))
             {
                 throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
             }
@@ -74,6 +75,10 @@ namespace SEP490_BE.Services.ServiceServices
             if (room == null)
             {
                 throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm.");
+            }
+            if (request.Name.Length > 100)
+            {
+                throw new ValidationException("Tên dịch vụ không được vượt quá 100 ký tự");
             }
 
             var service = new Service
@@ -132,7 +137,10 @@ namespace SEP490_BE.Services.ServiceServices
             service.Name = request.Name ?? service.Name;
             service.Price = request.Price ?? service.Price;
             service.Description = request.Description ?? service.Description;
-
+            if (await _serviceRepository.ExistsByNameAsync(service.Name, service.LaboratoryRoomsId))
+            {
+                throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
+            }
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
