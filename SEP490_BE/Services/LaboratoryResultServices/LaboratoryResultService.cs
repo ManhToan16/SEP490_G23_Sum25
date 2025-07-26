@@ -128,7 +128,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
 
             foreach (var file in files)
             {
-                var url = await _fileService.SaveFileAsync(file, "uploads/laboratory/");
+                var url = await _fileService.SaveFileAsync(file, "laboratory/");
                 var labFile = new LaboratoryFile
                 {
                     Id = Guid.NewGuid().ToString(),
@@ -141,7 +141,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                 {
                     Id = labFile.Id,
                     LaboratoryResultId = laboratoryResultId,
-                    Url = $"{backendUrl}/{url.TrimStart('/')}"
+                    Url = $"{backendUrl}/uploads/{url.TrimStart('/')}"
                 });
             }
 
@@ -175,7 +175,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                 {
                     Id = f.Id,
                     LaboratoryResultId = f.LaboratoryResultId,
-                    Url = $"{backendUrl}/{f.Url.TrimStart('/')}"
+                    Url = $"{backendUrl}/uploads/{f.Url.TrimStart('/')}"
                 }).ToList() ?? new()
             };
         }

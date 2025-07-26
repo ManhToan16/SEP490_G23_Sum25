@@ -32,6 +32,13 @@ namespace SEP490_BE.Services.MaterialServices
             {
                 throw new ResourceNotFoundException("Nhà cung cấp không tồn tại.");
             }
+            if (request.MinQuantity.HasValue && request.MaxQuantity.HasValue)
+            {
+                if (request.MinQuantity > request.MaxQuantity)
+                {
+                    throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
+                }
+            }
             if (await IsMaterialExistsAsync(request.Name, request.CategoryId, request.SupplierId))
             {
                 throw new InvalidOperationException("Vật tư đã tồn tại.");
@@ -90,7 +97,13 @@ namespace SEP490_BE.Services.MaterialServices
                 }
                 material.CategoryId = request.CategoryId;
             }
-
+            if (request.MinQuantity.HasValue && request.MaxQuantity.HasValue)
+            {
+                if (request.MinQuantity > request.MaxQuantity)
+                {
+                    throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
+                }
+            }
             if (!string.IsNullOrEmpty(request.SupplierId))
             {
                 var supplier = await _context.Suppliers.FindAsync(request.SupplierId);

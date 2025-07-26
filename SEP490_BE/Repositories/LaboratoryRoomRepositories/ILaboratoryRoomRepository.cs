@@ -13,5 +13,6 @@ namespace SEP490_BE.Repositories.LaboratoryRoomRepositories
         Task InsertAsync(LaboratoryRoom room);
         Task UpdateAsync(LaboratoryRoom room);
         Task DeleteAsync(LaboratoryRoom room);
+        Task<bool> ExistsByNameAsync(string name);
     }
 }

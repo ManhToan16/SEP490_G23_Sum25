@@ -58,9 +58,9 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
         public async Task<LaboratoryRoomResponseDTO> Create(CreateLaboratoryRoomDTO request)
         {
-            if (await IsLaboratoryRoomExistsAsync(request.Name))
+            if (await _laboratoryRoomRepository.ExistsByNameAsync(request.Name))
             {
-                throw new InvalidOperationException("Phòng xét nghiệm đã tồn tại.");
+                throw new InvalidOperationException("Tên phòng đã tồn tại");
             }
             var room = new LaboratoryRoom
             {
@@ -105,7 +105,10 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
             room.Name = request.Name ?? room.Name;
             room.Description = request.Description ?? room.Description;
-
+            if (await _laboratoryRoomRepository.ExistsByNameAsync(room.Name))
+            {
+                throw new InvalidOperationException("Tên phòng đã tồn tại");
+            }
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {

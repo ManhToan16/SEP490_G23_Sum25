@@ -180,7 +180,7 @@ jobs:
             "SecretKey": "$JWT_SECRET_KEY"
           },
           "App": {
-            "BackendUrl": "$BACKEND_URL",
+            "BackendUrl": "https://be.khanhanclinic.io.vn",
             "UploadPath": "/opt/khanhan/uploads"
           },
           "Smtp": {
@@ -274,6 +274,11 @@ jobs:
           docker pull quanghd/fe:latest
           docker pull quanghd/be:latest
           
+          # Force rebuild backend to ensure latest code
+          echo "🔨 Force rebuilding backend..."
+          docker rmi quanghd/be:latest || true
+          docker pull quanghd/be:latest
+          
           # 3. Setup network
           echo "🌐 Setting up network..."
           docker network create clinic-network 2>/dev/null || echo "Network already exists"
@@ -311,6 +316,14 @@ jobs:
           docker exec clinic-backend ls -la /opt/khanhan/uploads || echo "Upload directory not accessible"
           docker exec clinic-backend ls -la /opt/khanhan/uploads/doctorProfile || echo "Doctor profile directory not accessible"
           docker exec clinic-backend ls -la /opt/khanhan/uploads/laboratory || echo "Laboratory directory not accessible"
+          
+          # 12. Test static file serving
+          echo "📁 Testing static file serving..."
+          docker exec clinic-backend curl -f http://localhost:5050/uploads/doctorProfile/ || echo "Static file serving test failed"
+          
+          # 13. Verify static files configuration
+          echo "🔍 Verifying static files configuration..."
+          docker exec clinic-backend curl -s http://localhost:5050/api/health/static-files | jq . || echo "Static files health check failed"
           
           echo "✅ Deployment completed successfully!"
         EOF

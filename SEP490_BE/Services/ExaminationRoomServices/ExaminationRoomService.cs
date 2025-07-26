@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.DoctorProfileDTO;
@@ -13,6 +14,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IExaminationRoomRepository _examinationRoomRepository;
+
 
         public ExaminationRoomService(
             KhanhAnNeurologyClinicContext context,
@@ -60,10 +62,11 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
         public async Task<ExaminationRoomResponseDTO> Create(CreateExaminationRoomDTO request)
         {
-            if (await IsExaminationRoomExistsAsync(request.Name))
+            if (await _examinationRoomRepository.ExistsByNameAsync(request.Name))
             {
-                throw new InvalidOperationException("Phòng khám đã tồn tại.");
+                throw new InvalidOperationException("Tên phòng đã tồn tại");
             }
+
             var room = new ExaminationRoom
             {
                 Id = Guid.NewGuid().ToString(),
@@ -104,9 +107,13 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy phòng khám lâm sàng.");
             }
-
+           
             room.Name = request.Name ?? room.Name;
             room.Description = request.Description ?? room.Description;
+            if (await _examinationRoomRepository.ExistsByNameAsync(room.Name))
+            {
+                throw new InvalidOperationException("Tên phòng đã tồn tại");
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
