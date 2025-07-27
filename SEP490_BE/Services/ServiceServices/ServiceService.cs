@@ -5,6 +5,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ServiceRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SEP490_BE.Services.ServiceServices
 {
@@ -195,5 +196,19 @@ namespace SEP490_BE.Services.ServiceServices
             await _serviceRepository.DeleteAsync(service);
             await _context.SaveChangesAsync();
         }
+        public async Task DeleteByLaboId(string laboratoryRoomId)
+        {
+            var services = await _context.Services
+        .Where(s => s.LaboratoryRoomsId == laboratoryRoomId)
+        .ToListAsync(); ;
+            if (!services.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ trong phòng xét nghiệm này.");
+            }
+            _context.Services.RemoveRange(services);
+            await _context.SaveChangesAsync();
+
+        }
+      
     }
 }

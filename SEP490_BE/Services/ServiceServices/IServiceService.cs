@@ -18,5 +18,6 @@ namespace SEP490_BE.Services.ServiceServices
         Task<ServiceResponseDTO> Create(CreateServiceDTO request);
         Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request);
         Task Delete(string id);
+        Task DeleteByLaboId(string laboratoryRoomId);
     }
 }
