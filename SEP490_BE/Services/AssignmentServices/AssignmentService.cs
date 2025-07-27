@@ -1,12 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.AssignmentDTO;
 using SEP490_BE.DTO.VisitDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AssignmentRepositories;
+using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Repositories.LaboratoryResultRepositories;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
@@ -24,6 +27,8 @@ namespace SEP490_BE.Services.AssignmentServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly ILaboratoryResultRepository _laboratoryResultRepository;
+        private readonly IExaminationResultRepository _examinationResultRepository;
+        private readonly IHubContext<KhanhAnHub> _hubContext;
 
         public AssignmentService(
             IAssignmentRepository assignmentRepository,
@@ -32,7 +37,10 @@ namespace SEP490_BE.Services.AssignmentServices
             IServiceRepository serviceRepository,
             IAppointmentRepository appointmentRepository,
             KhanhAnNeurologyClinicContext context,
-            ILaboratoryResultRepository laboratoryResultRepository)
+            ILaboratoryResultRepository laboratoryResultRepository,
+            IExaminationResultRepository examinationResultRepository,
+            IHubContext<KhanhAnHub> hubContext
+            )
         {
             _assignmentRepository = assignmentRepository;
             _laboratoryRoomRepository = laboratoryRoomRepository;
@@ -41,6 +49,8 @@ namespace SEP490_BE.Services.AssignmentServices
             _appointmentRepository = appointmentRepository;
             _context = context;
             _laboratoryResultRepository = laboratoryResultRepository;
+            _examinationResultRepository = examinationResultRepository;
+            _hubContext = hubContext;
         }
 
         public async Task<Pagination<AssignmentResponseDTO>> GetAssignments(string laboratoryRoomId, string? status, DateTime date, int pageNumber, int pageSize)
@@ -84,6 +94,11 @@ namespace SEP490_BE.Services.AssignmentServices
 
             var visit = await _visitRepository.FindById(visitId)
                 ?? throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
+            var examResult = await _examinationResultRepository.FindByVisitIdAsync(visitId);
+            if (examResult == null)
+            {
+                throw new Exceptions.ArgumentException("Lượt khám cần có phiếu khám tổng quát để tạo chỉ định");
+            }
 
             var duplicateLabRooms = requests
                 .GroupBy(r => r.LaboratoryRoomId)
@@ -96,6 +111,7 @@ namespace SEP490_BE.Services.AssignmentServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var createdAssignments = new List<Assignment>();
                 foreach (var request in requests)
                 {
                     var labRoom = await _laboratoryRoomRepository.FindByIdAsync(request.LaboratoryRoomId)
@@ -124,6 +140,8 @@ namespace SEP490_BE.Services.AssignmentServices
                         CreateAt = DateTime.UtcNow
                     };
                     await _context.Assignments.AddAsync(assignment);
+                    createdAssignments.Add(assignment);
+
                     foreach (var service in services)
                     {
                         var assignmentService = new Entities.AssignmentService
@@ -175,6 +193,38 @@ namespace SEP490_BE.Services.AssignmentServices
                 await _appointmentRepository.Update(visitToUpdate.Appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                foreach (var asm in createdAssignments)
+                {
+                    await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                    {
+                        Action = "CREATE",
+                        AssignmentId = asm.Id,
+                        LaboratoryRoomId = asm.LaboratoryRoomId,
+                        Status = asm.Status
+                    });
+                }
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = visitToUpdate.Appointment.Id,
+                    Email = visitToUpdate.Appointment.Email,
+                    PhoneNumber = visitToUpdate.Appointment.PhoneNumber,
+                    DateOfBirth = visitToUpdate.Appointment.DateOfBirth,
+                    Date = visitToUpdate.Appointment.Date,
+                    Status = visitToUpdate.Appointment.Status,
+                });
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "UPDATE",
+                    VisitId = visitToUpdate.Id,
+                    ExaminationRoomId = visitToUpdate.ExaminationRoomId,
+                    QueueNumber = visitToUpdate.QueueNumber,
+                    Status = visitToUpdate.Status,
+                    IsPrioritized = visitToUpdate.IsPrioritized,
+                });
             }
             catch
             {
@@ -217,6 +267,15 @@ namespace SEP490_BE.Services.AssignmentServices
             assignment.Status = AssignmentStatus.IN_PROGRESS;
             await _assignmentRepository.Update(assignment);
             await _context.SaveChangesAsync();
+
+            await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+            {
+                Action = "UPDATE",
+                AssignmentId = assignment.Id,
+                LaboratoryRoomId = assignment.LaboratoryRoomId,
+                Status = assignment.Status
+            });
+
             return new AssignmentResponseDTO
             {
                 AssignmentId = assignment.Id,
@@ -268,6 +327,25 @@ namespace SEP490_BE.Services.AssignmentServices
                 }
 
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                {
+                    Action = "UPDATE",
+                    AssignmentId = assignment.Id,
+                    LaboratoryRoomId = assignment.LaboratoryRoomId,
+                    Status = assignment.Status
+                });
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "UPDATE",
+                    VisitId = visit.Id,
+                    ExaminationRoomId = visit.ExaminationRoomId,
+                    QueueNumber = visit.QueueNumber,
+                    Status = visit.Status,
+                    IsPrioritized = visit.IsPrioritized,
+                });
+
             }
             catch
             {
