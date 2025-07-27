@@ -5,6 +5,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ServiceRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SEP490_BE.Services.ServiceServices
 {
@@ -63,6 +64,24 @@ namespace SEP490_BE.Services.ServiceServices
                 Description = service.Description
             };
         }
+        public async Task<List<ServiceResponseDTO>> GetByRoom(string roomId)
+        {
+            var services = await _serviceRepository.FindAllByRoomAsync(roomId);
+            if (services == null || !services.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ nào trong phòng xét nghiệm này.");
+            }
+
+            return services.Select(service => new ServiceResponseDTO
+            {
+                Id = service.Id,
+                LaboratoryRoomId = service.LaboratoryRoomsId,
+                Name = service.Name,
+                Price = service.Price,
+                Description = service.Description
+            }).ToList();
+        }
+
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
@@ -121,6 +140,10 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new InvalidDataException("Tên dịch vụ không được để trống");
+            }
             var service = await _serviceRepository.FindByIdAsync(id);
             if (service == null)
             {
@@ -175,5 +198,19 @@ namespace SEP490_BE.Services.ServiceServices
             await _serviceRepository.DeleteAsync(service);
             await _context.SaveChangesAsync();
         }
+        public async Task DeleteByLaboId(string laboratoryRoomId)
+        {
+            var services = await _context.Services
+        .Where(s => s.LaboratoryRoomsId == laboratoryRoomId)
+        .ToListAsync(); ;
+            if (!services.Any())
+            {
+                return;
+            }
+            _context.Services.RemoveRange(services);
+            await _context.SaveChangesAsync();
+
+        }
+      
     }
 }

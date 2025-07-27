@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
-namespace Test.Services.ExaminationRooms
+namespace Test2.Services.ExaminationRooms
 {
     [TestFixture]
     public class CreateExaminationRoomTests

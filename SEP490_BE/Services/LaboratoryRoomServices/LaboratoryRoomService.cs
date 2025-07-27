@@ -4,6 +4,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Services.ServiceServices;
 
 namespace SEP490_BE.Services.LaboratoryRoomServices
 {
@@ -11,13 +12,15 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly ILaboratoryRoomRepository _laboratoryRoomRepository;
+        private readonly IServiceService _serviceService;
 
         public LaboratoryRoomService(
             KhanhAnNeurologyClinicContext context,
-            ILaboratoryRoomRepository laboratoryRoomRepository)
+            ILaboratoryRoomRepository laboratoryRoomRepository, IServiceService serviceService)
         {
             _context = context;
             _laboratoryRoomRepository = laboratoryRoomRepository;
+            _serviceService = serviceService;
         }
 
         public async Task<Pagination<LaboratoryRoomResponseDTO>> GetAll(
@@ -137,9 +140,10 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy phòng cận lâm sàng.");
             }
-
+            await _serviceService.DeleteByLaboId(id);
             await _laboratoryRoomRepository.DeleteAsync(room);
             await _context.SaveChangesAsync();
         }
+
     }
 }

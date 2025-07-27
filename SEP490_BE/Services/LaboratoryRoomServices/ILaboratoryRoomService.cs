@@ -14,5 +14,6 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
         Task<LaboratoryRoomResponseDTO> Create(CreateLaboratoryRoomDTO request);
         Task<LaboratoryRoomResponseDTO> Update(string id, UpdateLaboratoryRoomDTO request);
         Task Delete(string id);
+
     }
 }
