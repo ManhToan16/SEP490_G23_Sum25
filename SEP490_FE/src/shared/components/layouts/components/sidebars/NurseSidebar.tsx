@@ -49,7 +49,7 @@ const NurseSidebar = () => {
             <Stethoscope className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Khu vực Bác sĩ</h3>
+            <h3 className="font-semibold text-gray-900">Khu vực Y Tá</h3>
             <p className="text-sm text-gray-600">Chuyên khoa Nội thần kinh</p>
           </div>
         </div>

@@ -3,7 +3,7 @@ import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
 import { workScheduleService } from '@/shared/services/workSchedule';
 import { format, parse, getDay, addDays, startOfWeek } from 'date-fns';
-import {vi} from 'date-fns/locale/vi';
+import { vi } from 'date-fns/locale/vi';
 
 const SLOT_INFO = {
   TS001: { type: 'Sáng', startTime: '08:00', endTime: '12:00' },
@@ -60,6 +60,7 @@ const DoctorSchedule: React.FC = () => {
           startTime: slot.startTime || '??',
           endTime: slot.endTime || '??',
           room: item.roomName,
+          staffName: item.userName || 'Chưa rõ',
         };
       });
 
@@ -125,6 +126,7 @@ const DoctorSchedule: React.FC = () => {
                       </span>
                     </div>
                     <div className="space-y-1 text-sm text-clinic-navy">
+                      <div>👤 {shift.staffName}</div> {/* ← dòng thêm vào */}
                       <div className="flex items-center space-x-1">
                         <Clock size={12} />
                         <span>{shift.startTime} - {shift.endTime}</span>
