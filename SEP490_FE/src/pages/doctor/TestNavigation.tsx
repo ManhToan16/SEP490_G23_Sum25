@@ -11,7 +11,7 @@ const TestNavigation: React.FC = () => {
     { path: ROUTES.DOCTOR.DASHBOARD, label: 'Dashboard', color: 'bg-blue-500' },
     { path: ROUTES.DOCTOR.MY_INFO, label: 'Thông tin cá nhân (My Info)', color: 'bg-green-500' },
     { path: ROUTES.DOCTOR.PROFILE, label: 'Hồ sơ chuyên môn (Profile)', color: 'bg-purple-500' },
-    { path: ROUTES.DOCTOR.MY_SCHEDULE, label: 'Lịch làm việc', color: 'bg-orange-500' },
+    { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', color: 'bg-orange-500' },
     { path: ROUTES.DOCTOR.APPOINTMENT_QUEUE, label: 'Hàng chờ khám', color: 'bg-red-500' },
   ];
 

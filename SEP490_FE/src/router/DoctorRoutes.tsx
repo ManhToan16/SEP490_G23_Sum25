@@ -21,7 +21,6 @@ const DoctorRoutes: React.FC = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="my-info" element={<MyInfo />} />
         <Route path="profile" element={<MyInfo />} />
-        <Route path="schedule" element={<MySchedule />} />
         <Route path="queue" element={<AppointmentQueue />} />
         <Route path="create-record" element={<CreateMedicalRecord />} />
         <Route path="test-nav" element={<TestNavigation />} />

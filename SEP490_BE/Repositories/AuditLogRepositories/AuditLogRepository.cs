@@ -29,7 +29,7 @@ namespace SEP490_BE.Repositories.AuditLogRepositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<(List<AuditLog>, int)> GetLogsAsync(string? userId, string? action, string? tableName, int pageNumber, int pageSize)
+        public async Task<(List<AuditLog>, int)> GetLogsAsync(string? userId, string? action, string? tableName, string? recordId, int pageNumber, int pageSize)
         {
             var query = _context.AuditLogs.AsQueryable();
 
@@ -40,7 +40,10 @@ namespace SEP490_BE.Repositories.AuditLogRepositories
                 query = query.Where(x => x.Action == action);
 
             if (!string.IsNullOrWhiteSpace(tableName))
-                query = query.Where(x => x.TableName == tableName);
+                query = query.Where(x => x.TableName == tableName);  
+            
+            if (!string.IsNullOrWhiteSpace(recordId))
+                query = query.Where(x => x.RecordId == recordId);
 
             var totalItems = await query.CountAsync();
 

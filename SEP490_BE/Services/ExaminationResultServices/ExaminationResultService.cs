@@ -3,6 +3,7 @@ using SEP490_BE.Constants;
 using SEP490_BE.DTO.ExaminationResultDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Services.AuthServices;
 
@@ -13,15 +14,18 @@ namespace SEP490_BE.Services.ExaminationResultServices
         private readonly IExaminationResultRepository _repository;
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IAuthService _authService;
+        private readonly IAuditLogRepository _logRepository;
 
         public ExaminationResultService(
             IExaminationResultRepository repository, 
             KhanhAnNeurologyClinicContext context,
-            IAuthService authService)
+            IAuthService authService,
+            IAuditLogRepository auditLogRepository)
         {
             _repository = repository;
             _context = context;
             _authService = authService;
+            _logRepository = auditLogRepository;
         }
 
         public async Task<ExaminationResultResponseDTO> CreateByVisitId(string visitId, ExaminationResultRequestDTO request)
@@ -54,10 +58,24 @@ namespace SEP490_BE.Services.ExaminationResultServices
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _repository.InsertAsync(examResult);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync(); // [AUDIT]
+            try
+            {
+                await _repository.InsertAsync(examResult);
+                await _context.SaveChangesAsync();
 
-            return await ToResponseDTO(examResult);
+                var response = await ToResponseDTO(examResult); // [AUDIT]
+
+                await _logRepository.LogAsync(sessionDoctor.Id, "CREATE", "ExaminationResults", examResult.Id, null, response); // [AUDIT]
+
+                await transaction.CommitAsync(); // [AUDIT]
+                return response;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(); // [AUDIT]
+                throw;
+            }
         }
 
         public async Task<ExaminationResultResponseDTO> Update(string id, ExaminationResultRequestDTO request)
@@ -71,14 +89,31 @@ namespace SEP490_BE.Services.ExaminationResultServices
             if (visit.Status == VisitStatus.CANCELLED || visit.Status == VisitStatus.COMPLETED)
                 throw new InvalidOperationException(MessageConstants.EXAMINATION_RESULT_INVALID_UPDATE);
 
+            var sessionDoctor = await _authService.GetAuthenticatedUser(); // [AUDIT]
+
+            var oldData = await ToResponseDTO(result); // [AUDIT]
+
             result.Summary = request.Summary;
             result.Conclusion = request.Conclusion;
             result.UpdatedAt = DateTime.UtcNow;
 
-            await _repository.UpdateAsync(result);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync(); // [AUDIT]
+            try
+            {
+                await _repository.UpdateAsync(result);
+                await _context.SaveChangesAsync();
 
-            return await ToResponseDTO(result);
+                var newData = await ToResponseDTO(result); // [AUDIT]
+                await _logRepository.LogAsync(sessionDoctor.Id, "UPDATE", "ExaminationResults", result.Id, oldData, newData); // [AUDIT]
+
+                await transaction.CommitAsync(); // [AUDIT]
+                return newData;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(); // [AUDIT]
+                throw;
+            }
         }
 
         public async Task<List<ExaminationResultResponseDTO>> GetByMedicalRecordId(string medicalRecordId)

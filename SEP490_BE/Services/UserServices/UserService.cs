@@ -118,8 +118,34 @@ namespace SEP490_BE.Services.UserServices
             if (user == null) { 
                 throw new ResourceNotFoundException(MessageConstants.USER_NOT_FOUND);
             }
-            await _userRepository.Delete(user);
-            await _context.SaveChangesAsync();
+            var sessionUser = await _authService.GetAuthenticatedUser();
+
+            var userResponseDTO = new UserResponseDTO
+            {
+                Id = user.Id,
+                Name = user.Name,
+                PhoneNumber = user.PhoneNumber,
+                Email = user.Email,
+                Address = user.Address ?? "",
+                Gender = user.Gender,
+                DateOfBirth = user.DateOfBirth,
+                IsActive = user.IsActive,
+                Role = (await _roleRepository.FindRolesByUser(user.Id)).FirstOrDefault() ?? ""
+            };
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _logRepository.LogAsync(sessionUser.Id, "DELETE", "Users", user.Id, userResponseDTO, null);
+                await _userRepository.Delete(user);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<Pagination<UserResponseDTO>> GetAll(
@@ -212,17 +238,35 @@ namespace SEP490_BE.Services.UserServices
             {
                 throw new ResourceNotFoundException(MessageConstants.ROLE_NOT_FOUND);
             }
+
+            #region Check if the authenticated user is ADMIN to have permission to update the role
+            var authenticatedUser = await _authService.GetAuthenticatedUser();
+            var roleOfAuthenticatedUser = await _roleRepository.FindRolesByUser(authenticatedUser.Id);
+            #endregion
+
+            var oldRole = await _roleRepository.FindRolesByUser(user.Id);
+
+            // Lưu lại thông tin cũ
+            var oldData = new UserResponseDTO
+            {
+                Id = user.Id,
+                Name = user.Name,
+                PhoneNumber = user.PhoneNumber,
+                Email = user.Email,
+                Address = user.Address,
+                Gender = user.Gender,
+                DateOfBirth = user.DateOfBirth,
+                IsActive = user.IsActive,
+                Role = oldRole[0]
+            };
+
+            // Cập nhật dữ liệu mới
             user.Name = request.Name;
             user.Email = request.Email;
             user.PhoneNumber = request.PhoneNumber;
             user.Address = request.Address;
             user.Gender = request.Gender;
             user.DateOfBirth = request.DateOfBirth;
-
-            #region Check if the authenticated user is ADMIN to have permission to update the role
-            var authenticatedUser = await _authService.GetAuthenticatedUser();
-            var roleOfAuthenticatedUser = await _roleRepository.FindRolesByUser(authenticatedUser.Id);
-            #endregion
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -233,29 +277,31 @@ namespace SEP490_BE.Services.UserServices
                     await _roleRepository.ApplyRole(user.Id, request.Role);
                 }
                 await _context.SaveChangesAsync();
+
+                var newRole = await _roleRepository.FindRolesByUser(user.Id);
+                var newData = new UserResponseDTO
+                {
+                    Id = user.Id,
+                    Name = user.Name,
+                    PhoneNumber = user.PhoneNumber,
+                    Email = user.Email,
+                    Address = user.Address,
+                    Gender = user.Gender,
+                    DateOfBirth = user.DateOfBirth,
+                    IsActive = user.IsActive,
+                    Role = newRole[0]
+                };
+
+                await _logRepository.LogAsync(authenticatedUser.Id, "UPDATE", "Users", user.Id, oldData, newData);
                 await transaction.CommitAsync();
+
+                return newData;
             }
             catch
             {
                 await transaction.RollbackAsync();
                 throw;
             }
-
-            var newRole = await _roleRepository.FindRolesByUser(user.Id);
-            return new UserResponseDTO
-            {
-                Id = user.Id,
-                Name = user.Name,
-                PhoneNumber = user.PhoneNumber,
-                Email = user.Email,
-                Address = user.Address,
-                Gender = user.Gender,
-                DateOfBirth = user.DateOfBirth,
-                IsActive = user.IsActive,
-                Role = newRole[0]
-            };
         }
-
-
     }
 }

@@ -14,9 +14,9 @@ namespace SEP490_BE.Services.AuditLogServices
             _repository = repository;
         }
 
-        public async Task<Pagination<AuditLog>> GetLogsAsync(string? userId, string? action, string? tableName, int pageNumber, int pageSize)
+        public async Task<Pagination<AuditLog>> GetLogsAsync(string? userId, string? action, string? tableName, string recordId, int pageNumber, int pageSize)
         {
-            var (logs, totalItems) = await _repository.GetLogsAsync(userId, action, tableName, pageNumber, pageSize);
+            var (logs, totalItems) = await _repository.GetLogsAsync(userId, action, tableName, recordId, pageNumber, pageSize);
             return new Pagination<AuditLog>
             {
                 Items = logs,

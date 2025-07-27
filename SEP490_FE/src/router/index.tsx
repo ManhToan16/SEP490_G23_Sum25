@@ -23,6 +23,7 @@ const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const HomePage = React.lazy(() => import("@/pages/Home"));
 const Health = React.lazy(() => import("@/pages/Health"));
 const Forbidden = React.lazy(() => import("@/pages/Forbiden"));
+const MySchedule = React.lazy(() => import("@/pages/doctor/MySchedule"));
 
 interface AppRouterProps {
   className?: string;
@@ -87,6 +88,14 @@ const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
             {/* Error routes */}
             <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
             <Route path={ROUTES.FORBIDDEN} element={<Forbidden />} />
+            <Route
+              path={ROUTES.MY_SCHEDULE}
+              element={
+                <ProtectedRoute requiredRoles={["DOCTOR", "NURSE", "TECHNICIAN"]}>
+                  <MySchedule />
+                </ProtectedRoute>
+              }
+            />            
             <Route
               path="*"
               element={<Navigate to={ROUTES.NOT_FOUND} replace />}
