@@ -121,6 +121,10 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new InvalidDataException("Tên dịch vụ không được để trống");
+            }
             var service = await _serviceRepository.FindByIdAsync(id);
             if (service == null)
             {

@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Test.Services.ServicesTest
+namespace Test2.Services.ServicesTest
 {
     [TestFixture]
     public class ServiceServiceUpdateTests
