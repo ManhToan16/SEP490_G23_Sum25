@@ -1,68 +1,77 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react';
+import { useAuth } from '@/shared/hooks/business/useAuth';
+import { workScheduleService } from '@/shared/services/workSchedule';
+import { format, parse, getDay, addDays, startOfWeek } from 'date-fns';
+import { vi } from 'date-fns/locale/vi';
+
+const SLOT_INFO = {
+  TS001: { type: 'Sáng', startTime: '08:00', endTime: '12:00' },
+  TS002: { type: 'Chiều', startTime: '13:30', endTime: '17:00' },
+};
+
+const getWeekDates = (selectedDate: Date) => {
+  const start = startOfWeek(selectedDate, { weekStartsOn: 1 }); // Thứ 2
+  return [...Array(7)].map((_, i) => {
+    const date = addDays(start, i);
+    return {
+      day: format(date, 'EEEE', { locale: vi }).replace(/^thứ/i, 'Thứ'),
+      date: format(date, 'yyyy-MM-dd'),
+    };
+  });
+};
 
 const DoctorSchedule: React.FC = () => {
+  const { user } = useAuth();
   const [selectedWeek, setSelectedWeek] = useState(new Date().toISOString().split('T')[0]);
+  const [scheduleData, setScheduleData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const schedule = [
-    {
-      id: 1,
-      day: 'Thứ 2',
-      date: '2025-06-23',
-      shifts: [
-        { id: 1, startTime: '08:00', endTime: '12:00', type: 'Sáng', room: 'Phòng 1' },
-        { id: 2, startTime: '13:30', endTime: '17:00', type: 'Chiều', room: 'Phòng 1' }
-      ]
-    },
-    {
-      id: 2,
-      day: 'Thứ 3',
-      date: '2025-06-24',
-      shifts: []
-    },
-    {
-      id: 3,
-      day: 'Thứ 4',
-      date: '2025-06-25',
-      shifts: [
-        { id: 3, startTime: '08:00', endTime: '12:00', type: 'Sáng', room: 'Phòng 2' },
-        { id: 4, startTime: '14:00', endTime: '17:00', type: 'Chiều', room: 'Phòng 2' }
-      ]
-    },
-    {
-      id: 4,
-      day: 'Thứ 5',
-      date: '2025-06-26',
-      shifts: []
-    },
-    {
-      id: 5,
-      day: 'Thứ 6',
-      date: '2025-06-27',
-      shifts: [
-        { id: 5, startTime: '08:00', endTime: '12:00', type: 'Sáng', room: 'Phòng 1' }
-      ]
-    },
-    {
-      id: 6,
-      day: 'Thứ 7',
-      date: '2025-06-28',
-      shifts: []
-    },
-    {
-      id: 7,
-      day: 'Chủ nhật',
-      date: '2025-06-29',
-      shifts: []
-    }
-  ];
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      if (!user?.UserId) return;
+      setLoading(true);
+      try {
+        const res = await workScheduleService.getScheduleRole(user.role);
+        setScheduleData(res.data);
+      } catch (error) {
+        console.error('Lỗi khi lấy lịch làm việc:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSchedule();
+  }, [user?.UserId]);
+
+  const weekDates = getWeekDates(new Date(selectedWeek));
+
+  const schedule = weekDates.map(({ day, date }, idx) => {
+    const shifts = scheduleData
+      .filter((item) => {
+        const [d, m, y] = item.date.split('/');
+        const itemDate = `${y}-${m}-${d}`;
+        return itemDate === date;
+      })
+      .map((item) => {
+        const slot = SLOT_INFO[item.timeSlotId] || {};
+        return {
+          id: item.id,
+          type: slot.type || 'Không rõ',
+          startTime: slot.startTime || '??',
+          endTime: slot.endTime || '??',
+          room: item.roomName,
+          staffName: item.userName || 'Chưa rõ',
+        };
+      });
+
+    return { id: idx + 1, day, date, shifts };
+  });
 
   const totalHours = schedule.reduce((total, day) => {
-    return total + day.shifts.reduce((dayTotal, shift) => {
+    return total + day.shifts.reduce((sum, shift) => {
       const start = new Date(`2000-01-01T${shift.startTime}`);
       const end = new Date(`2000-01-01T${shift.endTime}`);
-      return dayTotal + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+      return sum + (end.getTime() - start.getTime()) / (1000 * 60 * 60);
     }, 0);
   }, 0);
 
@@ -73,20 +82,13 @@ const DoctorSchedule: React.FC = () => {
           <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
             Lịch làm việc
           </h1>
-          <p className="text-gray-600">
-            Quản lý và cập nhật lịch trình làm việc
-          </p>
+          <p className="text-gray-600">Quản lý và cập nhật lịch trình làm việc</p>
         </div>
-        
-        <button className="flex items-center space-x-2 clinic-button-primary">
-          <Plus size={20} />
-          <span>Thêm ca làm việc</span>
-        </button>
       </div>
 
       {/* Week Selector */}
       <div className="clinic-card">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center justify-between">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Tuần làm việc
@@ -98,9 +100,8 @@ const DoctorSchedule: React.FC = () => {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
             />
           </div>
-          
-          <div className="flex-1 text-right">
-            <p className="text-sm text-gray-600">Tổng giờ làm việc tuần này</p>
+          <div className="text-right">
+            <p className="text-sm text-gray-600">Tổng giờ làm việc</p>
             <p className="text-2xl font-bold text-clinic-navy">{totalHours}h</p>
           </div>
         </div>
@@ -114,7 +115,7 @@ const DoctorSchedule: React.FC = () => {
               <h3 className="font-medium text-clinic-navy">{day.day}</h3>
               <p className="text-sm text-gray-600">{day.date}</p>
             </div>
-            
+
             <div className="space-y-2">
               {day.shifts.length > 0 ? (
                 day.shifts.map((shift) => (
@@ -123,23 +124,14 @@ const DoctorSchedule: React.FC = () => {
                       <span className="text-sm font-medium text-clinic-navy">
                         {shift.type}
                       </span>
-                      <div className="flex space-x-1">
-                        <button className="p-1 text-clinic-navy hover:bg-white rounded">
-                          <Edit size={14} />
-                        </button>
-                        <button className="p-1 text-red-600 hover:bg-white rounded">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-1 text-sm text-clinic-navy">
+                    <div className="space-y-1 text-sm text-clinic-navy">
+                      <div>👤 {shift.staffName}</div> {/* ← dòng thêm vào */}
+                      <div className="flex items-center space-x-1">
                         <Clock size={12} />
                         <span>{shift.startTime} - {shift.endTime}</span>
                       </div>
-                      <div className="text-sm text-clinic-navy">
-                        📍 {shift.room}
-                      </div>
+                      <div>📍 {shift.room}</div>
                     </div>
                   </div>
                 ))
@@ -157,22 +149,20 @@ const DoctorSchedule: React.FC = () => {
         ))}
       </div>
 
-      {/* Schedule Summary */}
+      {/* Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="clinic-card text-center">
           <h3 className="text-2xl font-bold text-clinic-navy">
-            {schedule.filter(d => d.shifts.length > 0).length}
+            {schedule.filter((d) => d.shifts.length > 0).length}
           </h3>
           <p className="text-gray-600">Ngày làm việc</p>
         </div>
-        
         <div className="clinic-card text-center">
           <h3 className="text-2xl font-bold text-clinic-navy">
-            {schedule.reduce((total, d) => total + d.shifts.length, 0)}
+            {schedule.reduce((sum, d) => sum + d.shifts.length, 0)}
           </h3>
           <p className="text-gray-600">Tổng ca làm việc</p>
         </div>
-        
         <div className="clinic-card text-center">
           <h3 className="text-2xl font-bold text-clinic-navy">{totalHours}h</h3>
           <p className="text-gray-600">Tổng giờ làm việc</p>
@@ -184,13 +174,10 @@ const DoctorSchedule: React.FC = () => {
         <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
           Thay đổi lịch sắp tới
         </h2>
-        
         <div className="space-y-3">
           <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div>
-              <h4 className="font-medium text-yellow-800">
-                Thay đổi ca làm việc
-              </h4>
+              <h4 className="font-medium text-yellow-800">Thay đổi ca làm việc</h4>
               <p className="text-sm text-yellow-700">
                 Thứ 3, 25/06 - Ca sáng được chuyển từ Phòng 1 sang Phòng 2
               </p>
@@ -199,7 +186,6 @@ const DoctorSchedule: React.FC = () => {
               Xác nhận
             </button>
           </div>
-        
         </div>
       </div>
     </div>
