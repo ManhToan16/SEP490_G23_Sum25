@@ -6,6 +6,6 @@ namespace SEP490_BE.Services.AuditLogServices
 {
     public interface IAuditLogService
     {
-        Task<Pagination<AuditLog>> GetLogsAsync(string? userId, string? action, string? tableName, int pageNumber, int pageSize);
+        Task<Pagination<AuditLog>> GetLogsAsync(string? userId, string? action, string? tableName, string? recordId, int pageNumber, int pageSize);
     }
 }

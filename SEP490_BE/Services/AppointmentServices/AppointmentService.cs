@@ -19,6 +19,8 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using SEP490_BE.Controllers;
 using QuestPDF.Infrastructure;
+using Microsoft.AspNetCore.SignalR;
+using SEP490_BE.Hubs;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -27,19 +29,19 @@ namespace SEP490_BE.Services.AppointmentServices
 
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IAuthService _authService;
-        private readonly IRoleRepository _roleRepository;
         private readonly IAuditLogRepository _logRepository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IUserRepository _userRepository;
         private readonly IEmailService _emailService;
         private readonly IVisitRepository _visitRepository;
         private readonly IVisitService _visitService;
-        private readonly IAssignmentService _assignmentService; private readonly ILogger<AppointmentService> _logger;
+        private readonly IAssignmentService _assignmentService; 
+        private readonly ILogger<AppointmentService> _logger;
+        private readonly IHubContext<KhanhAnHub> _hubContext;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
             IAuthService authService,
-            IRoleRepository roleRepository,
             IAuditLogRepository logRepository,
             IAppointmentRepository appointmentRepository,
             IUserRepository userRepository,
@@ -47,12 +49,12 @@ namespace SEP490_BE.Services.AppointmentServices
             IVisitRepository visitRepository,
             IVisitService visitService,
             IAssignmentService assignmentService,
-            ILogger<AppointmentService> logger
+            ILogger<AppointmentService> logger,
+            IHubContext<KhanhAnHub> hubContext
             )
         {
             _context = context;
             _authService = authService;
-            _roleRepository = roleRepository;
             _logRepository = logRepository;
             _appointmentRepository = appointmentRepository;
             _userRepository = userRepository;
@@ -61,6 +63,7 @@ namespace SEP490_BE.Services.AppointmentServices
             _visitService = visitService;
             _assignmentService = assignmentService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -153,6 +156,17 @@ namespace SEP490_BE.Services.AppointmentServices
                 await _appointmentRepository.Insert(appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "CREATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
             }
             catch
             {
@@ -238,6 +252,17 @@ namespace SEP490_BE.Services.AppointmentServices
                 await _appointmentRepository.Insert(appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "CREATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
             }
             catch
             {
@@ -323,6 +348,17 @@ namespace SEP490_BE.Services.AppointmentServices
                 await _appointmentRepository.Update(appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
             }
             catch
             {
@@ -373,6 +409,17 @@ namespace SEP490_BE.Services.AppointmentServices
                 await _appointmentRepository.Update(appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
             }
             catch
             {
@@ -419,6 +466,17 @@ namespace SEP490_BE.Services.AppointmentServices
                 await _appointmentRepository.Update(appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
             }
             catch
             {
@@ -482,12 +540,13 @@ namespace SEP490_BE.Services.AppointmentServices
                 await _appointmentRepository.Update(appointment);
 
                 var visit = await _context.Visits.FirstOrDefaultAsync(v => v.AppointmentId == appointment.Id);
+                var assignments = new List<Assignment>();
                 if (visit != null)
                 {
                     visit.Status = VisitStatus.CANCELLED;
                     await _visitRepository.Update(visit);
 
-                    var assignments = await _context.Assignments
+                    assignments = await _context.Assignments
                         .Where(a => a.VisitId == visit.Id)
                         .ToListAsync();
                     foreach (var asm in assignments)
@@ -499,6 +558,38 @@ namespace SEP490_BE.Services.AppointmentServices
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "UPDATE",
+                    VisitId = visit.Id,
+                    ExaminationRoomId = visit.ExaminationRoomId,
+                    QueueNumber = visit.QueueNumber,
+                    Status = visit.Status,
+                    IsPrioritized = visit.IsPrioritized,
+                });
+
+                foreach (var asm in assignments)
+                {
+                    await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                    {
+                        Action = "UPDATE",
+                        AssignmentId = asm.Id,
+                        LaboratoryRoomId = asm.LaboratoryRoomId,
+                        Status = asm.Status
+                    });
+                }
             }
             catch
             {
@@ -588,6 +679,17 @@ namespace SEP490_BE.Services.AppointmentServices
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = appointment.Id,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
             }
             catch
             {
@@ -639,7 +741,7 @@ namespace SEP490_BE.Services.AppointmentServices
         public async Task<byte[]> GenerateInvoicePdf(string appointmentId)
         {
             var appointment = await GetById(appointmentId);
-            if(appointment.Status != AppointmentStatus.PENDING)
+            if (appointment.Status != AppointmentStatus.PENDING)
             {
                 throw new Exceptions.ArgumentException("Lỗi khi in hoá đơn.");
             }
@@ -663,6 +765,8 @@ namespace SEP490_BE.Services.AppointmentServices
                     {
                         headerCol.Item().AlignCenter().Text("PHÒNG KHÁM NỘI THẦN KINH KHÁNH AN")
                             .FontSize(12).Bold().FontColor(Colors.Black);
+
+                        headerCol.Item().PaddingBottom(10);
 
                         headerCol.Item().AlignCenter().Text("HÓA ĐƠN KHÁM BỆNH")
                             .FontSize(16).Bold().FontColor(Colors.Black);

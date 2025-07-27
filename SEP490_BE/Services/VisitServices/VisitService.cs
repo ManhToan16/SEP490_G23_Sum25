@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.AppointmentDTO;
 using SEP490_BE.DTO.VisitDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.ExaminationResultRepositories;
@@ -27,6 +29,7 @@ namespace SEP490_BE.Services.VisitServices
         private readonly IEmailService _emailService;
         private readonly IVisitRepository _visitRepository;
         private readonly IExaminationResultRepository _examinationResultRepository;
+        private readonly IHubContext<KhanhAnHub> _hubContext;
 
         public VisitService(
             KhanhAnNeurologyClinicContext context,
@@ -36,7 +39,9 @@ namespace SEP490_BE.Services.VisitServices
             IUserRepository userRepository,
             IEmailService emailService,
             IVisitRepository visitRepository,
-            IExaminationResultRepository examinationResultRepository)
+            IExaminationResultRepository examinationResultRepository,
+            IHubContext<KhanhAnHub> hubContext
+            )
         {
             _context = context;
             _authService = authService;
@@ -46,6 +51,7 @@ namespace SEP490_BE.Services.VisitServices
             _emailService = emailService;
             _visitRepository = visitRepository;
             _examinationResultRepository = examinationResultRepository;
+            _hubContext = hubContext;
         }
         public async Task<VisitResponseDTO> Create(VisitRequestDTO request)
         {
@@ -110,6 +116,16 @@ namespace SEP490_BE.Services.VisitServices
                 await _appointmentRepository.Update(appointment);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "CREATE",
+                    VisitId = visit.Id,
+                    ExaminationRoomId = visit.ExaminationRoomId,
+                    QueueNumber = visit.QueueNumber,
+                    Status = visit.Status,
+                    IsPrioritized = visit.IsPrioritized,
+                });
             }
             catch {
                 await transaction.RollbackAsync();
@@ -199,6 +215,27 @@ namespace SEP490_BE.Services.VisitServices
                 await _appointmentRepository.Update(visit.Appointment); 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = visit.Appointment.Id,
+                    Email = visit.Appointment.Email,
+                    PhoneNumber = visit.Appointment.PhoneNumber,
+                    DateOfBirth = visit.Appointment.DateOfBirth,
+                    Date = visit.Appointment.Date,
+                    Status = visit.Appointment.Status,
+                });
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "UPDATE",
+                    VisitId = visit.Id,
+                    ExaminationRoomId = visit.ExaminationRoomId,
+                    QueueNumber = visit.QueueNumber,
+                    Status = visit.Status,
+                    IsPrioritized = visit.IsPrioritized,
+                });
             }
             catch
             {
@@ -250,6 +287,16 @@ namespace SEP490_BE.Services.VisitServices
                 await _visitRepository.Update(visit);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "UPDATE",
+                    VisitId = visit.Id,
+                    ExaminationRoomId = visit.ExaminationRoomId,
+                    QueueNumber = visit.QueueNumber,
+                    Status = visit.Status,
+                    IsPrioritized = visit.IsPrioritized,
+                });
             }
             catch
             {

@@ -63,6 +63,22 @@ namespace SEP490_BE.Services.ServiceServices
                 Description = service.Description
             };
         }
+        public async Task<ServiceResponseDTO> GetByRoom(string roomId)
+        {
+            var service = await _serviceRepository.FindByRoomAsync(roomId);
+            if (service == null)
+            {
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ trong phòng xét nghiệm này.");
+            }
+            return new ServiceResponseDTO
+            {
+                Id = service.Id,
+                LaboratoryRoomId = service.LaboratoryRoomsId,
+                Name = service.Name,
+                Price = service.Price,
+                Description = service.Description
+            };
+        }
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
@@ -121,6 +137,10 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request)
         {
+            if (string.IsNullOrWhiteSpace(request.Name))
+            {
+                throw new InvalidDataException("Tên dịch vụ không được để trống");
+            }
             var service = await _serviceRepository.FindByIdAsync(id);
             if (service == null)
             {

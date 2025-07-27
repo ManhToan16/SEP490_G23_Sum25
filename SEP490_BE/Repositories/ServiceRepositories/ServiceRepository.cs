@@ -18,6 +18,12 @@ namespace SEP490_BE.Repositories.ServiceRepositories
                 .Include(s => s.LaboratoryRooms)
                 .FirstOrDefaultAsync(s => s.Id == id);
         }
+        public async Task<Service> FindByRoomAsync(string roomId)
+        {
+            return await _context.Services
+                .Include(s => s.LaboratoryRooms)
+                .FirstOrDefaultAsync(s => s.LaboratoryRoomsId == roomId);
+        }
 
         public async Task<(List<Service> Services, int TotalItems)> FindAll(
             string? laboratoryRoomId,
