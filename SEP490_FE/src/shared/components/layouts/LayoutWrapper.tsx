@@ -4,6 +4,8 @@ import PatientLayout from './PatientLayout';
 import DoctorLayout from './DoctorLayout';
 import ReceptionistLayout from './ReceptionistLayout';
 import AdminLayout from './AdminLayout';
+import NurseLayout from './NurseLayout';
+import TechnicianLayout from './TechnicianLayout';
 // import PublicLayout from './PublicLayout';
 
 interface LayoutWrapperProps {
@@ -21,8 +23,16 @@ const LayoutWrapper: React.FC<LayoutWrapperProps> = ({ children }) => {
       return <PatientLayout>{children}</PatientLayout>;
     }
     
-    if (path.startsWith('/doctor')) {
+    if (path.startsWith('/doctor') || path.startsWith('/staff')) {
       return <DoctorLayout>{children}</DoctorLayout>;
+    }
+
+    if (path.startsWith('/nurse') || path.startsWith('/staff')) {
+      return <NurseLayout>{children}</NurseLayout>;
+    }
+
+    if (path.startsWith('/technician') || path.startsWith('/staff')) {
+      return <TechnicianLayout>{children}</TechnicianLayout>;
     }
     
     if (path.startsWith('/receptionist')) {
