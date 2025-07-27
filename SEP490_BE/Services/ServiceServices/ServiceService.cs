@@ -64,22 +64,24 @@ namespace SEP490_BE.Services.ServiceServices
                 Description = service.Description
             };
         }
-        public async Task<ServiceResponseDTO> GetByRoom(string roomId)
+        public async Task<List<ServiceResponseDTO>> GetByRoom(string roomId)
         {
-            var service = await _serviceRepository.FindByRoomAsync(roomId);
-            if (service == null)
+            var services = await _serviceRepository.FindAllByRoomAsync(roomId);
+            if (services == null || !services.Any())
             {
-                throw new ResourceNotFoundException("Không tìm thấy dịch vụ trong phòng xét nghiệm này.");
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ nào trong phòng xét nghiệm này.");
             }
-            return new ServiceResponseDTO
+
+            return services.Select(service => new ServiceResponseDTO
             {
                 Id = service.Id,
                 LaboratoryRoomId = service.LaboratoryRoomsId,
                 Name = service.Name,
                 Price = service.Price,
                 Description = service.Description
-            };
+            }).ToList();
         }
+
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {

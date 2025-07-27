@@ -73,6 +73,13 @@ namespace SEP490_BE.Repositories.ServiceRepositories
                 s.Name.ToLower().Trim() == name.ToLower().Trim() &&
                 s.LaboratoryRoomsId == laboratoryRoomId);
         }
+        public async Task<List<Service>> FindAllByRoomAsync(string roomId)
+        {
+            return await _context.Services
+                .Where(s => s.LaboratoryRoomsId == roomId)
+                .ToListAsync();
+        }
+
 
         public async Task InsertAsync(Service service)
         {
