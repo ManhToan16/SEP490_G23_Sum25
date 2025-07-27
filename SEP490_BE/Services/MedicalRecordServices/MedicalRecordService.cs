@@ -6,6 +6,8 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.MedicalRecordRepositories;
 using SEP490_BE.Services.FileServices;
 using Microsoft.AspNetCore.Http;
+using SEP490_BE.Services.AuthServices;
+using SEP490_BE.Repositories.AuditLogRepositories;
 
 namespace SEP490_BE.Services.MedicalRecordServices
 {
@@ -15,17 +17,24 @@ namespace SEP490_BE.Services.MedicalRecordServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IFileService _fileService;
         private readonly IConfiguration _configuration;
+        private readonly IAuthService _authService;
+        private readonly IAuditLogRepository _logRepository;
+
 
         public MedicalRecordService(
             IMedicalRecordRepository repository, 
             KhanhAnNeurologyClinicContext context,
             IFileService fileService,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IAuthService authService,
+            IAuditLogRepository logRepository)
         {
             _repository = repository;
             _context = context;
             _fileService = fileService;
             _configuration = configuration;
+            _authService = authService;
+            _logRepository = logRepository;
         }
 
         public async Task<MedicalRecordResponseDTO> Create(string patientProfileId, MedicalRecordRequestDTO request)
@@ -47,10 +56,25 @@ namespace SEP490_BE.Services.MedicalRecordServices
                 UpdatedAt = DateTime.UtcNow
             };
 
-            await _repository.InsertAsync(newRecord);
-            await _context.SaveChangesAsync();
+            var sessionUser = await _authService.GetAuthenticatedUser();
 
-            return ToDTO(newRecord);
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _repository.InsertAsync(newRecord);
+                await _context.SaveChangesAsync();
+
+                var response = ToDTO(newRecord);
+                await _logRepository.LogAsync(sessionUser.Id, "CREATE", "MedicalRecords", newRecord.Id, null, response);
+
+                await transaction.CommitAsync();
+                return response;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<MedicalRecordResponseDTO> Update(string medicalRecordId, MedicalRecordRequestDTO request)
@@ -59,6 +83,9 @@ namespace SEP490_BE.Services.MedicalRecordServices
             if (record == null)
                 throw new ResourceNotFoundException(MessageConstants.MEDICAL_RECORD_NOT_FOUND);
 
+            var sessionUser = await _authService.GetAuthenticatedUser();
+            var oldData = ToDTO(record);
+
             record.MedicalHistory = request.MedicalHistory;
             record.Allergies = request.Allergies;
             record.SurgicalHistory = request.SurgicalHistory;
@@ -66,11 +93,25 @@ namespace SEP490_BE.Services.MedicalRecordServices
             record.CurrentMedications = request.CurrentMedications;
             record.UpdatedAt = DateTime.UtcNow;
 
-            await _repository.UpdateAsync(record);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _repository.UpdateAsync(record);
+                await _context.SaveChangesAsync();
 
-            return ToDTO(record);
+                var newData = ToDTO(record);
+                await _logRepository.LogAsync(sessionUser.Id, "UPDATE", "MedicalRecords", record.Id, oldData, newData);
+
+                await transaction.CommitAsync();
+                return newData;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
+
 
         public async Task<MedicalRecordResponseDTO?> FindByPatientProfileId(string patientProfileId)
         {

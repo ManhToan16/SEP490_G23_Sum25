@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Test.Services.ExaminationRoomsTest
+namespace Test2.Services.ExaminationRoomsTest
 {
     [TestFixture]
     public class GetExaminationRoomTests

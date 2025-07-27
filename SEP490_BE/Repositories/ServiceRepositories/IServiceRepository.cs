@@ -5,6 +5,7 @@ namespace SEP490_BE.Repositories.ServiceRepositories
     public interface IServiceRepository
     {
         Task<Service> FindByIdAsync(string id);
+        Task<Service> FindByRoomAsync(string roomId);
         Task<(List<Service> Services, int TotalItems)> FindAll(
             string? laboratoryRoomId,
             string? name,

@@ -2,36 +2,36 @@
 using Moq;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
-using SEP490_BE.Repositories.ExaminationRoomRepositories;
-using SEP490_BE.Services.ExaminationRoomServices;
+using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using SEP490_BE.Services.LaboratoryRoomServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Test.Services.ExaminationRoomsTest
+namespace Test2.Services.LabRoomTest
 {
     [TestFixture]
-    public class GetExaminationRoomTests
+    public class GetLaboratoryRoomTests
     {
-        private Mock<IExaminationRoomRepository> _roomRepositoryMock = null!;
+        private Mock<ILaboratoryRoomRepository> _roomRepositoryMock = null!;
         private Mock<KhanhAnNeurologyClinicContext> _contextMock = null!;
-        private ExaminationRoomService _service = null!;
+        private LaboratoryRoomService _service = null!;
 
         [SetUp]
         public void SetUp()
         {
-            _roomRepositoryMock = new Mock<IExaminationRoomRepository>();
+            _roomRepositoryMock = new Mock<ILaboratoryRoomRepository>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
-            _service = new ExaminationRoomService(_contextMock.Object, _roomRepositoryMock.Object);
+            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object);
         }
 
         [Test]
         public async Task GetById_ValidId_ReturnsRoomResponse()
         {
             var id = Guid.NewGuid().ToString();
-            var room = new ExaminationRoom { Id = id, Name = "Phòng khám A", Description = "Mô tả A" };
+            var room = new LaboratoryRoom { Id = id, Name = "Phòng khám A", Description = "Mô tả A" };
 
             _roomRepositoryMock
                 .Setup(r => r.FindByIdAsync(id))
@@ -53,10 +53,10 @@ namespace Test.Services.ExaminationRoomsTest
 
             _roomRepositoryMock
                 .Setup(r => r.FindByIdAsync(id))
-                .ReturnsAsync((ExaminationRoom)null);
+                .ReturnsAsync((LaboratoryRoom)null);
 
             var exception = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.GetById(id));
-            Assert.That(exception.Message, Is.EqualTo("Không tìm thấy phòng khám lâm sàng."));
+            Assert.That(exception.Message, Is.EqualTo("Không tìm thấy phòng cận lâm sàng."));
             _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Once());
         }
 
@@ -66,7 +66,7 @@ namespace Test.Services.ExaminationRoomsTest
         //    string id = null;
 
         //    var exception = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.GetById(id));
-        //    Assert.That(exception.Message, Contains.Substring("Không tìm thấy phòng khám lâm sàng."));
+        //    Assert.That(exception.Message, Contains.Substring("Không tìm thấy phòng cận lâm sàng."));
         //    _roomRepositoryMock.Verify(r => r.FindByIdAsync(It.IsAny<string>()), Times.Never());
         //}
 
@@ -76,7 +76,7 @@ namespace Test.Services.ExaminationRoomsTest
         //    var id = "";
 
         //    var exception = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.GetById(id));
-        //    Assert.That(exception.Message, Contains.Substring("Không tìm thấy phòng khám lâm sàng."));
+        //    Assert.That(exception.Message, Contains.Substring("Không tìm thấy phòng cận lâm sàng."));
         //    _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Never());
         //}
     }
