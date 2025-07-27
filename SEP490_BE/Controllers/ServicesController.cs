@@ -37,6 +37,20 @@ namespace SEP490_BE.Controllers
                 Data = new[] { dto }
             });
         }
+        [HttpGet("room/{roomId}")]
+        public async Task<IActionResult> GetServicesByRoom(string roomId)
+        {
+            var dto = await _serviceService.GetByRoom(roomId);
+            var data = dto != null ? new List<ServiceResponseDTO> { dto } : new List<ServiceResponseDTO>();
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { dto }
+            });
+        }
 
         [HttpPost]
         public async Task<IActionResult> CreateService([FromBody] CreateServiceDTO dto)
