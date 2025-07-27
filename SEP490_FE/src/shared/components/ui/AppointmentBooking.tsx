@@ -17,6 +17,7 @@ const AppointmentBooking = () => {
     toast({
       title: "Đặt lịch thành công!",
       description: "Chúng tôi sẽ gửi email xác nhận trong vòng 15 phút.",
+      variant: 'success',
     });
   };
 

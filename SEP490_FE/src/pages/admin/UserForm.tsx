@@ -22,6 +22,13 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     role: user?.role || getDefaultRole(userType)
   });
 
+  const [errors, setErrors] = useState<{
+    name?: string;
+    email?: string;
+    phoneNumber?: string;
+    password?: string;
+  }>({});
+
   const { toast } = useToast();
 
   function getDefaultRole(userType) {
@@ -64,22 +71,31 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const newErrors: {
+      name?: string;
+      email?: string;
+      phoneNumber?: string;
+      password?: string;
+    } = {};
     
     // Validate required fields
-    if (!formData.name || !formData.email || !formData.phoneNumber) {
-      toast({
-        title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin bắt buộc"
-      });
-      return;
-    }
 
-    // If creating new user, password is required
-    if (!user && !formData.password) {
-      toast({
-        title: "Lỗi",
-        description: "Mật khẩu là bắt buộc khi tạo tài khoản mới"
-      });
+    if (!formData.name) newErrors.name = "Vui lòng nhập họ tên";
+    if (!formData.email) newErrors.email = "Vui lòng nhập email";
+    if (!formData.phoneNumber) newErrors.phoneNumber = "Vui lòng nhập số điện thoại";
+    // Kiểm tra họ tên: từ 2 đến 100 ký tự
+    if (formData.name && (formData.name.length < 2 || formData.name.length > 100)) newErrors.name = "Họ tên phải từ 2 đến 100 ký tự.";
+    // Kiểm tra họ tên: không chứa ký tự đặc biệt
+    if (formData.name && !/^[a-zA-ZÀ-ỹ\s]+$/.test(formData.name)) newErrors.name = "Họ tên không được chứa ký tự đặc biệt.";
+    // Kiểm tra số điện thoại: đúng định dạng Việt Nam (03,05,07,08,09 + 8 số)
+    if (formData.phoneNumber && !/^(03|05|07|08|09)\d{8}$/.test(formData.phoneNumber)) newErrors.phoneNumber = "Số điện thoại không đúng định dạng.";
+    // Nếu tạo mới thì bắt buộc có mật khẩu
+    if (!user && !formData.password) newErrors.password = "Mật khẩu là bắt buộc khi tạo tài khoản mới";
+    // Kiểm tra mật khẩu: ít nhất 8 ký tự (chỉ khi tạo mới hoặc đổi mật khẩu)
+    if (((!user && formData.password.length < 8) || (user && formData.password && formData.password.length < 8))) newErrors.password = "Mật khẩu phải có ít nhất 8 ký tự.";
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast({ title: "Lỗi", description: String(Object.values(newErrors)[0]) });
       return;
     }
 
@@ -98,6 +114,7 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
     toast({
       title: `${user ? 'Cập nhật' : 'Thêm'} thành công!`,
       description: `${getUserTypeDisplay(userType)} đã được ${user ? 'cập nhật' : 'thêm'} vào hệ thống.`,
+      variant: 'success',
     });
   };
 
@@ -140,7 +157,9 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                 placeholder="Nhập họ và tên"
                 required
+                className={errors?.name ? "border-red-500" : ""}
               />
+              {errors?.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
             </div>
             
             <div>
@@ -152,7 +171,9 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
                 onChange={(e) => setFormData({...formData, email: e.target.value})}
                 placeholder="example@clinic.com"
                 required
+                className={errors?.email ? "border-red-500" : ""}
               />
+              {errors?.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
           </div>
 
@@ -165,7 +186,9 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
                 onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
                 placeholder="0987654321"
                 required
+                className={errors?.phoneNumber ? "border-red-500" : ""}
               />
+              {errors?.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
             </div>
             
             <div>
@@ -177,7 +200,9 @@ const UserForm = ({ userType, user, onSave, onCancel, isOpen }) => {
                 onChange={(e) => setFormData({...formData, password: e.target.value})}
                 placeholder={user ? "Để trống nếu không đổi" : "Nhập mật khẩu"}
                 required={!user}
+                className={errors?.password ? "border-red-500" : ""}
               />
+              {errors?.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
           </div>
 

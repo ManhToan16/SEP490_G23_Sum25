@@ -180,7 +180,8 @@ jobs:
             "SecretKey": "$JWT_SECRET_KEY"
           },
           "App": {
-            "BackendUrl": "$BACKEND_URL"
+            "BackendUrl": "https://be.khanhanclinic.io.vn",
+            "UploadPath": "/opt/khanhan/uploads"
           },
           "Smtp": {
             "Host": "smtp.gmail.com",
@@ -204,7 +205,7 @@ jobs:
           # Xóa file .env cũ nếu có (để tránh docker-compose đọc nhầm file cũ)
           rm -f .env
 
-          # Tạo docker-compose.yml inline (không cần .env)
+          # Tạo docker-compose.yml inline với volume mounting cho uploads
           echo "🔧 Creating docker-compose.yml..."
           cat > docker-compose.yml << 'COMPOSE_EOF'
         version: '3.8'
@@ -250,6 +251,8 @@ jobs:
               - clinic-network
             volumes:
               - ./appsettings.Production.json:/app/appsettings.Production.json:ro
+              - /opt/khanhan/uploads:/opt/khanhan/uploads
+            user: "1001:1001"
         
         networks:
           clinic-network:
@@ -269,6 +272,11 @@ jobs:
           # 2. Pull latest images
           echo "📥 Pulling latest images..."
           docker pull quanghd/fe:latest
+          docker pull quanghd/be:latest
+          
+          # Force rebuild backend to ensure latest code
+          echo "🔨 Force rebuilding backend..."
+          docker rmi quanghd/be:latest || true
           docker pull quanghd/be:latest
           
           # 3. Setup network
@@ -302,6 +310,20 @@ jobs:
           echo "📋 Container logs:"
           docker logs clinic-frontend --tail=5 || echo "Frontend container not found"
           docker logs clinic-backend --tail=5 || echo "Backend container not found"
+          
+          # 11. Verify upload directories are accessible
+          echo "🔍 Verifying upload directories..."
+          docker exec clinic-backend ls -la /opt/khanhan/uploads || echo "Upload directory not accessible"
+          docker exec clinic-backend ls -la /opt/khanhan/uploads/doctorProfile || echo "Doctor profile directory not accessible"
+          docker exec clinic-backend ls -la /opt/khanhan/uploads/laboratory || echo "Laboratory directory not accessible"
+          
+          # 12. Test static file serving
+          echo "📁 Testing static file serving..."
+          docker exec clinic-backend curl -f http://localhost:5050/uploads/doctorProfile/ || echo "Static file serving test failed"
+          
+          # 13. Verify static files configuration
+          echo "🔍 Verifying static files configuration..."
+          docker exec clinic-backend curl -s http://localhost:5050/api/health/static-files | jq . || echo "Static files health check failed"
           
           echo "✅ Deployment completed successfully!"
         EOF
@@ -353,6 +375,14 @@ jobs:
           echo "📋 Backend logs:"
           ssh -o StrictHostKeyChecking=no ${{ secrets.USERNAME }}@${{ secrets.HOST }} "docker logs clinic-backend --tail=10"
           exit 1
+        fi
+        
+        # Check file upload functionality
+        echo "📁 Checking file upload functionality..."
+        if curl -f "${{ secrets.HOST }}:5050/api/health/static-files" > /dev/null 2>&1; then
+          echo "✅ File upload system is accessible"
+        else
+          echo "⚠️ File upload system check failed, but continuing..."
         fi
         
         echo "🎉 All services are healthy!"

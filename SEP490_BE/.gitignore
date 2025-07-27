@@ -1,7 +1,8 @@
 # Build results
 bin/
 obj/
-
+# Ignore test project
+Test/
 # Secrets
 appsettings.json
 appsettings.Development.json
@@ -15,5 +16,4 @@ docs/*
 .env.test.local
 .env.production.local
 
-# wwwroot/uploads
-wwwroot/uploads/
+

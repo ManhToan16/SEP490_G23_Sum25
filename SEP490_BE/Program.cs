@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Hangfire;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -60,6 +61,7 @@ using SEP490_BE.Services.VisitServices;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -155,6 +157,22 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 #endregion
+
+#region Hangfire
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("MyDB")));
+builder.Services.AddHangfireServer();
+#endregion
+
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+
+builder.Logging.ClearProviders();
+builder.Logging.AddSimpleConsole(options =>
+{
+    options.TimestampFormat = "dd-MM-yyyy HH:mm:ss ";
+    options.IncludeScopes = false;
+});
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
 #region Scope
@@ -239,6 +257,16 @@ app.UseCors("AllowAllOrigins");
 
 app.UseRouting();
 
+// Serve static files from external uploads directory FIRST (more specific)
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider("/opt/khanhan/uploads"),
+    RequestPath = "/uploads",
+    ServeUnknownFileTypes = true,
+    DefaultContentType = "application/octet-stream"
+});
+
+// Serve static files from wwwroot (fallback)
 app.UseStaticFiles();
 
 app.UseAuthentication();
@@ -253,6 +281,15 @@ app.UseEndpoints(endpoints =>
 app.MapControllers();
 
 app.UseMiddleware<NotFoundMiddleware>();
+
+app.UseHangfireDashboard("/hangfire");
+
+RecurringJob.AddOrUpdate<IAppointmentService>(
+    "auto-expire-appointments",
+    service => service.AutoExpired(),
+    "59 23 * * *", // cron expression: 23:59 mỗi ngày
+    TimeZoneInfo.Local
+);
 
 app.Run();
 

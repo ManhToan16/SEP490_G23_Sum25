@@ -48,6 +48,9 @@ COPY --from=build /app/publish .
 # Copy Templates directory
 COPY Templates/ ./Templates/
 
+# Tạo thư mục uploads trong container (sẽ được mount từ bên ngoài)
+RUN mkdir -p /opt/khanhan/uploads
+
 # Tạo thư mục logs
 RUN mkdir -p /app/logs
 

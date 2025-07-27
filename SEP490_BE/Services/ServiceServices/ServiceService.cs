@@ -3,6 +3,8 @@ using SEP490_BE.DTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ServiceRepositories;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace SEP490_BE.Services.ServiceServices
 {
@@ -64,16 +66,19 @@ namespace SEP490_BE.Services.ServiceServices
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
-            var existingService = await _serviceRepository.FindByIdAsync(Guid.NewGuid().ToString());
-            if (existingService != null)
+            if ( await _serviceRepository.ExistsByNameAsync(request.Name, request.LaboratoryRoomId))
             {
-                throw new ConflictDataException("Dịch vụ đã tồn tại.");
+                throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
             }
 
             var room = await _context.LaboratoryRooms.FindAsync(request.LaboratoryRoomId);
             if (room == null)
             {
                 throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm.");
+            }
+            if (request.Name.Length > 100)
+            {
+                throw new ValidationException("Tên dịch vụ không được vượt quá 100 ký tự");
             }
 
             var service = new Service
@@ -107,6 +112,12 @@ namespace SEP490_BE.Services.ServiceServices
                 Description = service.Description
             };
         }
+        public async Task<bool> IsServiceExistsAsync(string name, string laboratoryRoomId)
+        {
+            return await _context.Services.AnyAsync(s =>
+                s.Name.ToLower().Trim() == name.ToLower().Trim() &&
+                s.LaboratoryRoomsId == laboratoryRoomId);
+        }
 
         public async Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request)
         {
@@ -126,7 +137,10 @@ namespace SEP490_BE.Services.ServiceServices
             service.Name = request.Name ?? service.Name;
             service.Price = request.Price ?? service.Price;
             service.Description = request.Description ?? service.Description;
-
+            if (await _serviceRepository.ExistsByNameAsync(service.Name, service.LaboratoryRoomsId))
+            {
+                throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
+            }
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {

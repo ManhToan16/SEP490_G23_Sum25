@@ -4,6 +4,8 @@ using SEP490_BE.DTO.MedicalRecordDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.MedicalRecordRepositories;
+using SEP490_BE.Services.FileServices;
+using Microsoft.AspNetCore.Http;
 
 namespace SEP490_BE.Services.MedicalRecordServices
 {
@@ -11,11 +13,19 @@ namespace SEP490_BE.Services.MedicalRecordServices
     {
         private readonly IMedicalRecordRepository _repository;
         private readonly KhanhAnNeurologyClinicContext _context;
+        private readonly IFileService _fileService;
+        private readonly IConfiguration _configuration;
 
-        public MedicalRecordService(IMedicalRecordRepository repository, KhanhAnNeurologyClinicContext context)
+        public MedicalRecordService(
+            IMedicalRecordRepository repository, 
+            KhanhAnNeurologyClinicContext context,
+            IFileService fileService,
+            IConfiguration configuration)
         {
             _repository = repository;
             _context = context;
+            _fileService = fileService;
+            _configuration = configuration;
         }
 
         public async Task<MedicalRecordResponseDTO> Create(string patientProfileId, MedicalRecordRequestDTO request)
@@ -99,6 +109,21 @@ namespace SEP490_BE.Services.MedicalRecordServices
             };
         }
 
+        // Thêm method upload vào MedicalRecordService
+        public async Task<string> UploadMedicalRecord(string medicalRecordId, IFormFile file)
+        {
+            var medicalRecord = await _repository.FindByIdAsync(medicalRecordId)
+                ?? throw new ResourceNotFoundException("Không tìm thấy hồ sơ bệnh án");
+
+            // Tự động tạo folder /opt/khanhan/uploads/medicalRecords/
+            var url = await _fileService.SaveFileAsync(file, "medicalRecords/");
+            
+            // Tạo URL đầy đủ
+            var backendUrl = _configuration["App:BackendUrl"]?.TrimEnd('/');
+            var finalUrl = $"{backendUrl}/uploads/{url.TrimStart('/')}";
+            
+            return finalUrl;
+        }
 
     }
 

@@ -10,6 +10,10 @@
         public string Reason { get; set; }
         public string Status { get; set; }
         public string? RequesterName { get; set; }
+        public DateTime RequesterDate { get; set; }
+        public string RequesterTimeSlotId { get; set; }
         public string? TargetUserName { get; set; }
+        public DateTime TargetDate { get; set; }
+        public string TargetTimeSlotId { get; set; }
     }
 }

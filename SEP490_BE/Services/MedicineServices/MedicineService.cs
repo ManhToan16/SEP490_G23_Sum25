@@ -20,6 +20,10 @@ namespace SEP490_BE.Services.MedicineServices
 
         public async Task<MedicineResponseDTO> CreateMedicine(CreateMedicineDTO request)
         {
+            if (await IsMedicineExistsAsync(request.Name, request.Strength))
+            {
+                throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
+            }
             var medicine = new Medicine
             {
                 Id = Guid.NewGuid().ToString(),
@@ -44,6 +48,11 @@ namespace SEP490_BE.Services.MedicineServices
                 throw;
             }
             return MapToResponseDTO(medicine);
+        }
+        public async Task<bool> IsMedicineExistsAsync(string name, string strength)
+        {
+            return await _context.Medicines
+                .AnyAsync(m => m.Name.ToLower() == name.ToLower() && m.Strength.ToLower() == strength.ToLower());
         }
 
         public async Task<MedicineResponseDTO> UpdateMedicine(string id, UpdateMedicineDTO request)

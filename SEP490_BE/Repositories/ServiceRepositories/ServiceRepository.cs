@@ -61,6 +61,12 @@ namespace SEP490_BE.Repositories.ServiceRepositories
 
             return (services, totalItems);
         }
+        public async Task<bool> ExistsByNameAsync(string name, string laboratoryRoomId)
+        {
+            return await _context.Services.AnyAsync(s =>
+                s.Name.ToLower().Trim() == name.ToLower().Trim() &&
+                s.LaboratoryRoomsId == laboratoryRoomId);
+        }
 
         public async Task InsertAsync(Service service)
         {

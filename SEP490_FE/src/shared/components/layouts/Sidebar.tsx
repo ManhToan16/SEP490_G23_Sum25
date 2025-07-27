@@ -12,12 +12,32 @@ import {
   Activity,
   UserPlus,
   Building,
-  Star
+  Star,
+  ChevronDown
 } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const [openMenus, setOpenMenus] = React.useState<string[]>([]);
+
+  // Menu đa cấp cho admin
+  const adminMenu = [
+    { icon: Home, label: 'Trang chủ', path: '/admin/dashboard' },
+    { icon: Users, label: 'Quản lý tài khoản', path: '/admin/accounts' },
+    { icon: Building, label: 'Quản lý phòng khám', path: '/admin/clinic' },
+    { icon: Star, label: 'Đánh giá bác sĩ', path: '/admin/doctor-feedback' },
+    // Mục đa cấp mẫu
+    {
+      icon: ClipboardList,
+      label: 'Quản lý kho',
+      children: [
+        { label: 'Quản lý vật tư', path: '/admin/materials' },
+        { label: 'Quản lý loại vật tư', path: '/admin/material-types' },
+      ]
+    },
+    { icon: Settings, label: 'Nhật ký hệ thống', path: '/admin/logs' },
+  ];
 
   const getMenuItems = () => {
     if (location.pathname.includes('/patient')) {
@@ -50,20 +70,18 @@ const Sidebar: React.FC = () => {
       ];
     }
     
-    if (location.pathname.includes('/admin')) {
-      return [
-        { icon: Home, label: 'Trang chủ', path: '/admin/dashboard' },
-        { icon: Users, label: 'Quản lý tài khoản', path: '/admin/accounts' },
-        { icon: Building, label: 'Quản lý phòng khám', path: '/admin/clinic' },
-        { icon: Star, label: 'Đánh giá bác sĩ', path: '/admin/doctor-feedback' },
-        { icon: Settings, label: 'Nhật ký hệ thống', path: '/admin/logs' },
-      ];
-    }
+    if (location.pathname.includes('/admin')) return adminMenu;
 
     return [];
   };
 
   const menuItems = getMenuItems();
+
+  const handleToggle = (label: string) => {
+    setOpenMenus((prev) =>
+      prev.includes(label) ? prev.filter(l => l !== label) : [...prev, label]
+    );
+  };
 
   return (
     <aside className="w-64 bg-white shadow-sm border-r border-gray-200">
@@ -71,10 +89,47 @@ const Sidebar: React.FC = () => {
         <h2 className="text-lg font-poppins font-semibold text-clinic-navy mb-6">
           Menu điều hướng
         </h2>
-        
         <nav className="space-y-2">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
+            // Nếu là mục đa cấp
+            if (item.children) {
+              const isOpen = openMenus.includes(item.label);
+              // Nếu có children, render accordion
+              return (
+                <div key={item.label}>
+                  <button
+                    onClick={() => handleToggle(item.label)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      isOpen ? 'bg-clinic-blue text-clinic-navy' : 'text-gray-700 hover:bg-gray-50 hover:text-clinic-navy'
+                    }`}
+                  >
+                    <item.icon size={20} />
+                    <span className="font-medium flex-1">{item.label}</span>
+                    <ChevronDown size={18} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="pl-8 space-y-1 mt-1">
+                      {item.children.map((child) => {
+                        const isChildActive = location.pathname === child.path;
+                        return (
+                          <button
+                            key={child.path}
+                            onClick={() => navigate(child.path)}
+                            className={`w-full flex items-center px-3 py-2 rounded text-left text-sm transition-colors ${
+                              isChildActive ? 'bg-blue-100 text-clinic-navy' : 'text-gray-700 hover:bg-gray-50 hover:text-clinic-navy'
+                            }`}
+                          >
+                            <span>{child.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            // Mục thường
             return (
               <button
                 key={item.path}

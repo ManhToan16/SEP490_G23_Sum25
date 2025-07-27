@@ -122,9 +122,10 @@ const AccountManagement: React.FC = () => {
       const response = await adminService.getListUsers(1, 100); // Load more users
       setUsers(response.users);
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: "Không thể tải danh sách người dùng"
+        description: error?.response?.data?.Message || error?.response?.data?.message || "Có lỗi xảy ra"
       });
     } finally {
       setLoading(false);
@@ -189,32 +190,35 @@ const AccountManagement: React.FC = () => {
   };
 
   const handleSaveUser = async (userType, userData) => {
+    // Kiểm tra trùng lặp khi tạo mới (nếu muốn kiểm tra phía client thì thêm ở đây)
     try {
       if (editingItem) {
         // Update existing user
         await adminService.updateUser(editingItem.id, userData);
         toast({
           title: "Thành công",
-          description: "Cập nhật người dùng thành công"
+          description: "Cập nhật người dùng thành công",
+          variant: 'success',
         });
       } else {
         // Create new user
         await adminService.createUser(userData);
         toast({
           title: "Thành công", 
-          description: "Tạo người dùng mới thành công"
+          description: "Tạo người dùng mới thành công",
+          variant: 'success',
         });
       }
-      
       // Reload users
       loadUsers();
       setIsFormOpen(false);
       setEditingItem(null);
       setShowForm(null);
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Có lỗi xảy ra"
+        description: error?.response?.data?.Message || error?.response?.data?.message || "Có lỗi xảy ra"
       });
     }
   };
@@ -228,13 +232,16 @@ const AccountManagement: React.FC = () => {
       await adminService.deleteUser(userId);
       toast({
         title: "Thành công",
-        description: "Xóa người dùng thành công"
+        description: "Xóa người dùng thành công",
+        variant: 'success',
       });
       loadUsers();
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể xóa người dùng"
+        description: error?.response?.data?.message || "Không thể xóa người dùng",
+        variant: 'destructive',
       });
     }
   };
@@ -248,13 +255,16 @@ const AccountManagement: React.FC = () => {
       await adminService.activateUser(userId);
       toast({
         title: "Thành công",
-        description: "Kích hoạt người dùng thành công"
+        description: "Kích hoạt người dùng thành công",
+        variant: 'success',
       });
       loadUsers();
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể kích hoạt người dùng"
+        description: error?.response?.data?.message || "Không thể kích hoạt người dùng",
+        variant: 'destructive',
       });
     }
   };
@@ -268,13 +278,16 @@ const AccountManagement: React.FC = () => {
       await adminService.deactivateUser(userId);
       toast({
         title: "Thành công",
-        description: "Vô hiệu hóa người dùng thành công"
+        description: "Vô hiệu hóa người dùng thành công",
+        variant: 'success',
       });
       loadUsers();
     } catch (error) {
+      console.log("ERROR RESPONSE:", error);
       toast({
         title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể vô hiệu hóa người dùng"
+        description: error?.response?.data?.message || "Không thể vô hiệu hóa người dùng",
+        variant: 'destructive',
       });
     }
   };

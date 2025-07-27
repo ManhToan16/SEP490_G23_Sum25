@@ -3,10 +3,12 @@
     public class FileService : IFileService
     {
         private readonly IWebHostEnvironment _env;
+        private readonly IConfiguration _configuration;
 
-        public FileService(IWebHostEnvironment env)
+        public FileService(IWebHostEnvironment env, IConfiguration configuration)
         {
             _env = env;
+            _configuration = configuration;
         }
 
         public async Task<string> SaveFileAsync(IFormFile file, string relativePath)
@@ -26,9 +28,26 @@
             if (!allowedExtensions.Contains(ext))
                 throw new Exception("Tệp không hợp lệ. Vui lòng chọn tệp có đuôi [.pdf, .jpg, .jpeg, .png, .dcm, .xlsx].");
 
-            var fullPath = Path.Combine(_env.WebRootPath, relativePath);
+            // Lấy đường dẫn upload từ config
+            var uploadPath = _configuration["App:UploadPath"];
+            if (string.IsNullOrEmpty(uploadPath))
+            {
+                // Fallback cho local development
+                if (string.IsNullOrEmpty(_env.WebRootPath))
+                {
+                    _env.WebRootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                }
+                uploadPath = _env.WebRootPath;
+            }
+
+            var fullPath = Path.Combine(uploadPath, relativePath);
             var directory = Path.GetDirectoryName(fullPath)!;
-            Directory.CreateDirectory(directory);
+            
+            // Tạo thư mục nếu chưa tồn tại
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
 
             var fileName = Guid.NewGuid().ToString() + ext;
             var savedPath = Path.Combine(directory, fileName);
@@ -45,7 +64,17 @@
 
         public async Task DeleteFileAsync(string relativePath)
         {
-            var fullPath = Path.Combine(_env.WebRootPath, relativePath.TrimStart('/'));
+            var uploadPath = _configuration["App:UploadPath"];
+            if (string.IsNullOrEmpty(uploadPath))
+            {
+                if (string.IsNullOrEmpty(_env.WebRootPath))
+                {
+                    _env.WebRootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                }
+                uploadPath = _env.WebRootPath;
+            }
+
+            var fullPath = Path.Combine(uploadPath, relativePath.TrimStart('/'));
             if (File.Exists(fullPath))
             {
                 File.Delete(fullPath);
@@ -55,7 +84,17 @@
 
         public bool FileExists(string relativePath)
         {
-            var fullPath = Path.Combine(_env.WebRootPath, relativePath.TrimStart('/'));
+            var uploadPath = _configuration["App:UploadPath"];
+            if (string.IsNullOrEmpty(uploadPath))
+            {
+                if (string.IsNullOrEmpty(_env.WebRootPath))
+                {
+                    _env.WebRootPath = Path.Combine(_env.ContentRootPath, "wwwroot");
+                }
+                uploadPath = _env.WebRootPath;
+            }
+
+            var fullPath = Path.Combine(uploadPath, relativePath.TrimStart('/'));
             return File.Exists(fullPath);
         }
     }
