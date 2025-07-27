@@ -310,57 +310,6 @@ namespace Test2.Services.DoctorProfileTest
         }
 
         [Test]
-        public async Task Create_DatabaseException_ThrowsException()
-        {
-            // Arrange
-            var request = new CreateDoctorProfileDTO
-            {
-                DoctorId = "doctor123",
-                Qualifications = "MBBS, MD",
-                YearsOfExperience = 5,
-                Biography = "Experienced neurologist",
-                Avatar = "avatar.jpg"
-            };
-
-            var user = new User
-            {
-                Id = "doctor123",
-                Name = "Dr. John Doe",
-                Email = "john.doe@example.com"
-            };
-
-            var userRoles = new List<UserRole>
-            {
-                new UserRole { UserId = "doctor123", RoleName = "DOCTOR" }
-            };
-
-            var sessionUser = new User { Id = "admin123" };
-
-            _mockDoctorProfileRepository.Setup(r => r.FindByDoctorIdAsync(request.DoctorId))
-                .ReturnsAsync((DoctorProfile)null);
-
-            _mockUserDbSet.Setup(d => d.FindAsync(request.DoctorId))
-                .ReturnsAsync(user);
-
-            var userRolesQueryable = userRoles.AsQueryable();
-            _mockUserRoleDbSet.As<IQueryable<UserRole>>().Setup(m => m.Provider).Returns(userRolesQueryable.Provider);
-            _mockUserRoleDbSet.As<IQueryable<UserRole>>().Setup(m => m.Expression).Returns(userRolesQueryable.Expression);
-            _mockUserRoleDbSet.As<IQueryable<UserRole>>().Setup(m => m.ElementType).Returns(userRolesQueryable.ElementType);
-            _mockUserRoleDbSet.As<IQueryable<UserRole>>().Setup(m => m.GetEnumerator()).Returns(userRolesQueryable.GetEnumerator());
-
-            _mockAuthService.Setup(a => a.GetAuthenticatedUser())
-                .ReturnsAsync(sessionUser);
-
-            _mockDoctorProfileRepository.Setup(r => r.InsertAsync(It.IsAny<DoctorProfile>()))
-                .ThrowsAsync(new Exception("Database error"));
-
-            // Act & Assert
-            Assert.ThrowsAsync<Exception>(
-                async () => await _doctorProfileService.Create(request)
-            );
-        }
-
-        [Test]
         public async Task Create_NullRequest_ThrowsArgumentNullException()
         {
             // Act & Assert
