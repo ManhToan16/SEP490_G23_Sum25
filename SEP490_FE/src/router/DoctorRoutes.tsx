@@ -19,7 +19,6 @@ const DoctorRoutes: React.FC = () => {
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="my-info" element={<MyInfo />} />
         <Route path="profile" element={<MyInfo />} />
         <Route path="queue" element={<AppointmentQueue />} />
         <Route path="create-record" element={<CreateMedicalRecord />} />
