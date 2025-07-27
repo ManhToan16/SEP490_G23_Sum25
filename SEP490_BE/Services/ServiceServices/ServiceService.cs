@@ -205,7 +205,7 @@ namespace SEP490_BE.Services.ServiceServices
         .ToListAsync(); ;
             if (!services.Any())
             {
-                throw new ResourceNotFoundException("Không tìm thấy dịch vụ trong phòng xét nghiệm này.");
+                return;
             }
             _context.Services.RemoveRange(services);
             await _context.SaveChangesAsync();
