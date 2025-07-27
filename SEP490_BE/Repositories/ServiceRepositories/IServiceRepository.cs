@@ -16,5 +16,6 @@ namespace SEP490_BE.Repositories.ServiceRepositories
         Task InsertAsync(Service service);
         Task UpdateAsync(Service service);
         Task DeleteAsync(Service service);
+        Task<bool> ExistsByNameAsync(string name, string laboratoryRoomId);
     }
 }

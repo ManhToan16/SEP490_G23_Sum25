@@ -2,37 +2,37 @@
 using Moq;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
-using SEP490_BE.Repositories.ExaminationRoomRepositories;
-using SEP490_BE.Services.ExaminationRoomServices;
+using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using SEP490_BE.Services.LaboratoryRoomServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Test.Services.ExaminationRoomsTest
+namespace Test.Services.LabRoomTest
 {
     [TestFixture]
-    public class DeleteExaminationRoomTests
+    public class DeleteLaboratoryRoomTests
     {
-        private Mock<IExaminationRoomRepository> _roomRepositoryMock = null!;
+        private Mock<ILaboratoryRoomRepository> _roomRepositoryMock = null!;
         private Mock<KhanhAnNeurologyClinicContext> _contextMock = null!;
-        private ExaminationRoomService _service = null!;
+        private LaboratoryRoomService _service = null!;
 
         [SetUp]
         public void SetUp()
         {
-            _roomRepositoryMock = new Mock<IExaminationRoomRepository>();
+            _roomRepositoryMock = new Mock<ILaboratoryRoomRepository>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
             _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
-            _service = new ExaminationRoomService(_contextMock.Object, _roomRepositoryMock.Object);
+            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object);
         }
 
         [Test]
         public async Task Delete_ValidId_DeletesRoomSuccessfully()
         {
             var id = Guid.NewGuid().ToString();
-            var room = new ExaminationRoom { Id = id, Name = "Phòng khám A", Description = "Mô tả A" };
+            var room = new LaboratoryRoom { Id = id, Name = "Phòng khám A", Description = "Mô tả A" };
 
             _roomRepositoryMock
                 .Setup(r => r.FindByIdAsync(id))
@@ -56,13 +56,13 @@ namespace Test.Services.ExaminationRoomsTest
 
             _roomRepositoryMock
                 .Setup(r => r.FindByIdAsync(id))
-                .ReturnsAsync((ExaminationRoom)null);
+                .ReturnsAsync((LaboratoryRoom)null);
 
             var exception = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.Delete(id));
-            Assert.That(exception.Message, Is.EqualTo("Không tìm thấy phòng khám lâm sàng."));
+            Assert.That(exception.Message, Is.EqualTo("Không tìm thấy phòng cận lâm sàng."));
 
             _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Once());
-            _roomRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<ExaminationRoom>()), Times.Never());
+            _roomRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<LaboratoryRoom>()), Times.Never());
             _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
         }
 
@@ -75,7 +75,7 @@ namespace Test.Services.ExaminationRoomsTest
         //    Assert.That(exception.Message, Is.EqualTo("Không tìm thấy phòng khám lâm sàng."));
 
         //    _roomRepositoryMock.Verify(r => r.FindByIdAsync(It.IsAny<string>()), Times.Never());
-        //    _roomRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<ExaminationRoom>()), Times.Never());
+        //    _roomRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<LaboratoryRoom>()), Times.Never());
         //    _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
         //}
 
@@ -88,7 +88,7 @@ namespace Test.Services.ExaminationRoomsTest
         //    Assert.That(exception.Message, Is.EqualTo("Không tìm thấy phòng khám lâm sàng."));
 
         //    _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Never());
-        //    _roomRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<ExaminationRoom>()), Times.Never());
+        //    _roomRepositoryMock.Verify(r => r.DeleteAsync(It.IsAny<LaboratoryRoom>()), Times.Never());
         //    _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
         //}
 
@@ -96,7 +96,7 @@ namespace Test.Services.ExaminationRoomsTest
         public async Task Delete_DeleteAsyncFails_ThrowsException()
         {
             var id = Guid.NewGuid().ToString();
-            var room = new ExaminationRoom { Id = id, Name = "Phòng khám A", Description = "Mô tả A" };
+            var room = new LaboratoryRoom { Id = id, Name = "Phòng khám A", Description = "Mô tả A" };
 
             _roomRepositoryMock
                 .Setup(r => r.FindByIdAsync(id))
@@ -106,7 +106,7 @@ namespace Test.Services.ExaminationRoomsTest
                 .Setup(r => r.DeleteAsync(room))
                 .ThrowsAsync(new ResourceNotFoundException("Database error"));
 
-             Assert.ThrowsAsync<ResourceNotFoundException>(async () => await _service.Delete(id));
+            Assert.ThrowsAsync<ResourceNotFoundException>(async () => await _service.Delete(id));
 
             _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Once());
             _roomRepositoryMock.Verify(r => r.DeleteAsync(room), Times.Once());
