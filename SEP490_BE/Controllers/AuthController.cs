@@ -127,10 +127,11 @@ namespace SEP490_BE.Controllers
                 [FromQuery] string? userId,
                 [FromQuery] string? action,
                 [FromQuery] string? tableName,
+                [FromQuery] string? recordId,
                 [FromQuery] int pageNumber = 1,
                 [FromQuery] int pageSize = 10)
         {
-            var response = await _auditLogService.GetLogsAsync(userId, action, tableName, pageNumber, pageSize);
+            var response = await _auditLogService.GetLogsAsync(userId, action, tableName, recordId, pageNumber, pageSize);
             var apiResponse = new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

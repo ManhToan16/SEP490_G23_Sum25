@@ -4,6 +4,7 @@ using SEP490_BE.DTO.LaboratoryResultDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.AssignmentRepositories;
+using SEP490_BE.Repositories.AuditLogRepositories;
 using SEP490_BE.Repositories.LaboratoryResultRepositories;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.FileServices;
@@ -20,6 +21,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IAuthService _authService;
         private readonly IConfiguration _configuration;
+        private readonly IAuditLogRepository _logRepository;
 
         public LaboratoryResultService(
             ILaboratoryResultRepository resultRepo,
@@ -28,7 +30,8 @@ namespace SEP490_BE.Services.LaboratoryResultServices
             IFileService fileService,
             IAuthService authService,
             KhanhAnNeurologyClinicContext context,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IAuditLogRepository auditLogRepository)
         {
             _resultRepo = resultRepo;
             _fileRepo = fileRepo;
@@ -37,6 +40,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
             _context = context;
             _authService = authService;
             _configuration = configuration;
+            _logRepository = auditLogRepository;
         }
 
         public async Task<LaboratoryResultResponseDTO> CreateByAssignmentId(string assignmentId)
@@ -46,14 +50,14 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                     .ThenInclude(v => v.ExaminationResults)
                 .FirstOrDefaultAsync(a => a.Id == assignmentId);
 
+            if (assignment == null)
+                throw new ResourceNotFoundException(MessageConstants.ASSIGNMENT_NOT_FOUND);
+
             if (assignment.Status == AssignmentStatus.COMPLETED
                  || assignment.Status == AssignmentStatus.COMPLETED)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.LABORATORY_RESULT_INVALID_UPDATE);
             }
-
-            if (assignment == null)
-                throw new ResourceNotFoundException(MessageConstants.ASSIGNMENT_NOT_FOUND);
 
             var examinationResult = assignment.Visit?.ExaminationResults?.FirstOrDefault();
             if (examinationResult == null)
@@ -70,10 +74,23 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.LaboratoryResults.Add(result);
-            await _context.SaveChangesAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync(); // [AUDIT]
+            try
+            {
+                _context.LaboratoryResults.Add(result);
+                await _context.SaveChangesAsync();
 
-            return await GetById(result.Id);
+                var response = await GetById(result.Id); // [AUDIT]
+                await _logRepository.LogAsync(technician.Id, "CREATE", "LaboratoryResults", result.Id, null, response); // [AUDIT]
+
+                await transaction.CommitAsync(); // [AUDIT]
+                return response;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(); // [AUDIT]
+                throw;
+            }
         }
 
 
@@ -111,11 +128,28 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                 throw new Exceptions.ArgumentException(MessageConstants.LABORATORY_RESULT_INVALID_UPDATE);
             }
 
+            var technician = await _authService.GetAuthenticatedUser(); // [AUDIT]
+            var oldData = await GetById(id); // [AUDIT]
+
             result.Note = request.Note;
             result.UpdatedAt = DateTime.UtcNow;
-            await _resultRepo.UpdateAsync(result);
+            using var transaction = await _context.Database.BeginTransactionAsync(); // [AUDIT]
+            try
+            {
+                await _resultRepo.UpdateAsync(result);
+                await _context.SaveChangesAsync();
 
-            return await GetById(id);
+                var newData = await GetById(id); // [AUDIT]
+                await _logRepository.LogAsync(technician.Id, "UPDATE", "LaboratoryResults", result.Id, oldData, newData); // [AUDIT]
+
+                await transaction.CommitAsync(); // [AUDIT]
+                return newData;
+            }
+            catch
+            {
+                await transaction.RollbackAsync(); // [AUDIT]
+                throw;
+            }
         }
 
         public async Task<List<LaboratoryFilesResponseDTO>> UploadFiles(string laboratoryResultId, List<IFormFile> files)
