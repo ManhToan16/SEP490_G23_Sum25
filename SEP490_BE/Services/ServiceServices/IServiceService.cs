@@ -14,6 +14,7 @@ namespace SEP490_BE.Services.ServiceServices
             int pageNumber,
             int pageSize);
         Task<ServiceResponseDTO> GetById(string id);
+        Task<ServiceResponseDTO> GetByRoom(string roomId);
         Task<ServiceResponseDTO> Create(CreateServiceDTO request);
         Task<ServiceResponseDTO> Update(string id, UpdateServiceDTO request);
         Task Delete(string id);
