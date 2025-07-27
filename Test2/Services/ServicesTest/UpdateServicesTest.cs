@@ -343,62 +343,8 @@ namespace Test2.Services.ServicesTest
             Assert.IsTrue(results.Any(r => r.MemberNames.Contains("Price")));
         }
 
-        // TC010 - Price null
-       @ -241,37 +241,58 @@ namespace Test.Services.ServicesTest
 
-        // TC007 - Uppercase name
-        [Test]
-        public async Task TC007_Update_DescriptionIsNull_ReturnsSuccess()
-        {
-            // Arrange
-            var id = Guid.NewGuid().ToString();
-            var existingService = new Service
-            {
-                Id = id,
-                LaboratoryRoomsId = "123",
-                Name = "Dịch vụ cũ",
-                Description = "Mô tả cũ"
-            };
-
-            var request = new UpdateServiceDTO
-            {
-                Name = "Dịch vụ mới",
-                Description = null
-            };
-
-            _serviceRepositoryMock.Setup(r => r.FindByIdAsync(id))
-                .ReturnsAsync(existingService);
-
-            _serviceRepositoryMock.Setup(r => r.ExistsByNameAsync(request.Name, existingService.LaboratoryRoomsId))
-                .ReturnsAsync(false);
-
-            _contextMock.Setup(c => c.LaboratoryRooms.FindAsync(It.IsAny<object[]>()))
-      .ReturnsAsync(new LaboratoryRoom
-      {
-          Id = existingService.LaboratoryRoomsId,
-          Name = "Phòng xét nghiệm 1"
-      });
-
-
-            _serviceRepositoryMock.Setup(r => r.UpdateAsync(It.IsAny<Service>()))
-                .Returns(Task.CompletedTask);
-
-            _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
-
-            _databaseMock.Setup(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(_transactionMock.Object);
-
-            // Act
-            var result = await _service.Update(id, request);
-
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(request.Name, result.Name);
-            Assert.AreEqual("Mô tả cũ", result.Description);
-
-        }
-
+    
 
         // TC008 - Empty name
 
