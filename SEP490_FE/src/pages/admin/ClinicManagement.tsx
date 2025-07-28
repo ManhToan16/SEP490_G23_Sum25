@@ -3,6 +3,7 @@ import { Plus, Edit, Trash } from 'lucide-react';
 import { Card } from '../../shared/components/ui/card';
 import { Button } from '../../shared/components/ui/button';
 import { Badge } from '../../shared/components/ui/badge';
+import { useToast } from '../../shared/components/ui/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from '../../shared/components/ui/alert-dialog';
 import RoomForm from '@/shared/components/common/RoomForm';
 import { adminService } from '@/shared/services/adminService';
@@ -12,6 +13,7 @@ const ClinicManagement: React.FC = () => {
   const [editingItem, setEditingItem] = useState(null);
   const [rooms, setRooms] = useState({ examination: [], laboratory: [] });
   const [roomToDelete, setRoomToDelete] = useState<{ roomType: string, roomId: string } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -233,6 +235,7 @@ const ClinicManagement: React.FC = () => {
               onClick={async () => {
                 if (roomToDelete) {
                   await handleDeleteRoom(roomToDelete.roomType, roomToDelete.roomId);
+                  toast({ title: 'Xoá phòng thành công!' });
                   setRoomToDelete(null);
                 }
               }}

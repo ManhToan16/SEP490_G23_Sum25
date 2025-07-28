@@ -29,7 +29,6 @@ export const ROUTES = {
   // Doctor routes
   DOCTOR: {
     DASHBOARD: '/doctor/dashboard',
-    MY_INFO: '/doctor/my-info',
     PROFILE: '/doctor/profile',
     APPOINTMENT_QUEUE: '/doctor/queue',
     CREATE_MEDICAL_RECORD: '/doctor/create-record',
@@ -94,7 +93,6 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.DOCTOR.APPOINTMENT_QUEUE, label: 'Hàng chờ khám', icon: 'Clock' },
     { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
     { path: ROUTES.DOCTOR.CREATE_MEDICAL_RECORD, label: 'Tạo hồ sơ', icon: 'Plus' },
-    { path: ROUTES.DOCTOR.MY_INFO, label: 'Thông tin cá nhân', icon: 'User' },
     { path: ROUTES.DOCTOR.PROFILE, label: 'Hồ sơ chuyên môn', icon: 'FileText' },
   ],
 

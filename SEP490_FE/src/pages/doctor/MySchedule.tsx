@@ -1,13 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
 import { workScheduleService } from '@/shared/services/workSchedule';
+import { adminService } from '@/shared/services/adminService';
 import { format, parse, getDay, addDays, startOfWeek } from 'date-fns';
 import { vi } from 'date-fns/locale/vi';
+import { getWeek, getYear } from 'date-fns';
 
-const SLOT_INFO = {
-  TS001: { type: 'Sáng', startTime: '08:00', endTime: '12:00' },
-  TS002: { type: 'Chiều', startTime: '13:30', endTime: '17:00' },
+const getInitialWeekString = () => {
+  const today = new Date();
+  const year = getYear(today);
+  const week = getWeek(today, { weekStartsOn: 1 });
+  return `${year}-W${week.toString().padStart(2, '0')}`;
 };
 
 const getWeekDates = (selectedDate: Date) => {
@@ -21,10 +25,38 @@ const getWeekDates = (selectedDate: Date) => {
   });
 };
 
+const getDateFromWeekString = (weekString: string) => {
+  try {
+    if (weekString.includes('W')) {
+      const [year, week] = weekString.split('-W');
+      const yearNum = parseInt(year);
+      const weekNum = parseInt(week);
+
+      const jan1 = new Date(yearNum, 0, 1);
+      const daysToAdd = (weekNum - 1) * 7;
+      const firstDayOfWeek = new Date(jan1);
+      firstDayOfWeek.setDate(jan1.getDate() + daysToAdd);
+
+      const dayOfWeek = firstDayOfWeek.getDay();
+      const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+      firstDayOfWeek.setDate(firstDayOfWeek.getDate() - daysToMonday);
+
+      return firstDayOfWeek.toISOString().split('T')[0];
+    } else {
+      return weekString;
+    }
+  } catch (error) {
+    console.error('Error parsing week string:', error);
+    return new Date().toISOString().split('T')[0];
+  }
+};
+
 const DoctorSchedule: React.FC = () => {
   const { user } = useAuth();
-  const [selectedWeek, setSelectedWeek] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedWeek, setSelectedWeek] = useState(getInitialWeekString());
   const [scheduleData, setScheduleData] = useState([]);
+  const [timeSlots, setTimeSlots] = useState([]);
+
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,33 +64,72 @@ const DoctorSchedule: React.FC = () => {
       if (!user?.UserId) return;
       setLoading(true);
       try {
-        const res = await workScheduleService.getScheduleRole(user.role);
-        setScheduleData(res.data);
+        const { fromDate, toDate } = (() => {
+          const startDate = new Date(getDateFromWeekString(selectedWeek));
+          const endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+          return {
+            fromDate: startDate.toISOString().split('T')[0],
+            toDate: endDate.toISOString().split('T')[0],
+          };
+        })();
+
+        const res = await workScheduleService.getSchedulesByRole(user.role, fromDate, toDate);
+        setScheduleData(res);
       } catch (error) {
         console.error('Lỗi khi lấy lịch làm việc:', error);
       } finally {
         setLoading(false);
       }
     };
-    fetchSchedule();
-  }, [user?.UserId]);
 
-  const weekDates = getWeekDates(new Date(selectedWeek));
+    fetchSchedule();
+  }, [user?.UserId, selectedWeek]);
+
+  useEffect(() => {
+    const loadTimeSlots = async () => {
+      try {
+        const data = await adminService.getTimeSlots();
+        setTimeSlots(data);
+      } catch (error) {
+        console.error('Không thể tải time slots:', error);
+      }
+    };
+    loadTimeSlots();
+  }, []);
+
+  const weekDates = useMemo(() => {
+    const start = new Date(getDateFromWeekString(selectedWeek));
+    return [...Array(7)].map((_, i) => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + i);
+      const dayNames = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+      return {
+        day: dayNames[date.getDay()],
+        date: date.toISOString().split('T')[0],
+      };
+    });
+  }, [selectedWeek]);
+
+  const formatDateFromAPI = (apiDate: string) => {
+    if (!apiDate) return '';
+    const parts = apiDate.split('/');
+    if (parts.length === 3) {
+      return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+    }
+    return apiDate; // fallback
+  };
 
   const schedule = weekDates.map(({ day, date }, idx) => {
     const shifts = scheduleData
-      .filter((item) => {
-        const [d, m, y] = item.date.split('/');
-        const itemDate = `${y}-${m}-${d}`;
-        return itemDate === date;
-      })
+      .filter((item) => formatDateFromAPI(item.date) === date)
       .map((item) => {
-        const slot = SLOT_INFO[item.timeSlotId] || {};
+        const slot = timeSlots.find((s) => s.id === item.timeSlotId);
         return {
           id: item.id,
-          type: slot.type || 'Không rõ',
-          startTime: slot.startTime || '??',
-          endTime: slot.endTime || '??',
+          type: slot?.name || 'Không rõ',
+          startTime: slot?.startTime?.slice(0, 5) || '??',
+          endTime: slot?.endTime?.slice(0, 5) || '??',
           room: item.roomName,
           staffName: item.userName || 'Chưa rõ',
         };
@@ -76,7 +147,7 @@ const DoctorSchedule: React.FC = () => {
   }, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-10 lg:px-12 lg:py-8 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
