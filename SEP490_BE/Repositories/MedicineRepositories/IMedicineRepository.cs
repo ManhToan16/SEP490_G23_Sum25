@@ -9,5 +9,6 @@ namespace SEP490_BE.Repositories.MedicineRepositories
         Task UpdateAsync(Medicine medicine);
         Task DeleteAsync(Medicine medicine);
         Task<(List<Medicine> Medicines, int TotalItems)> FindAll(string? name, string? description, int pageNumber, int pageSize);
+        Task<bool> IsMedicineExistsAsync(string name, string strength);
     }
 }
