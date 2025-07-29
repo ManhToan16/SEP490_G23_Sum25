@@ -9,5 +9,6 @@ namespace SEP490_BE.Repositories.SupplierRepositories
         Task UpdateAsync(Supplier supplier);
         Task DeleteAsync(Supplier supplier);
         Task<List<Supplier>> GetAllAsync();
+        Task<bool> IsSupplierExistsAsync(string name, string email);
     }
 }

@@ -15,7 +15,7 @@ using NUnit.Framework;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using SEP490_BE.Exceptions;
 
-namespace Test2.Services.Services
+namespace Test2.Services.ServicesTest
 {
     [TestFixture]
     public class ServiceServiceCreateTests

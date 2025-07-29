@@ -53,7 +53,11 @@ namespace SEP490_BE.Repositories.ScheduleChangeRepositories
                     r.RequesterSchedule.Date == date &&
                     r.RequesterSchedule.TimeSlotId == timeSlotId
                 ).ToListAsync();
-
+            if (!requestsToDelete.Any())
+            {
+                // Không ném lỗi nếu không có yêu cầu => chỉ return
+                return;
+            }
             _context.ScheduleChangeRequests.RemoveRange(requestsToDelete);
             await _context.SaveChangesAsync();
         }

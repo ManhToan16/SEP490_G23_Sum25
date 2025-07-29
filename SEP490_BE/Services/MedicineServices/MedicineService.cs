@@ -20,7 +20,7 @@ namespace SEP490_BE.Services.MedicineServices
 
         public async Task<MedicineResponseDTO> CreateMedicine(CreateMedicineDTO request)
         {
-            if (await IsMedicineExistsAsync(request.Name, request.Strength))
+            if (await _medicineRepository.IsMedicineExistsAsync(request.Name, request.Strength))
             {
                 throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
             }
@@ -69,7 +69,10 @@ namespace SEP490_BE.Services.MedicineServices
             medicine.Packaging = request.Packaging ?? medicine.Packaging;
             medicine.Unit = request.Unit ?? medicine.Unit;
             medicine.Description = request.Description ?? medicine.Description;
-
+            if (await _medicineRepository.IsMedicineExistsAsync(medicine.Name, medicine.Strength))
+            {
+                throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
+            }
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
