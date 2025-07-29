@@ -8,9 +8,11 @@ import {
   Activity,
   TrendingUp,
 } from "lucide-react";
+import { useAuth } from "@/shared/hooks/business/useAuth";
 
 const DoctorDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const todayStats = [
     {
@@ -86,10 +88,10 @@ const DoctorDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 md:p-10 lg:px-12 lg:py-8 space-y-6">
       <div>
         <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
-          Chào mừng, Bác sĩ
+          Chào mừng, Bác sĩ {user?.unique_name || "Người dùng"}!
         </h1>
         <p className="text-gray-600">
           Hôm nay là {new Date().toLocaleDateString("vi-VN")} - Có{" "}

@@ -64,7 +64,6 @@ const Sidebar: React.FC = () => {
     if (location.pathname.includes('/doctor')) {
       return [
         { icon: Home, label: 'Trang chủ', path: '/doctor/dashboard' },
-        { icon: User, label: 'Thông tin cá nhân', path: '/doctor/my-info' },
         { icon: Calendar, label: 'Lịch làm việc', path: '/doctor/schedule' },
         { icon: Activity, label: 'Hàng chờ khám', path: '/doctor/queue' },
       ];
