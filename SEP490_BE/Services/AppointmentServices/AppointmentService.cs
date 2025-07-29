@@ -570,25 +570,31 @@ namespace SEP490_BE.Services.AppointmentServices
                     Status = appointment.Status,
                 });
 
-                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                if (visit != null)
                 {
-                    Action = "UPDATE",
-                    VisitId = visit.Id,
-                    ExaminationRoomId = visit.ExaminationRoomId,
-                    QueueNumber = visit.QueueNumber,
-                    Status = visit.Status,
-                    IsPrioritized = visit.IsPrioritized,
-                });
-
-                foreach (var asm in assignments)
-                {
-                    await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                    await _hubContext.Clients.All.SendAsync("VisitChanged", new
                     {
                         Action = "UPDATE",
-                        AssignmentId = asm.Id,
-                        LaboratoryRoomId = asm.LaboratoryRoomId,
-                        Status = asm.Status
+                        VisitId = visit.Id,
+                        ExaminationRoomId = visit.ExaminationRoomId,
+                        QueueNumber = visit.QueueNumber,
+                        Status = visit.Status,
+                        IsPrioritized = visit.IsPrioritized,
                     });
+                }
+
+                if (assignments != null)
+                {
+                    foreach (var asm in assignments)
+                    {
+                        await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                        {
+                            Action = "UPDATE",
+                            AssignmentId = asm.Id,
+                            LaboratoryRoomId = asm.LaboratoryRoomId,
+                            Status = asm.Status
+                        });
+                    }
                 }
             }
             catch

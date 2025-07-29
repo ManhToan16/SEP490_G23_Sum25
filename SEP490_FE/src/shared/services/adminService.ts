@@ -405,7 +405,7 @@ export const adminService = {
 
   getServicesByRoomId: async (roomId: string) => {
     const res = await api.get(`/Services/room/${roomId}`);
-    return res.data;
+    return res.data[0];
   },
 
   // Material/Category Management
