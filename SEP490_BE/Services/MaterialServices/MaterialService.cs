@@ -39,7 +39,7 @@ namespace SEP490_BE.Services.MaterialServices
                     throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
                 }
             }
-            if (await IsMaterialExistsAsync(request.Name, request.CategoryId, request.SupplierId))
+            if (await _materialRepository.IsMaterialExistsAsync(request.Name, request.CategoryId, request.SupplierId))
             {
                 throw new InvalidOperationException("Vật tư đã tồn tại.");
             }
@@ -116,10 +116,14 @@ namespace SEP490_BE.Services.MaterialServices
 
             material.Name = request.Name ?? material.Name;
             material.Unit = request.Unit ?? material.Unit;
-            material.QuantityInStock = request.QuantityInStock ?? material.QuantityInStock;
+            material.QuantityInStock = request.QuantityInStock ;
             material.MaxQuantity = request.MaxQuantity ?? material.MaxQuantity;
             material.MinQuantity = request.MinQuantity ?? material.MinQuantity;
             material.UpdatedAt = DateTime.UtcNow;
+            if (await _materialRepository.IsMaterialExistsAsync(material.Name, material.CategoryId, material.SupplierId))
+            {
+                throw new InvalidOperationException("Vật tư đã tồn tại.");
+            }
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
