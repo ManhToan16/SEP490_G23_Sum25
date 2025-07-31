@@ -11,7 +11,6 @@ using SEP490_BE.Repositories.DoctorProfileRepositories;
 using SEP490_BE.Services.AuthServices;
 using SEP490_BE.Services.DoctorProfileServices;
 using SEP490_BE.Services.FileServices;
-using SEP490_BE.Services.ServiceServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +20,7 @@ using System.Threading.Tasks;
 namespace Test2.Services.DoctorProfileTest
 {
     [TestFixture]
-    public class GetDoctorProfileTests
+    public class DeleteDoctorProfileTest
     {
         private Mock<KhanhAnNeurologyClinicContext> _contextMock = null!;
         private Mock<IDoctorProfileRepository> _doctorProfileRepoMock = null!;
@@ -68,60 +67,58 @@ namespace Test2.Services.DoctorProfileTest
             );
         }
 
+
         [Test]
-        public async Task GetById_DoctorProfileExists_ReturnsDoctorProfileResponseDTO()
+        public async Task Delete_ExistingDoctorProfile_DeletesSuccessfully()
         {
             // Arrange
-            var doctorId = "doctor123";
-            var doctorProfile = new DoctorProfile
+            var doctorProfileId = "dp001";
+            var mockProfile = new DoctorProfile
             {
-                Id = "dp001",
-                DoctorId = doctorId,
-                Qualifications = "BS CKI",
-                YearsOfExperience = 10,
-                Biography = "Chuyên nội thần kinh",
-                Avatar = "avatar.jpg",
-                Doctor = new User
-                {
-                    Id = doctorId,
-                    Name = "Nguyễn Văn A",
-                    PhoneNumber = "0901234567",
-                    Email = "vana@example.com",
-                    DateOfBirth = new DateTime(1985, 1, 1)
-                }
+                Id = doctorProfileId,
+                DoctorId = "doctor123",
+                Qualifications = "MD"
             };
 
-            _doctorProfileRepoMock.Setup(repo => repo.FindByDoctorIdAsync(doctorId))
-                .ReturnsAsync(doctorProfile);
+            var mockUser = new User { Id = "admin001" };
+
+            _doctorProfileRepoMock.Setup(repo => repo.FindByIdAsync(doctorProfileId))
+                .ReturnsAsync(mockProfile);
+
+            _authServiceMock.Setup(auth => auth.GetAuthenticatedUser())
+                .ReturnsAsync(mockUser);
+
+            _doctorProfileRepoMock.Setup(repo => repo.DeleteAsync(mockProfile))
+                .Returns(Task.CompletedTask);
+
+            _contextMock.Setup(ctx => ctx.SaveChangesAsync(default))
+                .ReturnsAsync(1);
+
+            _auditLogRepoMock.Setup(log => log.LogAsync(
+                mockUser.Id, "DELETE", "DoctorProfiles", doctorProfileId, mockProfile, null))
+                .Returns(Task.CompletedTask);
 
             // Act
-            var result = await _service.GetById(doctorId);
+            await _service.Delete(doctorProfileId);
 
             // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(doctorProfile.Id, result.Id);
-            Assert.AreEqual(doctorProfile.DoctorId, result.DoctorId);
-            Assert.AreEqual(doctorProfile.Qualifications, result.Qualifications);
-            Assert.AreEqual(doctorProfile.YearsOfExperience, result.YearsOfExperience);
-            Assert.AreEqual(doctorProfile.Biography, result.Biography);
-            Assert.AreEqual(doctorProfile.Avatar, result.Avatar);
-            Assert.AreEqual(doctorProfile.Doctor.Name, result.Name);
-            Assert.AreEqual(doctorProfile.Doctor.PhoneNumber, result.PhoneNumber);
-            Assert.AreEqual(doctorProfile.Doctor.Email, result.Email);
-            Assert.AreEqual(doctorProfile.Doctor.DateOfBirth, result.DateOfBirth);
+            _doctorProfileRepoMock.Verify(repo => repo.DeleteAsync(mockProfile), Times.Once);
+            _contextMock.Verify(ctx => ctx.SaveChangesAsync(default), Times.Once);
+            _auditLogRepoMock.Verify(log => log.LogAsync(
+                mockUser.Id, "DELETE", "DoctorProfiles", doctorProfileId, mockProfile, null), Times.Once);
         }
 
         [Test]
-        public void GetById_DoctorProfileNotFound_ThrowsResourceNotFoundException()
+        public void Delete_DoctorProfileNotFound_ThrowsResourceNotFoundException()
         {
             // Arrange
-            var doctorId = "nonexistent";
-            _doctorProfileRepoMock.Setup(repo => repo.FindByDoctorIdAsync(doctorId))
+            var nonexistentId = "notfound123";
+            _doctorProfileRepoMock.Setup(repo => repo.FindByIdAsync(nonexistentId))
                 .ReturnsAsync((DoctorProfile?)null);
 
-            // Act + Assert
-            var ex = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.GetById(doctorId));
-            Assert.That(ex.Message, Is.EqualTo("Không tìm thấy hồ sơ bác sĩ"));
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.Delete(nonexistentId));
+            Assert.That(ex.Message, Is.EqualTo("Không tìm thấy hồ sơ bác sĩ\""));
         }
     }
 }
