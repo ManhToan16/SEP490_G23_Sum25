@@ -96,31 +96,6 @@ namespace Test2.Services.AuthTest
             var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.Login(request));
             Assert.That(ex.Message, Is.EqualTo(MessageConstants.FORBIDDEN));
         }
-
-        //[Test]
-        //public async Task Login_ValidCredentials_ReturnsTokenResponse()
-        //{
-        //    var user = new User { Id = "123", Name = "John", Email = "john@example.com", PhoneNumber = "0123456789", Password = BCrypt.Net.BCrypt.HashPassword("123456"), IsActive = true };
-        //    var request = new LoginRequestDTO { Email = user.Email, Password = "123456", DeviceId = "dev1" };
-
-        //    _userRepositoryMock.Setup(r => r.FindByEmail(user.Email)).ReturnsAsync(user);
-        //    _roleRepositoryMock.Setup(r => r.FindRolesByUser(user.Id)).ReturnsAsync(new List<string> { "Admin" });
-        //    _roleRepositoryMock.Setup(r => r.FindPermissionsByRole("Admin")).ReturnsAsync(new List<string> { "USER.READ", "USER.UPDATE" });
-
-        //    _redisMock.Setup(r => r.StringSetAsync(
-        //        It.IsAny<RedisKey>(),
-        //        It.IsAny<RedisValue>(),
-        //        It.IsAny<TimeSpan?>(),
-        //        It.IsAny<When>(),
-        //        It.IsAny<CommandFlags>())
-        //    ).ReturnsAsync(true);
-
-        //    var result = await _authService.Login(request);
-
-        //    Assert.IsNotNull(result.AccessToken);
-        //    Assert.IsNotNull(result.RefreshToken);
-        //    Assert.That(result.AccessTokenExpiresAt, Is.GreaterThan(DateTime.UtcNow));
-        //}
     }
 
 }

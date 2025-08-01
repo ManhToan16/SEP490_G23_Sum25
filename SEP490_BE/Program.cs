@@ -258,13 +258,13 @@ app.UseCors("AllowAllOrigins");
 app.UseRouting();
 
 // Serve static files from external uploads directory FIRST (more specific)
-app.UseStaticFiles(new StaticFileOptions
-{
-    FileProvider = new PhysicalFileProvider("/opt/khanhan/uploads"),
-    RequestPath = "/uploads",
-    ServeUnknownFileTypes = true,
-    DefaultContentType = "application/octet-stream"
-});
+//app.UseStaticFiles(new StaticFileOptions
+//{
+//    FileProvider = new PhysicalFileProvider("/opt/khanhan/uploads"),
+//    RequestPath = "/uploads",
+//    ServeUnknownFileTypes = true,
+//    DefaultContentType = "application/octet-stream"
+//});
 
 // Serve static files from wwwroot (fallback)
 app.UseStaticFiles();
