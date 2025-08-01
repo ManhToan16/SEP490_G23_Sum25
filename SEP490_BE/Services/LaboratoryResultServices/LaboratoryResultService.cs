@@ -80,7 +80,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                 _context.LaboratoryResults.Add(result);
                 await _context.SaveChangesAsync();
 
-                var response = await GetById(result.Id); // [AUDIT]
+                var response = MapToDto(result); // [AUDIT]
                 await _logRepository.LogAsync(technician.Id, "CREATE", "LaboratoryResults", result.Id, null, response); // [AUDIT]
 
                 await transaction.CommitAsync(); // [AUDIT]
