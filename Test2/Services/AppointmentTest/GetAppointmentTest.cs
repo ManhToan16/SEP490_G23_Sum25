@@ -2,8 +2,10 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
+using SEP490_BE.Constants;
 using SEP490_BE.DTO.AppointmentDTO;
 using SEP490_BE.Entities;
+using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
@@ -117,6 +119,94 @@ namespace Test2.Services.AppointmentTest
             Assert.AreEqual(pageNumber, result.PageNumber);
             Assert.AreEqual(pageSize, result.PageSize);
         }
+
+        [TestFixture]
+        public class AppointmentServiceTests
+        {
+            private AppointmentService _service;
+            private Mock<IAppointmentRepository> _appointmentRepositoryMock;
+            // Các mock khác...
+
+            [SetUp]
+            public void SetUp()
+            {
+                var options = new DbContextOptionsBuilder<KhanhAnNeurologyClinicContext>()
+                    .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                    .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
+                    .Options;
+                var context = new KhanhAnNeurologyClinicContext(options);
+
+                _appointmentRepositoryMock = new Mock<IAppointmentRepository>();
+                // Các mock khác như bạn đã setup...
+
+                _service = new AppointmentService(
+                    context,
+                    new Mock<IAuthService>().Object,
+                    new Mock<IAuditLogRepository>().Object,
+                    _appointmentRepositoryMock.Object,
+                    new Mock<IUserRepository>().Object,
+                    new Mock<IEmailService>().Object,
+                    new Mock<IVisitRepository>().Object,
+                    new Mock<IVisitService>().Object,
+                    new Mock<IAssignmentService>().Object,
+                    null,
+                    new Mock<IHubContext<KhanhAnHub>>().Object,
+                    new Mock<ITimeSlotRepository>().Object
+                );
+            }
+
+            [Test]
+            public async Task GetById_ShouldReturnAppointment_WhenAppointmentExists()
+            {
+                // Arrange
+                var appointmentId = "appt-123";
+                var appointment = new Appointment
+                {
+                    Id = appointmentId,
+                    Name = "John Doe",
+                    PhoneNumber = "0123456789",
+                    Email = "john@example.com",
+                    DateOfBirth = new DateTime(1990, 1, 1),
+                    Gender = "Male",
+                    Address = "123 Street",
+                    Symptom = "Headache",
+                    RequiredDoctorId = "doc-1",
+                    Date = new DateTime(2025, 8, 1),
+                    TimeSlotId = "slot-1",
+                    Status = AppointmentStatus.WAITING_FOR_CONFIRMATION,
+                    TotalPrice = 500_000,
+                    ExpiredAt = DateTime.UtcNow.AddHours(1),
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _appointmentRepositoryMock.Setup(r => r.FindById(appointmentId))
+                    .ReturnsAsync(appointment);
+
+                // Act
+                var result = await _service.GetById(appointmentId);
+
+                // Assert
+                Assert.IsNotNull(result);
+                Assert.AreEqual(appointmentId, result.Id);
+                Assert.AreEqual("John Doe", result.Name);
+                Assert.AreEqual("0123456789", result.PhoneNumber);
+                Assert.AreEqual("john@example.com", result.Email);
+            }
+
+            [Test]
+            public void GetById_ShouldThrowNotFoundException_WhenAppointmentDoesNotExist()
+            {
+                // Arrange
+                var appointmentId = "nonexistent";
+                _appointmentRepositoryMock.Setup(r => r.FindById(appointmentId))
+                    .ReturnsAsync((Appointment?)null);
+
+                // Act + Assert
+                var ex = Assert.ThrowsAsync<ResourceNotFoundException>(() => _service.GetById(appointmentId));
+                Assert.That(ex.Message, Is.EqualTo(MessageConstants.APPOINTMENT_NOT_FOUND));
+            }
+        }
+
 
     }
 }
