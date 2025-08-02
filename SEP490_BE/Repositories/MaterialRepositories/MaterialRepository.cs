@@ -45,36 +45,15 @@ namespace SEP490_BE.Repositories.MaterialRepositories
                 m.CategoryId == categoryId &&
                 m.SupplierId == supplierId);
         }
-        public async Task<(List<Material> Materials, int TotalItems)> FindAll(string? name, string? categoryId, string? supplierId, int pageNumber, int pageSize)
+        public async Task<List<Material>> FindAll()
         {
             var query = _context.Materials
                 .Include(m => m.Category)
                 .Include(m => m.Supplier)
                 .AsQueryable();
 
-            if (!string.IsNullOrEmpty(name))
-            {
-                query = query.Where(m => m.Name.Contains(name));
-            }
-
-            if (!string.IsNullOrEmpty(categoryId))
-            {
-                query = query.Where(m => m.CategoryId == categoryId);
-            }
-
-            if (!string.IsNullOrEmpty(supplierId))
-            {
-                query = query.Where(m => m.SupplierId == supplierId);
-            }
-
-            int totalItems = await query.CountAsync();
-
-            var materials = await query
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return (materials, totalItems);
+            return await query.ToListAsync();
         }
+
     }
 }

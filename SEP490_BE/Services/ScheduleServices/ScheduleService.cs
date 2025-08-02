@@ -376,7 +376,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
                 if (techCount > 0 && nurseCount > 0)
                 {
-                    throw new ConflictDataException("Phòng xét nghiệm chỉ được phép có một KỸ THUẬT VIÊN và một Y TÁ cho mỗi khung giờ.");
+                    throw new   ("Phòng xét nghiệm chỉ được phép có một KỸ THUẬT VIÊN và một Y TÁ cho mỗi khung giờ.");
                 }
                 if (techCount > 0 && user.UserRoles.First().RoleName == "TECHNICIAN" ||
                     nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
