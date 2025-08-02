@@ -113,43 +113,6 @@ namespace Test2.Services.AuthTest
             // Assert
             Assert.That(BCrypt.Net.BCrypt.Verify(newPassword, user.Password), Is.True);
         }
-
-        //[Test]
-        //public async Task ChangePassword_CorrectOldPassword_ChangesSuccessfully()
-        //{
-        //    // Arrange
-        //    var userId = "user123";
-        //    var oldPassword = "oldpass";
-        //    var newPassword = "newStrongPass123";
-
-        //    var user = new User { Id = userId, Password = BCrypt.Net.BCrypt.HashPassword(oldPassword) };
-
-        //    var authService = new Mock<AuthService>(_contextMock.Object,
-        //                                            _httpContextAccessorMock.Object,
-        //                                            _configurationMock.Object,
-        //                                            null!,
-        //                                            _userRepositoryMock.Object,
-        //                                            _emailServiceMock.Object,
-        //                                            _connectionMultiplexerMock.Object,
-        //                                            _envMock.Object)
-        //    {
-        //        CallBase = true
-        //    };
-
-        //    authService.Setup(a => a.GetAuthenticatedUser()).ReturnsAsync(user);
-        //    _userRepositoryMock.Setup(r => r.Update(user)).Returns(Task.CompletedTask);
-        //    _contextMock.Setup(c => c.SaveChangesAsync(default)).ReturnsAsync(1);
-
-        //    // Act
-        //    await authService.Object.ChangePassword(new ChangePasswordDTO
-        //    {
-        //        OldPassword = oldPassword,
-        //        Password = newPassword
-        //    });
-
-        //    // Assert
-        //    Assert.That(BCrypt.Net.BCrypt.Verify(newPassword, user.Password), Is.True);
-        //}
     }
 
 }

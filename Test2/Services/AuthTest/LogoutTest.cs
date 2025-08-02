@@ -1,188 +1,129 @@
-﻿//using Microsoft.EntityFrameworkCore;
-//using Microsoft.Extensions.Configuration;
-//using Microsoft.IdentityModel.Tokens;
-//using Moq;
-//using SEP490_BE.Constants;
-//using SEP490_BE.DTO.AuthDTO;
-//using SEP490_BE.Entities;
-//using SEP490_BE.Exceptions;
-//using SEP490_BE.Services.AuthServices;
-//using StackExchange.Redis;
-//using System;
-//using System.Collections.Generic;
-//using System.IdentityModel.Tokens.Jwt;
-//using System.Linq;
-//using System.Security.Claims;
-//using System.Text;
-//using System.Threading.Tasks;
+﻿using NUnit.Framework;
+using Moq;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Hosting;
+using StackExchange.Redis;
+using System.IdentityModel.Tokens.Jwt;
+using Microsoft.IdentityModel.Tokens;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using SEP490_BE.Constants;
+using SEP490_BE.DTO.AuthDTO;
+using SEP490_BE.Entities;
+using SEP490_BE.Exceptions;
+using SEP490_BE.Repositories.RoleRepositories;
+using SEP490_BE.Repositories.UserRepositories;
+using SEP490_BE.Services.AuthServices;
+using SEP490_BE.Services.EmailServices;
 
-//namespace Test2.Services.AuthTest
-//{
-//    [TestFixture]
-//    public class LogoutTest
-//    {
-//        private AuthService _authService;
-//        private Mock<IConfiguration> _configurationMock;
-//        private Mock<IDatabase> _redisMock;
-//        private Mock<IConnectionMultiplexer> _connectionMultiplexerMock;
-//        private KhanhAnNeurologyClinicContext _context;
+namespace Test2.Services.AuthTest
+{
 
-//        [SetUp]
-//        public void SetUp()
-//        {
-//            _configurationMock = new Mock<IConfiguration>();
-//            _redisMock = new Mock<IDatabase>();
-//            _connectionMultiplexerMock = new Mock<IConnectionMultiplexer>();
+[TestFixture]
+public class LogoutTest
+{
+    private Mock<IUserRepository> _userRepoMock;
+    private Mock<IRoleRepository> _roleRepoMock;
+    private Mock<IEmailService> _emailServiceMock;
+    private Mock<IConnectionMultiplexer> _redisMock;
+    private Mock<IWebHostEnvironment> _envMock;
+    private Mock<IHttpContextAccessor> _httpContextAccessorMock;
+    private Mock<IConfiguration> _configMock;
+    private Mock<IDatabase> _dbMock;
 
-//            _configurationMock.Setup(c => c["Jwt:SecretKey"]).Returns("super_secret_key_123456");
-//            _connectionMultiplexerMock.Setup(c => c.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(_redisMock.Object);
+    private AuthService _authService;
 
-//            _context = new KhanhAnNeurologyClinicContext(new DbContextOptionsBuilder<KhanhAnNeurologyClinicContext>()
-//                .UseInMemoryDatabase("LogoutTestDb")
-//                .Options);
+    [SetUp]
+    public void SetUp()
+    {
+        _userRepoMock = new Mock<IUserRepository>();
+        _roleRepoMock = new Mock<IRoleRepository>();
+        _emailServiceMock = new Mock<IEmailService>();
+        _redisMock = new Mock<IConnectionMultiplexer>();
+        _envMock = new Mock<IWebHostEnvironment>();
+        _httpContextAccessorMock = new Mock<IHttpContextAccessor>();
+        _configMock = new Mock<IConfiguration>();
 
-//            _authService = new AuthService(
-//                _context,
-//                null!,
-//                _configurationMock.Object,
-//                null!,
-//                null!,
-//                null!,
-//                _connectionMultiplexerMock.Object,
-//                null!
-//            );
-//        }
+        _dbMock = new Mock<IDatabase>();
+        _redisMock.Setup(r => r.GetDatabase(It.IsAny<int>(), It.IsAny<object>())).Returns(_dbMock.Object);
 
-//        [Test]
-//        public async Task Logout_ValidToken_DeletesRedisKey()
-//        {
-//            // Arrange
-//            var userId = "123";
-//            var deviceId = "deviceX";
-//            var jti = Guid.NewGuid().ToString();
+        _configMock.Setup(c => c["Jwt:SecretKey"]).Returns("this_is_a_test_secret_key_123456");
 
-//            var tokenHandler = new JwtSecurityTokenHandler();
-//            var secretKey = Encoding.UTF8.GetBytes("super_secret_key_123456");
-//            var tokenDescriptor = new SecurityTokenDescriptor
-//            {
-//                Subject = new ClaimsIdentity(new[]
-//                {
-//                new Claim("UserId", userId),
-//                new Claim(JwtRegisteredClaimNames.Jti, jti)
-//            }),
-//                Expires = DateTime.UtcNow.AddMinutes(30),
-//                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256)
-//            };
+        var dbContextMock = new Mock<KhanhAnNeurologyClinicContext>();
 
-//            var token = tokenHandler.CreateToken(tokenDescriptor);
-//            var accessToken = tokenHandler.WriteToken(token);
+        _authService = new AuthService(
+            dbContextMock.Object,
+            _httpContextAccessorMock.Object,
+            _configMock.Object,
+            _roleRepoMock.Object,
+            _userRepoMock.Object,
+            _emailServiceMock.Object,
+            _redisMock.Object,
+            _envMock.Object
+        );
+    }
 
-//            var redisKey = $"refresh:{userId}:{deviceId}";
+    private string GenerateValidToken(string userId)
+    {
+        var key = Encoding.UTF8.GetBytes("this_is_a_test_secret_key_123456");
+        var claims = new[]
+        {
+            new Claim("UserId", userId)
+        };
 
-//            _redisMock.Setup(r => r.KeyExistsAsync(redisKey, CommandFlags.None)).ReturnsAsync(true);
-//            _redisMock.Setup(r => r.KeyDeleteAsync(redisKey, CommandFlags.None)).ReturnsAsync(true);
+        var token = new JwtSecurityToken(
+            claims: claims,
+            signingCredentials: new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256)
+        );
 
-//            var request = new TokenRequestDTO
-//            {
-//                AccessToken = accessToken,
-//                RefreshToken = "dummy", // not used in logout
-//                DeviceId = deviceId
-//            };
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
 
-//            // Act
-//            await _authService.Logout(request);
+    [Test]
+    public async Task Logout_ShouldSucceed_WhenTokenIsValidAndKeyExists()
+    {
+        // Arrange
+        var userId = "user-1";
+        var token = GenerateValidToken(userId);
+        var deviceId = "device-1";
+        var redisKey = $"refresh:{userId}:{deviceId}";
 
-//            // Assert
-//            _redisMock.Verify(r => r.KeyDeleteAsync(redisKey, CommandFlags.None), Times.Once);
-//        }
+        _dbMock.Setup(x => x.KeyExistsAsync(redisKey, CommandFlags.None)).ReturnsAsync(true);
+        _dbMock.Setup(x => x.KeyDeleteAsync(redisKey, CommandFlags.None)).ReturnsAsync(true);
 
-//        [Test]
-//        public void Logout_InvalidAccessToken_ThrowsUnauthenticatedException()
-//        {
-//            // Arrange
-//            var request = new TokenRequestDTO
-//            {
-//                AccessToken = "invalid.token",
-//                RefreshToken = "x",
-//                DeviceId = "d1"
-//            };
+        var request = new TokenRequestDTO
+        {
+            AccessToken = token,
+            DeviceId = deviceId
+        };
 
-//            // Act & Assert
-//            var ex = Assert.ThrowsAsync<UnauthenticatedException>(async () => await _authService.Logout(request));
-//            Assert.That(ex.Message, Is.EqualTo(MessageConstants.UNAUTHENTICATED_ERROR));
-//        }
+        // Act & Assert (no exception)
+        Assert.DoesNotThrowAsync(async () => await _authService.Logout(request));
+    }
 
-//        [Test]
-//        public void Logout_MissingUserIdClaim_ThrowsUnauthenticatedException()
-//        {
-//            // Arrange
-//            var tokenHandler = new JwtSecurityTokenHandler();
-//            var secretKey = Encoding.UTF8.GetBytes("super_secret_key_123456");
+    [Test]
+    public void Logout_ShouldThrow_WhenTokenIsValidButKeyNotExists()
+    {
+        // Arrange
+        var userId = "user-2";
+        var token = GenerateValidToken(userId);
+        var deviceId = "device-2";
+        var redisKey = $"refresh:{userId}:{deviceId}";
 
-//            var tokenDescriptor = new SecurityTokenDescriptor
-//            {
-//                Subject = new ClaimsIdentity(new[]
-//                {
-//                new Claim("custom-claim", "value")
-//            }),
-//                Expires = DateTime.UtcNow.AddMinutes(5),
-//                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256)
-//            };
+        _dbMock.Setup(x => x.KeyExistsAsync(redisKey, CommandFlags.None)).ReturnsAsync(false);
 
-//            var token = tokenHandler.CreateToken(tokenDescriptor);
-//            var accessToken = tokenHandler.WriteToken(token);
+        var request = new TokenRequestDTO
+        {
+            AccessToken = token,
+            DeviceId = deviceId
+        };
 
-//            var request = new TokenRequestDTO
-//            {
-//                AccessToken = accessToken,
-//                RefreshToken = "dummy",
-//                DeviceId = "d1"
-//            };
+        // Act & Assert
+        var ex = Assert.ThrowsAsync<UnauthenticatedException>(async () => await _authService.Logout(request));
+        Assert.That(ex.Message, Is.EqualTo(MessageConstants.UNAUTHENTICATED_ERROR));
+    }
+}
 
-//            // Act & Assert
-//            var ex = Assert.ThrowsAsync<UnauthenticatedException>(async () => await _authService.Logout(request));
-//            Assert.That(ex.Message, Is.EqualTo(MessageConstants.UNAUTHENTICATED_ERROR));
-//        }
-
-//        [Test]
-//        public void Logout_KeyNotExistsInRedis_ThrowsUnauthenticatedException()
-//        {
-//            // Arrange
-//            var userId = "456";
-//            var deviceId = "dev2";
-//            var jti = Guid.NewGuid().ToString();
-
-//            var tokenHandler = new JwtSecurityTokenHandler();
-//            var secretKey = Encoding.UTF8.GetBytes("super_secret_key_123456");
-
-//            var tokenDescriptor = new SecurityTokenDescriptor
-//            {
-//                Subject = new ClaimsIdentity(new[]
-//                {
-//                new Claim("UserId", userId),
-//                new Claim(JwtRegisteredClaimNames.Jti, jti)
-//            }),
-//                Expires = DateTime.UtcNow.AddMinutes(10),
-//                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(secretKey), SecurityAlgorithms.HmacSha256)
-//            };
-
-//            var token = tokenHandler.CreateToken(tokenDescriptor);
-//            var accessToken = tokenHandler.WriteToken(token);
-//            var redisKey = $"refresh:{userId}:{deviceId}";
-
-//            _redisMock.Setup(r => r.KeyExistsAsync(redisKey, CommandFlags.None)).ReturnsAsync(false);
-
-//            var request = new TokenRequestDTO
-//            {
-//                AccessToken = accessToken,
-//                RefreshToken = "xx",
-//                DeviceId = deviceId
-//            };
-
-//            // Act & Assert
-//            var ex = Assert.ThrowsAsync<UnauthenticatedException>(async () => await _authService.Logout(request));
-//            Assert.That(ex.Message, Is.EqualTo(MessageConstants.UNAUTHENTICATED_ERROR));
-//        }
-//    }
-
-//}
+}
