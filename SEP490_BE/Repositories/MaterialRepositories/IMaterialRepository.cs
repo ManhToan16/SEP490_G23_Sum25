@@ -8,7 +8,7 @@ namespace SEP490_BE.Repositories.MaterialRepositories
         Task AddAsync(Material material);
         Task UpdateAsync(Material material);
         Task DeleteAsync(Material material);
-        Task<(List<Material> Materials, int TotalItems)> FindAll(string? name, string? categoryId, string? supplierId, int pageNumber, int pageSize);
+        Task<List<Material>> FindAll();
         Task<bool> IsMaterialExistsAsync(string name, string categoryId, string supplierId);
     }
 }

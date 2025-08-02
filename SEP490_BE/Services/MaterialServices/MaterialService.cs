@@ -164,21 +164,13 @@ namespace SEP490_BE.Services.MaterialServices
             return MapToResponseDTO(material);
         }
 
-        public async Task<Pagination<MaterialResponseDTO>> GetAllMaterials(string? name, string? categoryId, string? supplierId, int pageNumber = 1, int pageSize = 10)
+        public async Task<List<MaterialResponseDTO>> GetAllMaterials()
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-
-            var (materials, totalItems) = await _materialRepository.FindAll(name, categoryId, supplierId, pageNumber, pageSize);
+            var materials = await _materialRepository.FindAll();
             var responseDtos = materials.Select(MapToResponseDTO).ToList();
-            return new Pagination<MaterialResponseDTO>
-            {
-                Items = responseDtos,
-                TotalItems = totalItems,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
+            return responseDtos;
         }
+
 
         private MaterialResponseDTO MapToResponseDTO(Material material)
         {

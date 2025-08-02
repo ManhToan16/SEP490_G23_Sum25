@@ -75,9 +75,9 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllMaterials([FromQuery] string? name = null, [FromQuery] string? categoryId = null, [FromQuery] string? supplierId = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllMaterials()
         {
-            var pagination = await _materialService.GetAllMaterials(name, categoryId, supplierId, pageNumber, pageSize);
+            var pagination = await _materialService.GetAllMaterials();
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
