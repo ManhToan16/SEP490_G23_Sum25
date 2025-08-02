@@ -21,6 +21,7 @@ using SEP490_BE.Controllers;
 using QuestPDF.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
 using SEP490_BE.Hubs;
+using SEP490_BE.Repositories.TimeSlotRepositories;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -38,6 +39,7 @@ namespace SEP490_BE.Services.AppointmentServices
         private readonly IAssignmentService _assignmentService; 
         private readonly ILogger<AppointmentService> _logger;
         private readonly IHubContext<KhanhAnHub> _hubContext;
+        private readonly ITimeSlotRepository _timeSlotRepository;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
@@ -50,7 +52,8 @@ namespace SEP490_BE.Services.AppointmentServices
             IVisitService visitService,
             IAssignmentService assignmentService,
             ILogger<AppointmentService> logger,
-            IHubContext<KhanhAnHub> hubContext
+            IHubContext<KhanhAnHub> hubContext,
+            ITimeSlotRepository timeSlotRepository
             )
         {
             _context = context;
@@ -64,6 +67,7 @@ namespace SEP490_BE.Services.AppointmentServices
             _assignmentService = assignmentService;
             _logger = logger;
             _hubContext = hubContext;
+            _timeSlotRepository = timeSlotRepository;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -328,7 +332,7 @@ namespace SEP490_BE.Services.AppointmentServices
             {
                 throw new ResourceNotFoundException(MessageConstants.TIMESLOT_NOT_FOUND);
             }
-            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
+            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION && appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
