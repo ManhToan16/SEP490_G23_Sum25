@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SEP490_BE.Exceptions;
 
 namespace Test2.Services.UserTest
 {
@@ -106,5 +107,17 @@ namespace Test2.Services.UserTest
             _logRepoMock.Verify(r => r.LogAsync(adminUser.Id, "UPDATE", "Users", userId, It.IsAny<UserResponseDTO>(), It.IsAny<UserResponseDTO>()), Times.Once);
             _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Test]
+        public void UpdateUserById_UserNotFound_ThrowsResourceNotFoundException()
+        {
+            var userId = "notfound";
+            _userRepoMock.Setup(r => r.FindById(userId)).ReturnsAsync((User)null!);
+
+            var ex = Assert.ThrowsAsync<ResourceNotFoundException>(async () => await _userService.GetUserById(userId));
+            Assert.AreEqual(MessageConstants.USER_NOT_FOUND, ex!.Message);
+        }
+
+
     }
 }

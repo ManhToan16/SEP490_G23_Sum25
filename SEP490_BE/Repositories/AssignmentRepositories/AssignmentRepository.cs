@@ -27,6 +27,7 @@ namespace SEP490_BE.Repositories.AssignmentRepositories
         public async Task<Assignment?> FindById(string id)
         {
             return await _context.Assignments
+                .Include(a => a.Visit)
                 .Include(a => a.AssignmentServices)
                     .ThenInclude(asv => asv.Service)
                 .Include(a => a.LaboratoryRoom)
@@ -36,6 +37,7 @@ namespace SEP490_BE.Repositories.AssignmentRepositories
         public async Task<List<Assignment>> GetByVisitId(string visitId)
         {
             return await _context.Assignments
+                .Include(a => a.Visit)
                 .Include(a => a.AssignmentServices)
                     .ThenInclude(asv => asv.Service)
                 .Include(a => a.LaboratoryRoom)
@@ -51,6 +53,7 @@ namespace SEP490_BE.Repositories.AssignmentRepositories
             int pageSize)
         {
             var query = _context.Assignments
+                .Include(a => a.Visit)
                 .Include(a => a.LaboratoryRoom)
                 .Include(a => a.AssignmentServices)
                     .ThenInclude(asv => asv.Service)
@@ -85,6 +88,7 @@ namespace SEP490_BE.Repositories.AssignmentRepositories
                 {
                     AssignmentId = a.Id,
                     VisitId = a.VisitId,
+                    PatientName = a.Visit.PatientName,
                     LaboratoryRoomId = a.LaboratoryRoomId,
                     LaboratoryRoomName = a.LaboratoryRoom.Name,
                     TotalPrice = a.TotalPrice ?? 0,

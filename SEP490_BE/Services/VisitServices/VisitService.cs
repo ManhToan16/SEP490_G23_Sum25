@@ -117,10 +117,23 @@ namespace SEP490_BE.Services.VisitServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = appointment.Id,
+                    Name = appointment.Name,
+                    Email = appointment.Email,
+                    PhoneNumber = appointment.PhoneNumber,
+                    DateOfBirth = appointment.DateOfBirth,
+                    Date = appointment.Date,
+                    Status = appointment.Status,
+                });
+
                 await _hubContext.Clients.All.SendAsync("VisitChanged", new
                 {
                     Action = "CREATE",
                     VisitId = visit.Id,
+                    PatientName = visit.PatientName,
                     ExaminationRoomId = visit.ExaminationRoomId,
                     QueueNumber = visit.QueueNumber,
                     Status = visit.Status,
@@ -220,6 +233,7 @@ namespace SEP490_BE.Services.VisitServices
                 {
                     Action = "UPDATE",
                     Id = visit.Appointment.Id,
+                    Name = visit.Appointment.Name,
                     Email = visit.Appointment.Email,
                     PhoneNumber = visit.Appointment.PhoneNumber,
                     DateOfBirth = visit.Appointment.DateOfBirth,
@@ -231,6 +245,7 @@ namespace SEP490_BE.Services.VisitServices
                 {
                     Action = "UPDATE",
                     VisitId = visit.Id,
+                    PatientName = visit.PatientName,
                     ExaminationRoomId = visit.ExaminationRoomId,
                     QueueNumber = visit.QueueNumber,
                     Status = visit.Status,
@@ -292,6 +307,7 @@ namespace SEP490_BE.Services.VisitServices
                 {
                     Action = "UPDATE",
                     VisitId = visit.Id,
+                    PatientName = visit.PatientName,
                     ExaminationRoomId = visit.ExaminationRoomId,
                     QueueNumber = visit.QueueNumber,
                     Status = visit.Status,

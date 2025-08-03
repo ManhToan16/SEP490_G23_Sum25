@@ -6,6 +6,7 @@ namespace SEP490_BE.DTO.AssignmentDTO
     {
         public string AssignmentId { get; set; }
         public string VisitId { get; set; }
+        public string PatientName { get; set; }
         public string LaboratoryRoomId { get; set; }
         public string LaboratoryRoomName { get; set; }
         public decimal? TotalPrice { get; set; }
