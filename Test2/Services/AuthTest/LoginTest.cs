@@ -96,6 +96,19 @@ namespace Test2.Services.AuthTest
             var ex = Assert.ThrowsAsync<UnauthorizedAccessException>(() => _authService.Login(request));
             Assert.That(ex.Message, Is.EqualTo(MessageConstants.FORBIDDEN));
         }
+
+
+        [Test]
+        public void Login_ValidPasswordAndEmail_ThrowsSucceed()
+        {
+            var user = new User { Email = "test@example.com", Password = BCrypt.Net.BCrypt.HashPassword("correct"), IsActive = true };
+            var request = new LoginRequestDTO { Email = user.Email, Password = "wrong", DeviceId = "dev1" };
+
+            _userRepositoryMock.Setup(r => r.FindByEmail(user.Email)).ReturnsAsync(user);
+
+            var ex = Assert.ThrowsAsync<UnauthenticatedException>(() => _authService.Login(request));
+            Assert.That(ex.Message, Is.EqualTo(MessageConstants.INVALID_LOGIN));
+        }
     }
 
 }

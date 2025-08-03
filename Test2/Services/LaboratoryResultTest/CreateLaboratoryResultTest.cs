@@ -116,6 +116,11 @@ namespace Test2.Services.LaboratoryResultTest
                 VisitId = visitId
             };
 
+            var requestDTO = new LaboratoryResultRequestDTO
+            {
+                Note = "He than kinh on dinh"
+            };
+
             // Add to context
             await _context.Users.AddAsync(technician);
             await _context.ExaminationResults.AddAsync(examinationResult);
@@ -131,7 +136,7 @@ namespace Test2.Services.LaboratoryResultTest
                 .Returns(Task.CompletedTask);
 
             // Act
-            var response = await _service.CreateByAssignmentId(assignmentId);
+            var response = await _service.CreateByAssignmentId(assignmentId, requestDTO);
 
             // Assert
             Assert.NotNull(response);

@@ -75,6 +75,7 @@ namespace SEP490_BE.Services.AssignmentServices
             {
                 AssignmentId = assignment.Id,
                 VisitId = assignment.VisitId,
+                PatientName = assignment.Visit.PatientName,
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
                 TotalPrice = assignment.TotalPrice,
@@ -156,6 +157,7 @@ namespace SEP490_BE.Services.AssignmentServices
                     {
                         AssignmentId = assignment.Id,
                         VisitId = assignment.VisitId,
+                        PatientName = assignment.Visit.PatientName,
                         LaboratoryRoomId = assignment.LaboratoryRoomId,
                         LaboratoryRoomName = labRoom.Name,
                         TotalPrice = assignment.TotalPrice,
@@ -201,6 +203,7 @@ namespace SEP490_BE.Services.AssignmentServices
                         Action = "CREATE",
                         AssignmentId = asm.Id,
                         LaboratoryRoomId = asm.LaboratoryRoomId,
+                        PatientName = visit.PatientName,
                         Status = asm.Status
                     });
                 }
@@ -209,6 +212,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 {
                     Action = "UPDATE",
                     Id = visitToUpdate.Appointment.Id,
+                    Name = visitToUpdate.Appointment.Name,
                     Email = visitToUpdate.Appointment.Email,
                     PhoneNumber = visitToUpdate.Appointment.PhoneNumber,
                     DateOfBirth = visitToUpdate.Appointment.DateOfBirth,
@@ -220,6 +224,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 {
                     Action = "UPDATE",
                     VisitId = visitToUpdate.Id,
+                    PatientName = visitToUpdate.PatientName,
                     ExaminationRoomId = visitToUpdate.ExaminationRoomId,
                     QueueNumber = visitToUpdate.QueueNumber,
                     Status = visitToUpdate.Status,
@@ -243,6 +248,7 @@ namespace SEP490_BE.Services.AssignmentServices
             {
                 AssignmentId = a.Id,
                 VisitId = a.VisitId,
+                PatientName = a.Visit.PatientName,
                 LaboratoryRoomId = a.LaboratoryRoomId,
                 LaboratoryRoomName = a.LaboratoryRoom?.Name ?? "",
                 TotalPrice = a.TotalPrice,
@@ -271,6 +277,7 @@ namespace SEP490_BE.Services.AssignmentServices
             await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
             {
                 Action = "UPDATE",
+                PatientName = assignment.Visit.PatientName,
                 AssignmentId = assignment.Id,
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 Status = assignment.Status
@@ -280,6 +287,7 @@ namespace SEP490_BE.Services.AssignmentServices
             {
                 AssignmentId = assignment.Id,
                 VisitId = assignment.VisitId,
+                PatientName = assignment.Visit.PatientName,
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
                 TotalPrice = assignment.TotalPrice,
@@ -331,6 +339,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
                 {
                     Action = "UPDATE",
+                    PatientName = assignment.Visit.PatientName,
                     AssignmentId = assignment.Id,
                     LaboratoryRoomId = assignment.LaboratoryRoomId,
                     Status = assignment.Status
@@ -340,6 +349,7 @@ namespace SEP490_BE.Services.AssignmentServices
                 {
                     Action = "UPDATE",
                     VisitId = visit.Id,
+                    PatientName = visit.PatientName,
                     ExaminationRoomId = visit.ExaminationRoomId,
                     QueueNumber = visit.QueueNumber,
                     Status = visit.Status,
@@ -356,6 +366,7 @@ namespace SEP490_BE.Services.AssignmentServices
             {
                 AssignmentId = assignment.Id,
                 VisitId = assignment.VisitId,
+                PatientName = assignment.Visit.PatientName,
                 LaboratoryRoomId = assignment.LaboratoryRoomId,
                 LaboratoryRoomName = assignment.LaboratoryRoom?.Name ?? "",
                 TotalPrice = assignment.TotalPrice,

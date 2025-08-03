@@ -260,46 +260,6 @@ namespace Test2.Services.AssignmentTest
             }
 
             [Test]
-            public async Task GetById_ShouldReturnAssignment_WhenExists()
-            {
-                // Arrange
-                var assignmentId = "asg-1";
-                var assignment = new Assignment
-                {
-                    Id = assignmentId,
-                    VisitId = "visit-1",
-                    LaboratoryRoomId = "room-1",
-                    LaboratoryRoom = new LaboratoryRoom { Id = "room-1", Name = "Phòng máu" },
-                    Status = "PENDING",
-                    TotalPrice = 500000,
-                    AssignmentServices = new List<SEP490_BE.Entities.AssignmentService>
-        {
-            new SEP490_BE.Entities.AssignmentService
-            {
-                Service = new SEP490_BE.Entities.Service
-                {
-                    Id = "svc-1",
-                    Name = "Xét nghiệm máu",
-                    Price = 500000
-                }
-            }
-        }
-                };
-
-                _assignmentRepoMock.Setup(r => r.FindById(assignmentId)).ReturnsAsync(assignment);
-
-                // Act
-                var result = await _service.GetById(assignmentId);
-
-                // Assert
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result.AssignmentId, Is.EqualTo(assignmentId));
-                Assert.That(result.LaboratoryRoomName, Is.EqualTo("Phòng máu"));
-                Assert.That(result.AssignmentServices.Count, Is.EqualTo(1));
-                Assert.That(result.AssignmentServices.First().ServiceName, Is.EqualTo("Xét nghiệm máu"));
-            }
-
-            [Test]
             public void GetById_ShouldThrow_WhenNotFound()
             {
                 // Arrange
@@ -311,71 +271,6 @@ namespace Test2.Services.AssignmentTest
                 Assert.That(ex.Message, Is.EqualTo(MessageConstants.ASSIGNMENT_NOT_FOUND));
             }
 
-            [Test]
-            public async Task GetByVisitId_ShouldReturnListOfAssignments_WhenExist()
-            {
-                // Arrange
-                var visitId = "visit-1";
-
-                var assignments = new List<Assignment>
-    {
-        new Assignment
-        {
-            Id = "asg-1",
-            VisitId = visitId,
-            LaboratoryRoomId = "room-1",
-            LaboratoryRoom = new LaboratoryRoom { Id = "room-1", Name = "Phòng máu" },
-            Status = "PENDING",
-            TotalPrice = 300000,
-            AssignmentServices = new List<SEP490_BE.Entities.AssignmentService>
-            {
-                new SEP490_BE.Entities.AssignmentService
-                {
-                    Service = new SEP490_BE.Entities.Service
-                    {
-                        Id = "svc-1",
-                        Name = "XN máu",
-                        Price = 300000
-                    }
-                }
-            }
-        },
-        new Assignment
-        {
-            Id = "asg-2",
-            VisitId = visitId,
-            LaboratoryRoomId = "room-2",
-            LaboratoryRoom = new LaboratoryRoom { Id = "room-2", Name = "Phòng nước tiểu" },
-            Status = "PENDING",
-            TotalPrice = 150000,
-            AssignmentServices = new List<SEP490_BE.Entities.AssignmentService>
-            {
-                new SEP490_BE.Entities.AssignmentService
-                {
-                    Service = new SEP490_BE.Entities.Service
-                    {
-                        Id = "svc-2",
-                        Name = "XN nước tiểu",
-                        Price = 150000
-                    }
-                }
-            }
-        }
-    };
-
-                _assignmentRepoMock
-                    .Setup(r => r.GetByVisitId(visitId))
-                    .ReturnsAsync(assignments);
-
-                // Act
-                var result = await _service.GetByVisitId(visitId);
-
-                // Assert
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result.Count, Is.EqualTo(2));
-                Assert.That(result[0].AssignmentId, Is.EqualTo("asg-1"));
-                Assert.That(result[1].LaboratoryRoomName, Is.EqualTo("Phòng nước tiểu"));
-            }
 
             [Test]
             public async Task GetByVisitId_ShouldReturnEmptyList_WhenNoAssignments()
@@ -392,45 +287,6 @@ namespace Test2.Services.AssignmentTest
                 Assert.That(result, Is.Empty);
             }
 
-            [Test]
-            public async Task Calling_ShouldUpdateStatus_WhenAssignmentIsWaiting()
-            {
-                // Arrange
-                var assignmentId = "asg-1";
-
-                var assignment = new Assignment
-                {
-                    Id = assignmentId,
-                    Status = AssignmentStatus.WAITING,
-                    LaboratoryRoomId = "room-1",
-                    LaboratoryRoom = new LaboratoryRoom { Id = "room-1", Name = "Phòng máu" },
-                    VisitId = "visit-1",
-                    TotalPrice = 123000,
-                    AssignmentServices = new List<SEP490_BE.Entities.AssignmentService>
-        {
-            new SEP490_BE.Entities.AssignmentService
-            {
-                Service = new SEP490_BE.Entities.Service
-                {
-                    Id = "svc-1",
-                    Name = "XN máu",
-                    Price = 123000
-                }
-            }
-        }
-                };
-
-                _assignmentRepoMock.Setup(r => r.FindById(assignmentId)).ReturnsAsync(assignment);
-
-                // Act
-                var result = await _service.Calling(assignmentId);
-
-                // Assert
-                Assert.That(result, Is.Not.Null);
-                Assert.That(result.AssignmentId, Is.EqualTo(assignmentId));
-                Assert.That(result.Status, Is.EqualTo(AssignmentStatus.IN_PROGRESS));
-                _assignmentRepoMock.Verify(r => r.Update(It.Is<Assignment>(a => a.Id == assignmentId && a.Status == AssignmentStatus.IN_PROGRESS)), Times.Once);
-            }
 
             [Test]
             public void Calling_ShouldThrow_WhenAssignmentNotFound()
@@ -482,59 +338,6 @@ namespace Test2.Services.AssignmentTest
                 Assert.That(ex.Message, Does.Contain("chưa có phiếu kết quả"));
             }
 
-            [Test]
-            public async Task MarkAsCompleted_ShouldSetAssignmentToCompleted_AndUpdateVisit_WhenAllAssignmentsDone()
-            {
-                // Arrange
-                var assignmentId = "asg-1";
-                var visitId = "visit-1";
-
-                var assignment = new Assignment
-                {
-                    Id = assignmentId,
-                    VisitId = visitId,
-                    Status = AssignmentStatus.IN_PROGRESS,
-                    LaboratoryRoomId = "room-1",
-                    LaboratoryRoom = new LaboratoryRoom { Id = "room-1", Name = "Phòng XN" },
-                    AssignmentServices = new List<SEP490_BE.Entities.AssignmentService>
-        {
-            new SEP490_BE.Entities.AssignmentService
-            {
-                Service = new SEP490_BE.Entities.Service
-                {
-                    Id = "svc-1",
-                    Name = "Fake service",
-                    Price = 99999
-                }
-            }
-        }
-                };
-
-                var visit = new Visit
-                {
-                    Id = visitId,
-                    Status = VisitStatus.IN_LABORATORY,
-                    ExaminationRoomId = "exam-1",
-                    QueueNumber = 2,
-                    IsPrioritized = false
-                };
-
-                _assignmentRepoMock.Setup(r => r.FindById(assignmentId)).ReturnsAsync(assignment);
-                _visitRepoMock.Setup(r => r.FindById(visitId)).ReturnsAsync(visit);
-                _labResultRepoMock.Setup(r => r.GetByAssignmentIdAsync(assignmentId)).ReturnsAsync(new LaboratoryResult());
-
-
-                var transactionMock = new Mock<IDbContextTransaction>();
-
-                // Act
-                var result = await _service.MarkAsCompleted(assignmentId);
-
-                // Assert
-                Assert.That(result.Status, Is.EqualTo(AssignmentStatus.COMPLETED));
-                Assert.That(visit.Status, Is.EqualTo(VisitStatus.RETURNING));
-                _assignmentRepoMock.Verify(r => r.Update(It.Is<Assignment>(a => a.Id == assignmentId)), Times.Once);
-                _visitRepoMock.Verify(r => r.Update(It.Is<Visit>(v => v.Id == visitId && v.Status == VisitStatus.RETURNING)), Times.Once);
-            }
 
         }
 

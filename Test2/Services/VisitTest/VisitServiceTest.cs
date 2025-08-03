@@ -472,6 +472,27 @@ namespace Test2.Services.VisitTest
             Assert.That(ex.Message, Is.EqualTo(MessageConstants.VISIT_INVALID_CALLING));
         }
 
+        [Test]
+        public async Task GetByPatientProfileId_ShouldReturnVisit_WhenFound()
+        {
+            var visit = new Visit
+            {
+                Id = "v1",
+                AppointmentId = "a1",
+                ExaminationRoom = new ExaminationRoom { Name = "Phòng A" },
+                AssignedDoctor = new User { Name = "Dr. A" },
+                PatientProfileId = "p1",
+                PatientName = "Nguyen Van B",
+                QueueNumber = 2
+            };
+            _visitRepositoryMock.Setup(r => r.FindByAppointmentId("a1")).ReturnsAsync(visit);
+
+            var result = await _visitService.GetByAppointmentId("a1");
+
+            Assert.AreEqual("v1", result.VisitId);
+            Assert.AreEqual("Phòng A", result.ExaminationRoomName);
+        }
+
     }
 
 
