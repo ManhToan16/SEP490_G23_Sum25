@@ -165,6 +165,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "CREATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -261,6 +262,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "CREATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -357,6 +359,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -418,6 +421,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -475,6 +479,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -567,6 +572,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -580,26 +586,30 @@ namespace SEP490_BE.Services.AppointmentServices
                     {
                         Action = "UPDATE",
                         VisitId = visit.Id,
+                        PatientName = visit.PatientName,
                         ExaminationRoomId = visit.ExaminationRoomId,
                         QueueNumber = visit.QueueNumber,
                         Status = visit.Status,
                         IsPrioritized = visit.IsPrioritized,
                     });
-                }
 
-                if (assignments != null)
-                {
-                    foreach (var asm in assignments)
+                    if (assignments != null)
                     {
-                        await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                        foreach (var asm in assignments)
                         {
-                            Action = "UPDATE",
-                            AssignmentId = asm.Id,
-                            LaboratoryRoomId = asm.LaboratoryRoomId,
-                            Status = asm.Status
-                        });
+                            await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                            {
+                                Action = "UPDATE",
+                                AssignmentId = asm.Id,
+                                PatientName = visit.PatientName,
+                                LaboratoryRoomId = asm.LaboratoryRoomId,
+                                Status = asm.Status
+                            });
+                        }
                     }
                 }
+
+                
             }
             catch
             {
@@ -694,6 +704,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
