@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, Trash2, X, Save } from 'lucide-react';
+import { Plus, Edit, Trash2, X, Save, Search } from 'lucide-react';
 import { adminService } from '@/shared/services/adminService';
 import { useToast } from "@/shared/components/ui/use-toast";
 
@@ -18,13 +18,22 @@ const MaterialTypeManagement: React.FC = () => {
   const [form, setForm] = useState({ name: '', description: '' });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchData = async (pageNumber = 1) => {
     try {
       setLoading(true);
       const res = await adminService.getMaterialTypeList(pageNumber, PAGE_SIZE);
-      setData(res.items);
-      setTotalItems(res.totalItems);
+      // Filter data locally for now
+      let filteredData = res.items;
+      if (searchTerm) {
+        filteredData = filteredData.filter(item => 
+          item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.description.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
+      setData(filteredData);
+      setTotalItems(res.totalItems); // Use totalItems from API
       setPage(res.pageNumber);
     } catch (error: any) {
       console.error('Error fetching material types:', error);
@@ -43,6 +52,12 @@ const MaterialTypeManagement: React.FC = () => {
     fetchData(page);
     // eslint-disable-next-line
   }, [page]);
+
+  useEffect(() => {
+    // Refetch data when search changes
+    fetchData(1);
+    setPage(1);
+  }, [searchTerm]);
 
   const openAdd = () => {
     setModalType('add');
@@ -64,13 +79,21 @@ const MaterialTypeManagement: React.FC = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      if (modalType === 'add') {
-        await adminService.createMaterialType(form);
-      } else if (modalType === 'edit' && current) {
-        await adminService.updateMaterialType(current.id, form);
-      }
-      closeModal();
-      fetchData(page);
+        if (modalType === 'add') {
+          await adminService.createMaterialType(form);
+        } else if (modalType === 'edit' && current) {
+          await adminService.updateMaterialType(current.id, form);
+        }
+      
+        toast({
+          title: "Thành công",
+          description: `${modalType === 'add' ? 'Thêm' : 'Cập nhật'} loại vật tư thành công`,
+          variant: "success",
+        });
+      
+        closeModal();
+        fetchData(page);
+      
     } catch (error: any) {
       console.error('Error submitting material type:', error);
       const message = error?.response?.data?.Message || error?.message || "Không thể lưu loại vật liệu";
@@ -90,6 +113,11 @@ const MaterialTypeManagement: React.FC = () => {
       await adminService.deleteMaterialType(deleteId);
       setDeleteId(null);
       fetchData(page);
+      toast({
+        title: "Thành công",
+        description: "Xóa loại vật tư thành công",
+        variant: "success",
+      });
     } catch (error: any) {
       console.error('Error deleting material type:', error);
       const message = error?.response?.data?.Message || error?.message || "Không thể xóa loại vật liệu";
@@ -104,7 +132,7 @@ const MaterialTypeManagement: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
+    <div className="p-6 max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-clinic-navy">Quản lý loại vật tư</h1>
         <button
@@ -114,31 +142,64 @@ const MaterialTypeManagement: React.FC = () => {
           <Plus size={18} className="mr-2" /> Thêm loại vật tư
         </button>
       </div>
+
+      {/* Search Section */}
+      <div className="bg-white rounded shadow border p-4 mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên hoặc mô tả..."
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+
       <div className="bg-white rounded shadow border">
-        <table className="min-w-full text-sm">
+        <table className="w-full text-sm">
           <thead>
             <tr className="bg-gray-100 text-clinic-navy">
-              <th className="p-3 text-left">Tên loại vật tư</th>
-              <th className="p-3 text-left">Mô tả</th>
-              <th className="p-3 text-center w-32">Thao tác</th>
+              <th className="p-3 text-center w-16">STT</th>
+              <th className="p-3 text-left w-1/5">Tên loại vật tư</th>
+              <th className="p-3 text-left w-1/4">Mô tả</th>
+              <th className="p-3 text-left w-1/6">Ngày tạo</th>
+              <th className="p-3 text-left w-1/6">Ngày cập nhật</th>
+              <th className="p-3 text-center w-20">Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={3} className="text-center p-6">Đang tải...</td></tr>
+              <tr><td colSpan={6} className="text-center p-6">Đang tải...</td></tr>
             ) : data.length === 0 ? (
-              <tr><td colSpan={3} className="text-center p-6">Không có dữ liệu</td></tr>
-            ) : data.map((item) => (
+              <tr><td colSpan={6} className="text-center p-6">Không có dữ liệu</td></tr>
+            ) : data.map((item, index) => (
               <tr key={item.id} className="border-b hover:bg-blue-50">
-                <td className="p-3 font-medium">{item.name}</td>
-                <td className="p-3">{item.description}</td>
+                <td className="p-3 text-center text-gray-600 font-medium">
+                  {(page - 1) * PAGE_SIZE + index + 1}
+                </td>
+                <td className="p-3 font-medium text-clinic-navy">{item.name}</td>
+                <td className="p-3 text-gray-700">{item.description}</td>
+                <td className="p-3 text-gray-600 text-sm">{item.createdAt}</td>
+                <td className="p-3 text-gray-600 text-sm">{item.updatedAt}</td>
                 <td className="p-3 text-center">
-                  <button className="text-blue-600 hover:underline mr-2" onClick={() => openEdit(item)}>
-                    <Edit size={16} />
-                  </button>
-                  <button className="text-red-600 hover:underline" onClick={() => setDeleteId(item.id)}>
-                    <Trash2 size={16} />
-                  </button>
+                  <div className="flex justify-center space-x-2">
+                    <button 
+                      className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors" 
+                      onClick={() => openEdit(item)}
+                      title="Chỉnh sửa"
+                    >
+                      <Edit size={16} />
+                    </button>
+                    <button 
+                      className="p-1 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors" 
+                      onClick={() => setDeleteId(item.id)}
+                      title="Xóa"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -146,23 +207,28 @@ const MaterialTypeManagement: React.FC = () => {
         </table>
       </div>
       {/* Pagination */}
-      <div className="flex justify-end items-center mt-4 space-x-2">
-        <button
-          className="px-3 py-1 rounded border bg-white hover:bg-gray-100"
-          disabled={page === 1}
-          onClick={() => setPage(page - 1)}
-        >
-          Trước
-        </button>
-        <span className="text-sm">Trang {page} / {Math.ceil(totalItems / PAGE_SIZE) || 1}</span>
-        <button
-          className="px-3 py-1 rounded border bg-white hover:bg-gray-100"
-          disabled={page >= Math.ceil(totalItems / PAGE_SIZE)}
-          onClick={() => setPage(page + 1)}
-        >
-          Sau
-        </button>
-      </div>
+              <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-600">
+            Hiển thị {data.length} trong tổng số {totalItems} loại vật tư
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              className="px-3 py-1 rounded border bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+            >
+              Trước
+            </button>
+            <span className="text-sm font-medium">Trang {page} / {Math.ceil(totalItems / PAGE_SIZE)}</span>
+            <button
+              className="px-3 py-1 rounded border bg-white hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={page >= Math.ceil(totalItems / PAGE_SIZE)}
+              onClick={() => setPage(page + 1)}
+            >
+              Sau
+            </button>
+          </div>
+        </div>
       {/* Modal Thêm/Sửa */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
