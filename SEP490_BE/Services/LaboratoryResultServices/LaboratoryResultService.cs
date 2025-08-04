@@ -43,7 +43,7 @@ namespace SEP490_BE.Services.LaboratoryResultServices
             _logRepository = auditLogRepository;
         }
 
-        public async Task<LaboratoryResultResponseDTO> CreateByAssignmentId(string assignmentId)
+        public async Task<LaboratoryResultResponseDTO> CreateByAssignmentId(string assignmentId, LaboratoryResultRequestDTO requestDTO)
         {
             var assignment = await _context.Assignments
                 .Include(a => a.Visit)
@@ -70,7 +70,9 @@ namespace SEP490_BE.Services.LaboratoryResultServices
                 Id = Guid.NewGuid().ToString(),
                 AssignmentId = assignmentId,
                 TechnicianId = technician.Id,
+                Note = requestDTO.Note,
                 ExaminationResultId = examinationResult.Id,
+                UpdatedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             };
 
