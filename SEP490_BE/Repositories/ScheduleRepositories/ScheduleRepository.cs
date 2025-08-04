@@ -21,7 +21,11 @@ namespace SEP490_BE.Repositories.ScheduleRepositories
                             (!toDate.HasValue || s.Date <= toDate.Value.Date))
                 .ToListAsync();
         }
-
+        public async Task<bool> AnyScheduleUsingRoomAsync(string roomId, string roomType)
+        {
+            return await _context.Schedules
+                .AnyAsync(s => s.RoomId == roomId && s.RoomType == roomType);
+        }
         public async Task<List<Schedule>> GetSchedulesByRoomAndDateRangeAsync(string roomId, DateTime? fromDate, DateTime? toDate)
         {
          

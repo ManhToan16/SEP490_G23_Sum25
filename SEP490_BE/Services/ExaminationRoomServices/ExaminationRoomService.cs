@@ -7,6 +7,8 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
+using SEP490_BE.Repositories.ScheduleRepositories;
+using SEP490_BE.Repositories.TransactionRepositories;
 
 namespace SEP490_BE.Services.ExaminationRoomServices
 {
@@ -14,14 +16,19 @@ namespace SEP490_BE.Services.ExaminationRoomServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IExaminationRoomRepository _examinationRoomRepository;
+        private readonly IScheduleRepository _scheduleRepository;
+        private readonly ITransactionRepository _transactionRepository;
 
 
         public ExaminationRoomService(
             KhanhAnNeurologyClinicContext context,
-            IExaminationRoomRepository examinationRoomRepository)
+            IExaminationRoomRepository examinationRoomRepository,
+            IScheduleRepository scheduleRepository,ITransactionRepository transactionRepository)
         {
             _context = context;
             _examinationRoomRepository = examinationRoomRepository;
+            _scheduleRepository = scheduleRepository;
+            _transactionRepository = transactionRepository;
         }
 
         public async Task<Pagination<ExaminationRoomResponseDTO>> GetAll(
@@ -37,7 +44,8 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 {
                     Id = er.Id,
                     Name = er.Name,
-                    Description = er.Description
+                    Description = er.Description,
+                    IsActive = er.IsActive,
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -56,7 +64,9 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
+
             };
         }
 
@@ -91,7 +101,9 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
+
             };
         }
         public async Task<bool> IsExaminationRoomExistsAsync(string name)
@@ -132,7 +144,8 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
             };
         }
 
@@ -144,9 +157,28 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 throw new ResourceNotFoundException("Không tìm thấy phòng khám lâm sàng.");
             }
 
-            await _examinationRoomRepository.DeleteAsync(room);
-            await _context.SaveChangesAsync();
+            var hasSchedule = await _scheduleRepository.AnyScheduleUsingRoomAsync(id, "EXAMINATION");
+
+            bool hasMaterial = await _transactionRepository.AnyTransactionUsingRoomAsync(id, "EXAMINATION");
+
+
+            if (hasSchedule || hasMaterial)
+            {
+                throw new DbUpdateException("Phòng đang được sử dụng. Bạn có chắc chắn muốn xoá không?");
+            }
+
+            try
+            {
+                await _examinationRoomRepository.DeleteAsync(room);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new Exception("Lỗi khi xoá phòng khám: " + ex.InnerException?.Message, ex);
+            }
+
         }
+
         public async Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId)
         {
             var (queues, _) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);
@@ -209,7 +241,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 throw new Exceptions.ArgumentOutOfRangeException("Thời gian phải nằm trong khoảng từ 00:00:00 đến 23:59:59.");
             }
-            var rooms = await _examinationRoomRepository.FindAll(null, null, 1, int.MaxValue).ContinueWith(t => t.Result.Rooms);
+            var rooms = await _examinationRoomRepository.GetActiveRoomsAsync();
             var result = new List<ExaminationRoomWithDoctorDTO>();
 
             foreach (var room in rooms)
@@ -254,6 +286,37 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
             return result;
         }
+        public async Task ActiveExaminationRoom(string id)
+        {
+            var room = await _examinationRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng khám");
+            room.IsActive = true;
+            await _examinationRoomRepository.UpdateAsync(room);
+        }
+
+        public async Task InactiveExaminationRoom(string id)
+        {
+            var room = await _examinationRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng khám");
+            room.IsActive = false;
+            await _examinationRoomRepository.UpdateAsync(room);
+
+        }
+        public async Task<List<ExaminationRoomResponseDTO>> GetActiveExaminationRoomsAsync()
+        {
+            var rooms = await _examinationRoomRepository.GetActiveRoomsAsync();
+
+            var result = rooms.Select(r => new ExaminationRoomResponseDTO
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsActive = r.IsActive
+            }).ToList();
+
+            return result;
+        }
+
 
 
     }

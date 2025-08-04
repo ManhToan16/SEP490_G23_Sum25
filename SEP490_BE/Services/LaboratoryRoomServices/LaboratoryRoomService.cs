@@ -1,9 +1,10 @@
-﻿using SEP490_BE.DTO.LaboratoryRoomDTO;
+﻿using Microsoft.EntityFrameworkCore;
 using SEP490_BE.DTO;
+using SEP490_BE.DTO.ExaminationRoomDTO;
+using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
-using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Services.ServiceServices;
 
 namespace SEP490_BE.Services.LaboratoryRoomServices
@@ -145,5 +146,36 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             await _context.SaveChangesAsync();
         }
 
+
+        public async Task ActiveLaboratoryRoom(string id)
+        {
+            var room = await _laboratoryRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm");
+            room.IsActive = true;
+            await _laboratoryRoomRepository.UpdateAsync(room);
+        }
+
+        public async Task InactiveLaboratoryRoom(string id)
+        {
+            var room = await _laboratoryRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm");
+            room.IsActive = false;
+            await _laboratoryRoomRepository.UpdateAsync(room);
+        }
+        public async Task<List<LaboratoryRoomResponseDTO>> GetActiveLaboratoryRoomsAsync()
+        {
+            var rooms = await _laboratoryRoomRepository
+                .GetActiveRoomsAsync();
+
+            var result = rooms.Select(r => new LaboratoryRoomResponseDTO
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsActive = r.IsActive
+            }).ToList();
+
+            return result;
+        }
     }
 }

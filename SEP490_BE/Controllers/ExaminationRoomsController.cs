@@ -1,10 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SEP490_BE.DTO.ExaminationRoomDTO;
-using SEP490_BE.DTO;
-using SEP490_BE.Services.ExaminationRoomServices;
 using SEP490_BE.Constants;
+using SEP490_BE.DTO;
+using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Hubs;
+using SEP490_BE.Services.ExaminationRoomServices;
 
 
 namespace SEP490_BE.Controllers
@@ -38,7 +39,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { dto }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateExaminationRoom([FromBody] CreateExaminationRoomDTO dto)
         {
@@ -53,7 +54,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { createdDto }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateExaminationRoom(string id, [FromBody] UpdateExaminationRoomDTO dto)
         {
@@ -68,7 +69,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { updatedDto }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteExaminationRoom(string id)
         {
@@ -80,6 +81,19 @@ namespace SEP490_BE.Controllers
                 Success = true,
                 Message = MessageConstants.DELETE_SUCCESS,
                 Data = new List<object>() 
+            });
+        }
+
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            var dto = await _examinationRoomService.GetActiveExaminationRoomsAsync();        
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { dto }
             });
         }
 
@@ -100,7 +114,33 @@ namespace SEP490_BE.Controllers
                 Data = new[] { pagination }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("examination/{id}/active")]
+        public async Task<IActionResult> ActiveExamination(string id)
+        {
+            await _examinationRoomService.ActiveExaminationRoom(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new List<object>()
+            });
+            
+        }
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("examination/{id}/inactive")]
+        public async Task<IActionResult> InactiveExamination(string id)
+        {
+            await _examinationRoomService.InactiveExaminationRoom(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new List<object>()
+            });
+        }
         [HttpGet("ByDate")]
         public async Task<IActionResult> GetExaminationRoomsByDate(
              [FromQuery] TimeSpan time ,

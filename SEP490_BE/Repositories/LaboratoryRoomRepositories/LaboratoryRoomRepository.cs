@@ -46,6 +46,12 @@ namespace SEP490_BE.Repositories.LaboratoryRoomRepositories
 
             return (rooms, totalItems);
         }
+        public async Task<List<LaboratoryRoom>> GetActiveRoomsAsync()
+        {
+            return await _context.LaboratoryRooms
+                .Where(er => er.IsActive == true)
+                .ToListAsync();
+        }
 
         public async Task InsertAsync(LaboratoryRoom room)
         {

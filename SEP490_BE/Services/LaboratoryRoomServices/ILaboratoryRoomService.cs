@@ -1,4 +1,5 @@
 ﻿using SEP490_BE.DTO;
+using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
 
 namespace SEP490_BE.Services.LaboratoryRoomServices
@@ -14,6 +15,9 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
         Task<LaboratoryRoomResponseDTO> Create(CreateLaboratoryRoomDTO request);
         Task<LaboratoryRoomResponseDTO> Update(string id, UpdateLaboratoryRoomDTO request);
         Task Delete(string id);
+        Task ActiveLaboratoryRoom(string id);
+        Task InactiveLaboratoryRoom(string id);
+        Task<List<LaboratoryRoomResponseDTO>> GetActiveLaboratoryRoomsAsync();
 
     }
 }

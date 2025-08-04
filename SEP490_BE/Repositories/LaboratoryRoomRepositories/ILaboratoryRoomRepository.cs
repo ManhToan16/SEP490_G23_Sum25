@@ -10,9 +10,11 @@ namespace SEP490_BE.Repositories.LaboratoryRoomRepositories
             string? description,
             int pageNumber,
             int pageSize);
+        Task<List<LaboratoryRoom>> GetActiveRoomsAsync();
         Task InsertAsync(LaboratoryRoom room);
         Task UpdateAsync(LaboratoryRoom room);
         Task DeleteAsync(LaboratoryRoom room);
         Task<bool> ExistsByNameAsync(string name);
+
     }
 }

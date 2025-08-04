@@ -1,6 +1,7 @@
 ﻿using SEP490_BE.DTO;
 using SEP490_BE.DTO.DoctorProfileDTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
+using SEP490_BE.Entities;
 
 namespace SEP490_BE.Services.ExaminationRoomServices
 {
@@ -19,6 +20,9 @@ namespace SEP490_BE.Services.ExaminationRoomServices
         Task<List<ExaminationRoomWithDoctorDTO>> GetExaminationRoomsByDate(
             TimeSpan time,
             DateTime date);
+        Task ActiveExaminationRoom(string id);
+        Task InactiveExaminationRoom(string id);
+        Task<List<ExaminationRoomResponseDTO>> GetActiveExaminationRoomsAsync();
 
     }
 }

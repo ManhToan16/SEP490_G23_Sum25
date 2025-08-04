@@ -10,5 +10,7 @@ namespace SEP490_BE.Repositories.TransactionRepositories
         Task DeleteAsync(Transaction transaction);
         Task<(List<Transaction> Transactions, int TotalItems)> FindAll(string? materialId, string? transactionType, string? status, int pageNumber, int pageSize);
         Task AddTransactionHistoryAsync(TransactionHistory history);
+        Task<bool> AnyTransactionUsingRoomAsync(string roomId, string roomType);
+
     }
 }
