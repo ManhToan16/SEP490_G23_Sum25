@@ -94,5 +94,12 @@ namespace SEP490_BE.Repositories.ExaminationRoomRepositories
                 .Where(s => s.RoomId == roomId  && s.Date == date.Date)
                 .ToListAsync();
         }
+        public async Task<List<ExaminationRoom>> GetActiveRoomsAsync()
+        {
+            return await _context.ExaminationRooms
+                .Where(er => er.IsActive == true)
+                .ToListAsync();
+        }
+
     }
 }

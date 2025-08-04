@@ -256,6 +256,7 @@ namespace SEP490_BE.Entities
                 entity.Property(e => e.Id).HasMaxLength(100);
 
                 entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.IsActive).HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<LaboratoryFile>(entity =>
@@ -315,6 +316,7 @@ namespace SEP490_BE.Entities
                 entity.Property(e => e.Id).HasMaxLength(100);
 
                 entity.Property(e => e.Name).HasMaxLength(100);
+                entity.Property(e => e.IsActive).HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<Material>(entity =>

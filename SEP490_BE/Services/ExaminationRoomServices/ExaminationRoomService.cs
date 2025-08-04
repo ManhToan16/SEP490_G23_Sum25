@@ -44,7 +44,8 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 {
                     Id = er.Id,
                     Name = er.Name,
-                    Description = er.Description
+                    Description = er.Description,
+                    IsActive = er.IsActive,
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -63,7 +64,9 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
+
             };
         }
 
@@ -98,7 +101,9 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
+
             };
         }
         public async Task<bool> IsExaminationRoomExistsAsync(string name)
@@ -139,7 +144,8 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
             };
         }
 
@@ -280,6 +286,37 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
             return result;
         }
+        public async Task ActiveExaminationRoom(string id)
+        {
+            var room = await _examinationRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng khám");
+            room.IsActive = true;
+            await _examinationRoomRepository.UpdateAsync(room);
+        }
+
+        public async Task InactiveExaminationRoom(string id)
+        {
+            var room = await _examinationRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng khám");
+            room.IsActive = false;
+            await _examinationRoomRepository.UpdateAsync(room);
+
+        }
+        public async Task<List<ExaminationRoomResponseDTO>> GetActiveExaminationRoomsAsync()
+        {
+            var rooms = await _examinationRoomRepository.GetActiveRoomsAsync();
+
+            var result = rooms.Select(r => new ExaminationRoomResponseDTO
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsActive = r.IsActive
+            }).ToList();
+
+            return result;
+        }
+
 
 
     }

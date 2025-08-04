@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using SEP490_BE.DTO.LaboratoryRoomDTO;
-using SEP490_BE.DTO;
-using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Constants;
+using SEP490_BE.DTO;
 using SEP490_BE.DTO.ExaminationRoomDTO;
+using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.Hubs;
+using SEP490_BE.Services.LaboratoryRoomServices;
 
 namespace SEP490_BE.Controllers
 {
@@ -36,7 +37,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { dto }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateLaboratoryRoom([FromBody] CreateLaboratoryRoomDTO dto)
         {
@@ -51,7 +52,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { createdDto }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateLaboratoryRoom(string id, [FromBody] UpdateLaboratoryRoomDTO dto)
         {
@@ -67,7 +68,7 @@ namespace SEP490_BE.Controllers
                 Data = new[] { updatedDto }
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteLaboratoryRoom(string id)
         {
@@ -97,6 +98,45 @@ namespace SEP490_BE.Controllers
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
                 Data = new[] { pagination }
+            });
+        }
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("laboratory/{id}/active")]
+        public async Task<IActionResult> ActiveLaboratory(string id)
+        {
+            await _laboratoryRoomService.ActiveLaboratoryRoom(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.DELETE_SUCCESS,
+                Data = new List<object>()
+            });
+        }
+
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("laboratory/{id}/inactive")]
+        public async Task<IActionResult> InactiveLaboratory(string id)
+        {
+            await _laboratoryRoomService.InactiveLaboratoryRoom(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.DELETE_SUCCESS,
+                Data = new List<object>()
+            });
+        }
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActive()
+        {
+            var dto = await _laboratoryRoomService.GetActiveLaboratoryRoomsAsync();
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { dto }
             });
         }
     }
