@@ -241,7 +241,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
             {
                 throw new Exceptions.ArgumentOutOfRangeException("Thời gian phải nằm trong khoảng từ 00:00:00 đến 23:59:59.");
             }
-            var rooms = await _examinationRoomRepository.FindAll(null, null, 1, int.MaxValue).ContinueWith(t => t.Result.Rooms);
+            var rooms = await _examinationRoomRepository.GetActiveRoomsAsync();
             var result = new List<ExaminationRoomWithDoctorDTO>();
 
             foreach (var room in rooms)
