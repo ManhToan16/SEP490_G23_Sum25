@@ -68,6 +68,7 @@ namespace SEP490_BE.Services.ScheduleServices
 
             return result;
         }
+       
 
         public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime? fromDate, DateTime? toDate)
         {

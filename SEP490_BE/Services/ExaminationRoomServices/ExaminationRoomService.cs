@@ -7,6 +7,8 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
+using SEP490_BE.Repositories.ScheduleRepositories;
+using SEP490_BE.Repositories.TransactionRepositories;
 
 namespace SEP490_BE.Services.ExaminationRoomServices
 {
@@ -14,14 +16,19 @@ namespace SEP490_BE.Services.ExaminationRoomServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IExaminationRoomRepository _examinationRoomRepository;
+        private readonly IScheduleRepository _scheduleRepository;
+        private readonly ITransactionRepository _transactionRepository;
 
 
         public ExaminationRoomService(
             KhanhAnNeurologyClinicContext context,
-            IExaminationRoomRepository examinationRoomRepository)
+            IExaminationRoomRepository examinationRoomRepository,
+            IScheduleRepository scheduleRepository,ITransactionRepository transactionRepository)
         {
             _context = context;
             _examinationRoomRepository = examinationRoomRepository;
+            _scheduleRepository = scheduleRepository;
+            _transactionRepository = transactionRepository;
         }
 
         public async Task<Pagination<ExaminationRoomResponseDTO>> GetAll(
@@ -144,9 +151,28 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 throw new ResourceNotFoundException("Không tìm thấy phòng khám lâm sàng.");
             }
 
-            await _examinationRoomRepository.DeleteAsync(room);
-            await _context.SaveChangesAsync();
+            var hasSchedule = await _scheduleRepository.AnyScheduleUsingRoomAsync(id, "EXAMINATION");
+
+            bool hasMaterial = await _transactionRepository.AnyTransactionUsingRoomAsync(id, "EXAMINATION");
+
+
+            if (hasSchedule || hasMaterial)
+            {
+                throw new DbUpdateException("Phòng đang được sử dụng. Bạn có chắc chắn muốn xoá không?");
+            }
+
+            try
+            {
+                await _examinationRoomRepository.DeleteAsync(room);
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                throw new Exception("Lỗi khi xoá phòng khám: " + ex.InnerException?.Message, ex);
+            }
+
         }
+
         public async Task<List<PatientInRoomDTO>> GetPatientsInRoomAsync(string roomId)
         {
             var (queues, _) = await _examinationRoomRepository.GetPatientsAndDoctorInRoomAsync(roomId, DateTime.Today);

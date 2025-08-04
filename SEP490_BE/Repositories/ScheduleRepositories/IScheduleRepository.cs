@@ -15,5 +15,7 @@ namespace SEP490_BE.Repositories.ScheduleRepositories
         Task<Schedule> CreateAsync(Schedule schedule);
         Task UpdateAsync(Schedule schedule);
         Task DeleteAsync(string id);
+        Task<bool> AnyScheduleUsingRoomAsync(string roomId, string roomType);
+
     }
 }
