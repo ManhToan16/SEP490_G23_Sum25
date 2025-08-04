@@ -54,6 +54,7 @@ export const ROUTES = {
     MATERIAL_MANAGEMENT: '/admin/materials',
     MATERIAL_TYPE_MANAGEMENT: '/admin/material-types',
     PATIENT_LIST: '/admin/patients', // Thêm dòng này
+    SUPPLIER_MANAGEMENT: '/admin/suppliers',
   },
 
   TECHNICIAN: {
@@ -116,6 +117,7 @@ export const NAVIGATION_ITEMS = {
       children: [
         { path: ROUTES.ADMIN.MATERIAL_MANAGEMENT, label: 'Quản lý vật tư', icon: 'Box' },
         { path: ROUTES.ADMIN.MATERIAL_TYPE_MANAGEMENT, label: 'Quản lý loại vật tư', icon: 'Layers' },
+        { path: ROUTES.ADMIN.SUPPLIER_MANAGEMENT, label: 'Quản lý nhà cung cấp', icon: 'Truck' },
       ]
     },
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
