@@ -11,6 +11,7 @@
  * 
  */
 import { api } from "./apiClient";
+import axios from "axios";
 
 export const adminService = {
   // ===============================================
@@ -428,6 +429,35 @@ export const adminService = {
   },
 
   /**
+   * Import lịch làm việc từ file Excel
+   * @param file - File Excel cần import
+   * @param userId - ID của user thực hiện import
+   * @returns Kết quả import
+   */
+  importScheduleFromExcel: async (file: File, userId: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Use axios directly for multipart/form-data
+      const baseURL = (import.meta as any).env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api";
+      const token = localStorage.getItem("clinic_auth_token");
+      
+      const response = await axios.post(`${baseURL}/Schedules/import-create?userId=${userId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      console.error("Error importing schedule from Excel:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
    * Lấy danh sách users theo role
    * @param role - Role cần lọc (Doctor, Nurse, Technician, Receptionist)
    * @returns Danh sách users theo role
@@ -455,7 +485,7 @@ export const adminService = {
   getExaminationRooms: async () => {
     try {
       const response = await api.get(`/ExaminationRooms/active`);
-      return response?.data[0]?.items || [];
+      return response?.data[0]|| [];
     } catch (error: any) {
       console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
       throw error;
@@ -469,7 +499,8 @@ export const adminService = {
   getLaboratoryRooms: async () => {
     try {
       const response = await api.get(`/LaboratoryRooms/active`);
-      return response?.data[0]?.items || [];
+      console.log(response?.data[0]);
+      return response?.data[0]|| [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;
