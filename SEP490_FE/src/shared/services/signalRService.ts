@@ -25,7 +25,7 @@ class SignalRService {
   private initializeConnection() {
     try {
       // Get API URL from environment - BE chạy trên port 5050
-      const apiUrl = (import.meta as any).env.VITE_API_URL || 'http://70.153.24.53:5050/api';
+      const apiUrl = (import.meta as any).env.VITE_API_URL || 'https://be.khanhanclinic.io.vn/api';
       const baseUrl = apiUrl.replace('/api', '');
       const hubUrl = `${baseUrl}/khanhanHub`;
       console.log('Initializing SignalR connection to:', hubUrl);
