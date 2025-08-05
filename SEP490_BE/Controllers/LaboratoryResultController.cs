@@ -35,7 +35,6 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        //[Authorize]
         [HttpGet("examination-result/{examinationResultId}")]
         public async Task<ActionResult<ApiResponse>> GetByExaminationResultId(string examinationResultId)
         {
@@ -49,7 +48,6 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet("assignment/{assignmentId}")]
         public async Task<ActionResult<ApiResponse>> GetByAssignmentId(string assignmentId)
         {
@@ -63,7 +61,6 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse>> GetById(string id)
         {
