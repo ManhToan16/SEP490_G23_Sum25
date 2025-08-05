@@ -26,7 +26,7 @@ namespace Test2.Services.SupplierTest
             _service = new SupplierService(_contextMock.Object, _supplierRepositoryMock.Object);
         }
 
-      \
+      
 
         [Test]
         public void DeleteSupplier_WhenNotExists_ThrowsResourceNotFoundException()
