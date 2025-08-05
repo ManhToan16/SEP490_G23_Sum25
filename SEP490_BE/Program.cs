@@ -77,12 +77,17 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://khanhanclinic.io.vn")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); 
+        policy
+            .WithOrigins(
+                "https://khanhanclinic.io.vn",
+                "http://localhost:3000"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials(); 
     });
 });
+
 
 #endregion
 
