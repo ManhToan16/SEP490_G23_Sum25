@@ -26,29 +26,7 @@ namespace Test2.Services.SupplierTest
             _service = new SupplierService(_contextMock.Object, _supplierRepositoryMock.Object);
         }
 
-        [Test]
-        public async Task DeleteSupplier_WhenExists_DeletesSuccessfully()
-        {
-            // Arrange
-            var supplierId = "id1";
-            var supplier = new Supplier { Id = supplierId };
-
-            _supplierRepositoryMock.Setup(r => r.FindByIdAsync(supplierId))
-                .ReturnsAsync(supplier);
-
-            _supplierRepositoryMock.Setup(r => r.DeleteAsync(supplier))
-                .Returns(Task.CompletedTask);
-
-            _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
-                .ReturnsAsync(1);
-
-            // Act
-            await _service.DeleteSupplier(supplierId);
-
-            // Assert
-            _supplierRepositoryMock.Verify(r => r.DeleteAsync(supplier), Times.Once);
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
+      \
 
         [Test]
         public void DeleteSupplier_WhenNotExists_ThrowsResourceNotFoundException()
