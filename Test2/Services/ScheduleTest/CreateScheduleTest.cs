@@ -148,7 +148,7 @@ namespace Test2.Services.ScheduleTest
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
 
-            var room = new LaboratoryRoom { Id = "lab1", Name = "Phòng Xét Nghiệm" };
+            var room = new LaboratoryRoom { Id = "lab1", Name = "Phòng Xét Nghiệm" , IsActive = true };
             await _context.LaboratoryRooms.AddAsync(room);
             await _context.SaveChangesAsync();
 
@@ -188,7 +188,7 @@ namespace Test2.Services.ScheduleTest
             await _context.Users.AddAsync(user);
             await _context.SaveChangesAsync();
 
-            var room = new LaboratoryRoom { Id = "lab2", Name = "Phòng Lab" };
+            var room = new LaboratoryRoom { Id = "lab2", Name = "Phòng Lab", IsActive = true };
             await _context.LaboratoryRooms.AddAsync(room);
             await _context.SaveChangesAsync();
 
@@ -282,7 +282,7 @@ namespace Test2.Services.ScheduleTest
                 UserRoles = new List<UserRole> { new UserRole { RoleName = "TECHNICIAN" } }
             });
 
-            await _context.ExaminationRooms.AddAsync(new ExaminationRoom { Id = "room1", Name = "Phòng Khám A" });
+            await _context.ExaminationRooms.AddAsync(new ExaminationRoom { Id = "room1", Name = "Phòng Khám A" ,IsActive = true });
             await _context.TimeSlots.AddAsync(new TimeSlot { Id = "TS001", Name = "Ca Sáng", StartTime = new(8, 0, 0), EndTime = new(12, 0, 0) });
             await _context.SaveChangesAsync();
 
@@ -312,7 +312,7 @@ namespace Test2.Services.ScheduleTest
                 UserRoles = new List<UserRole> { new UserRole { RoleName = "DOCTOR" } }
             });
 
-            var room = new ExaminationRoom { Id = "ex1", Name = "Phòng Khám 1" };
+            var room = new ExaminationRoom { Id = "ex1", Name = "Phòng Khám 1",IsActive=true };
             var timeslot = new TimeSlot { Id = "TS001", Name = "Ca Sáng", StartTime = new(8, 0, 0), EndTime = new(12, 0, 0) };
             await _context.ExaminationRooms.AddAsync(room);
             await _context.TimeSlots.AddAsync(timeslot);
