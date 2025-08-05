@@ -94,7 +94,6 @@ namespace SEP490_BE.Controllers
             });
         }
 
-        [Authorize]
         [HttpGet("visitId/{visitId}")]
         public async Task<ActionResult<ApiResponse>> GetByVisitId(string visitId)
         {
