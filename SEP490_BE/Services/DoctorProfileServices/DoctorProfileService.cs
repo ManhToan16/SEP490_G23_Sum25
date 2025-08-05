@@ -155,7 +155,11 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 Qualifications = doctorProfile.Qualifications,
                 YearsOfExperience = doctorProfile.YearsOfExperience,
                 Biography = doctorProfile.Biography,
-                Avatar = doctorProfile.Avatar
+                Avatar = doctorProfile.Avatar,
+                Name = doctorProfile.Doctor?.Name,
+                PhoneNumber = doctorProfile.Doctor?.PhoneNumber,
+                Email = doctorProfile.Doctor?.Email,
+                DateOfBirth = doctorProfile.Doctor?.DateOfBirth
             };
         }
 
@@ -221,7 +225,11 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 Qualifications = doctorProfile.Qualifications,
                 YearsOfExperience = doctorProfile.YearsOfExperience,
                 Biography = doctorProfile.Biography,
-                Avatar = doctorProfile.Avatar
+                Avatar = doctorProfile.Avatar,
+                Name=doctorProfile.Doctor?.Name,
+                PhoneNumber = doctorProfile.Doctor?.PhoneNumber,
+                Email = doctorProfile.Doctor?.Email,
+                DateOfBirth = doctorProfile.Doctor?.DateOfBirth
             };
         }
 
