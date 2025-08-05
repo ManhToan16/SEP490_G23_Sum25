@@ -251,9 +251,9 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseHttpsRedirection();
 
 // tạm thời để dev
-app.UseCors("AllowAllOrigins");
+//app.UseCors("AllowAllOrigins");
 // sau chuyển lại
-// app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend");
 
 app.UseRouting();
 
