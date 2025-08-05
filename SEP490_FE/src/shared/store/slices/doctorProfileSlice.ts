@@ -71,7 +71,7 @@ const doctorProfileSlice = createSlice({
         } else {
           state.profile = action.payload || null;
         }
-        state.success = true;
+        // Don't set success = true for fetch operations
       })
       .addCase(fetchDoctorProfile.rejected, (state, action) => {
         state.loading = false;

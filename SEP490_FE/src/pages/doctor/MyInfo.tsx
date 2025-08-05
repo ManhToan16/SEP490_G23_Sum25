@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Edit3, Save, Award, Loader2, Camera } from 'lucide-react';
-import { Badge } from '@/shared/components/ui/badge';
+import { User, Mail, Phone, Calendar, Edit3, Save, Award, Loader2, Camera } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from "@/shared/store";
 import {
   fetchDoctorProfile,
@@ -10,7 +9,6 @@ import {
   clearError,
   clearSuccess,
 } from "@/shared/store/slices/doctorProfileSlice";
-import { toast } from "sonner";
 import { useToast } from "@/shared/components/ui/use-toast";
 
 // Interface cho doctor profile response (inline type theo yêu cầu)
@@ -106,8 +104,9 @@ const DoctorProfile: React.FC = () => {
   useEffect(() => {
     if (success) {
       toast({
-        title: "Cập nhật hồ sơ thành công!",
-        variant: "success",
+        title: "Thành công",
+        description: "Cập nhật hồ sơ thành công!",
+        variant: "default",
       });
       setIsEditing(false);
       dispatch(clearSuccess());
@@ -120,7 +119,7 @@ const DoctorProfile: React.FC = () => {
       });
       dispatch(clearError());
     }
-  }, [success, error, dispatch]);
+  }, [success, error, dispatch, toast]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -170,11 +169,11 @@ const DoctorProfile: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-clinic-navy mb-2">
             Hồ Sơ Chuyên Môn
           </h1>
           <p className="text-gray-600">
@@ -187,27 +186,27 @@ const DoctorProfile: React.FC = () => {
             <button
               onClick={handleCancel}
               disabled={loading}
-              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              className="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50"
             >
               Hủy
             </button>
           )}
-        <button
-          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-          disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
-        >
-          {loading ? (
-            <Loader2 className="animate-spin" size={20} />
-          ) : isEditing ? (
-            <Save size={20} />
-          ) : (
-            <Edit3 size={20} />
-          )}
-          <span>{loading ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Chỉnh sửa'}</span>
-        </button>
-          </div>
+          <button
+            onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-clinic-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          >
+            {loading ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : isEditing ? (
+              <Save size={20} />
+            ) : (
+              <Edit3 size={20} />
+            )}
+            <span>{loading ? 'Đang lưu...' : isEditing ? 'Lưu thay đổi' : 'Chỉnh sửa'}</span>
+          </button>
         </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column - Basic Info */}
@@ -217,7 +216,7 @@ const DoctorProfile: React.FC = () => {
             <div className="text-center space-y-4">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center mx-auto">
+                <div className="w-24 h-24 bg-clinic-blue rounded-full flex items-center justify-center mx-auto shadow-lg">
                   {profile?.avatar ? (
                     <img 
                       src={profile.avatar} 
@@ -229,8 +228,8 @@ const DoctorProfile: React.FC = () => {
                   )}
                 </div>
                 {isEditing && (
-                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center border border-gray-200">
-                    <Camera size={16} className="text-gray-600" />
+                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center border-2 border-clinic-blue shadow-md hover:bg-gray-50 transition-colors">
+                    <Camera size={16} className="text-clinic-blue" />
                   </button>
                 )}
               </div>
@@ -246,9 +245,9 @@ const DoctorProfile: React.FC = () => {
               </div>
 
               {/* Experience Badge */}
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 rounded-full">
-                <Award size={16} className="text-blue-600" />
-                <span className="text-sm font-medium text-blue-700">
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-clinic-blue/10 rounded-full border border-clinic-blue/20">
+                <Award size={16} className="text-clinic-blue" />
+                <span className="text-sm font-medium text-clinic-blue">
                   {formData.yearsOfExperience || 0} năm kinh nghiệm
                 </span>
               </div>
@@ -303,9 +302,9 @@ const DoctorProfile: React.FC = () => {
                   name="qualifications"
                   value={formData.qualifications}
                   onChange={handleInputChange}
-                    placeholder="VD: Thạc sĩ Y học thần kinh - Đại học Y Dược TP.HCM"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+                  placeholder="VD: Thạc sĩ Y học thần kinh - Đại học Y Dược TP.HCM"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+                />
                 ) : (
                   <p className="text-gray-900 py-2">
                     {formData.qualifications || (
@@ -327,9 +326,9 @@ const DoctorProfile: React.FC = () => {
                   value={formData.yearsOfExperience}
                   onChange={handleInputChange}
                   min="0"
-                    max="50"
-                    placeholder="VD: 5"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  max="50"
+                  placeholder="VD: 5"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
                 />
                 ) : (
                   <p className="text-gray-900 py-2">
@@ -349,9 +348,9 @@ const DoctorProfile: React.FC = () => {
                   value={formData.biography}
                   onChange={handleInputChange}
                   rows={4}
-                    placeholder="VD: Bác sĩ chuyên điều trị các bệnh về thần kinh trung ương và tâm lý như rối loạn lo âu, trầm cảm, và rối loạn giấc ngủ."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  />
+                  placeholder="VD: Bác sĩ chuyên điều trị các bệnh về thần kinh trung ương và tâm lý như rối loạn lo âu, trầm cảm, và rối loạn giấc ngủ."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent resize-none"
+                />
                 ) : (
                   <p className="text-gray-900 py-2 leading-relaxed">
                     {formData.biography || (
@@ -373,7 +372,7 @@ const DoctorProfile: React.FC = () => {
                     value={formData.avatar}
                     onChange={handleInputChange}
                     placeholder="https://example.com/avatar.jpg"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
                   />
                 </div>
               )}
