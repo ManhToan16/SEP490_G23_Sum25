@@ -117,7 +117,7 @@
 
         #region Prescription
         public const string PRESCRIPTION_NOT_FOUND = "Không tìm thấy đơn thuốc.";
-        public const string PRESCRIPTION_INVALID_UPDATE = "Không thể cập nhật phiếu đơn thuốc.";
+        public const string PRESCRIPTION_INVALID_UPDATE = "Không thể cập nhật đơn thuốc.";
         #endregion
 
         #region Labo Result

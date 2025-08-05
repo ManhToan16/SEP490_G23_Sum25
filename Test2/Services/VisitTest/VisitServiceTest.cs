@@ -88,7 +88,7 @@ namespace Test2.Services.VisitTest
             // Arrange
             var today = DateTime.UtcNow.Date;
 
-            var room = new ExaminationRoom { Id = "room1", Name = "Phòng 1" };
+            var room = new ExaminationRoom { Id = "room1", Name = "Phòng 1",IsActive = true };
             var patient = new PatientProfile
             {
                 Id = "patient1",
@@ -349,7 +349,7 @@ namespace Test2.Services.VisitTest
                 Appointment = appointment,
                 AppointmentId = appointment.Id,
                 ExaminationRoomId = "room-1",
-                ExaminationRoom = new ExaminationRoom { Name = "Room A" },
+                ExaminationRoom = new ExaminationRoom { Name = "Room A", IsActive = true },
                 AssignedDoctorId = "doc-1",
                 AssignedDoctor = new User { Name = "Dr. A" },
                 PatientProfileId = "patient-1",
@@ -374,7 +374,8 @@ namespace Test2.Services.VisitTest
                 LaboratoryRoom = new LaboratoryRoom
                 {
                     Id = "room-1",
-                    Name = "Test Room"
+                    Name = "Test Room",
+                    IsActive = true
                 },
                 TotalPrice = 100000,
                 Status = AssignmentStatus.COMPLETED
@@ -421,7 +422,8 @@ namespace Test2.Services.VisitTest
                 LaboratoryRoom = new LaboratoryRoom
                 {
                     Id = "room-1",
-                    Name = "Test Room"
+                    Name = "Test Room",
+                    IsActive = true
                 },
                 TotalPrice = 100000,
                 Status = AssignmentStatus.IN_PROGRESS

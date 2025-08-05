@@ -7,6 +7,7 @@ using SEP490_BE.DTO.ExaminationRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ExaminationRoomRepositories;
+using SEP490_BE.Repositories.RoleRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.TransactionRepositories;
 
@@ -18,17 +19,19 @@ namespace SEP490_BE.Services.ExaminationRoomServices
         private readonly IExaminationRoomRepository _examinationRoomRepository;
         private readonly IScheduleRepository _scheduleRepository;
         private readonly ITransactionRepository _transactionRepository;
-
+        private readonly IRoleRepository _roleRepository;
 
         public ExaminationRoomService(
             KhanhAnNeurologyClinicContext context,
             IExaminationRoomRepository examinationRoomRepository,
-            IScheduleRepository scheduleRepository,ITransactionRepository transactionRepository)
+            IScheduleRepository scheduleRepository,ITransactionRepository transactionRepository,
+            IRoleRepository roleRepository)
         {
             _context = context;
             _examinationRoomRepository = examinationRoomRepository;
             _scheduleRepository = scheduleRepository;
             _transactionRepository = transactionRepository;
+            _roleRepository = roleRepository;
         }
 
         public async Task<Pagination<ExaminationRoomResponseDTO>> GetAll(
@@ -271,6 +274,11 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                         var doctor = await _context.Users.FindAsync(s.UserId);
                         if (doctor != null)
                         {
+                            var roles = await _roleRepository.FindRolesByUser(doctor.Id);
+                            if (roles[0] != RoleConstants.Doctor)
+                            {
+                                continue;
+                            }
                             dto.DoctorId = doctor.Id;
                             dto.DoctorName = doctor.Name;
                             break; 
@@ -286,6 +294,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
 
             return result;
         }
+
         public async Task ActiveExaminationRoom(string id)
         {
             var room = await _examinationRoomRepository.FindByIdAsync(id)

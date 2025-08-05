@@ -12,8 +12,8 @@ namespace SEP490_BE.Entities
 
         public string Id { get; set; } = null!;
         public string Name { get; set; } = null!;
-        public string CategoryId { get; set; } = null!;
-        public string SupplierId { get; set; } = null!;
+        public string? CategoryId { get; set; }
+        public string? SupplierId { get; set; }
         public string Unit { get; set; } = null!;
         public int QuantityInStock { get; set; }
         public int? MaxQuantity { get; set; }
@@ -21,8 +21,8 @@ namespace SEP490_BE.Entities
         public DateTime? UpdatedAt { get; set; }
         public DateTime? CreatedAt { get; set; }
 
-        public virtual Category Category { get; set; } = null!;
-        public virtual Supplier Supplier { get; set; } = null!;
+        public virtual Category? Category { get; set; }
+        public virtual Supplier? Supplier { get; set; }
         public virtual ICollection<Transaction> Transactions { get; set; }
     }
 }
