@@ -93,13 +93,24 @@ namespace SEP490_BE.Services.SupplierServices
         {
             var supplier = await _supplierRepository.FindByIdAsync(id);
             if (supplier == null)
-            {
                 throw new ResourceNotFoundException("Không tìm thấy nhà cung cấp.");
+
+            // 1. Tìm các Material đang tham chiếu tới supplier này
+            var relatedMaterials = await _context.Materials
+                .Where(m => m.SupplierId == id)
+                .ToListAsync();
+
+            // 2. Set SupplierId về null để tránh conflict
+            foreach (var material in relatedMaterials)
+            {
+                material.SupplierId = null;
             }
 
+            // 3. Xoá supplier
             await _supplierRepository.DeleteAsync(supplier);
             await _context.SaveChangesAsync();
         }
+
 
         public async Task<SupplierResponseDTO> GetSupplierById(string id)
         {
