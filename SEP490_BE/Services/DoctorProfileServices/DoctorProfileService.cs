@@ -197,14 +197,21 @@ namespace SEP490_BE.Services.DoctorProfileServices
     tableName: "DoctorProfiles",
     recordId: doctorProfile.Id,
     oldData: oldData,
-    newData: doctorProfile
+    newData: new
+    {
+        doctorProfile.Qualifications,
+        doctorProfile.YearsOfExperience,
+        doctorProfile.Biography,
+        doctorProfile.Avatar
+    }
 );
+
                 await transaction.CommitAsync();
             }
-            catch
+            catch(Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw;
+                throw ex;
             }
 
             return new DoctorProfileResponseDTO
