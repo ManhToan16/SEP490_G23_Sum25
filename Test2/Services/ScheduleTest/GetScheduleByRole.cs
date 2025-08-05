@@ -93,7 +93,8 @@ namespace Test2.Services.ScheduleTest
             await _context.ExaminationRooms.AddAsync(new ExaminationRoom
             {
                 Id = roomId,
-                Name = "Phòng Khám Tổng Quát"
+                Name = "Phòng Khám Tổng Quát",
+                IsActive = true
             });
             await _context.SaveChangesAsync();
             var userId = "user123";

@@ -124,7 +124,7 @@ namespace Test2.Services.ScheduleTest
         {
             var scheduleId = "sch3";
             _scheduleRepoMock.Setup(r => r.FindByIdAsync(scheduleId)).ReturnsAsync(new Schedule { Id = scheduleId, RoomId = "r1" });
-            _context.ExaminationRooms.Add(new ExaminationRoom { Id = "r1",  Name = "Phòng khám 1", });
+            _context.ExaminationRooms.Add(new ExaminationRoom { Id = "r1",  Name = "Phòng khám 1", IsActive = true });
             _context.SaveChanges();
             var updateDto = new UpdateScheduleDTO { RoomId = "r1", TimeSlotId = "invalidTS" };
            var ex = Assert.ThrowsAsync<ResourceNotFoundException>(async () => await _service.UpdateSchedule(scheduleId, updateDto));

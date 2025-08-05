@@ -228,26 +228,19 @@ namespace SEP490_BE.Controllers
             });
         }
         [HttpPost("import-create")]
-        public async Task<IActionResult> ImportAndCreateScheduleRange( IFormFile file,  string userId)
+        public async Task<IActionResult> ImportAndCreateScheduleRange(IFormFile file)
         {
             if (file == null || file.Length == 0)
                 return BadRequest("File Excel không hợp lệ.");
 
-            if (string.IsNullOrWhiteSpace(userId))
-                return BadRequest("UserId không được để trống.");
-            var roles = await _roleRepository.FindRolesByUser(userId);
-            if (roles == null || !roles.Any())
-                return BadRequest("Người dùng không có vai trò nào.");
-            var role = roles.First();
-            if (!(new[] { "DOCTOR", "TECHNICIAN","NURSE" }.Contains(role)))
-                return BadRequest("Chỉ cho phép nhập lịch cho DOCTOR hoặc TECHNICIAN.");
             try
             {
-                var assignments = await _scheduleService.ReadScheduleExcelAsync(file,role);
+                // Đọc file, bên trong ReadScheduleExcelAsync đã tự tìm UserId + Role theo DoctorName
+                var assignments = await _scheduleService.ReadScheduleExcelAsync(file);
 
+                // Gộp dữ liệu để tạo theo range
                 var dto = new CreateScheduleRangeDTO
                 {
-                    UserId = userId,
                     ScheduleAssignments = assignments
                 };
 
@@ -266,47 +259,48 @@ namespace SEP490_BE.Controllers
                 return StatusCode(500, $"Lỗi khi tạo lịch từ Excel: {ex.Message}");
             }
         }
+
         [HttpGet("download-template")]
         public async Task<IActionResult> DownloadScheduleTemplate()
         {
             try
             {
-                // Sử dụng EPPlus để tạo file Excel template (cần install package EPPlus qua NuGet)
                 using var package = new ExcelPackage();
                 var worksheet = package.Workbook.Worksheets.Add("ScheduleTemplate");
 
-                // Định nghĩa các header cho template
+                // Header
                 worksheet.Cells[1, 1].Value = "Date";
                 worksheet.Cells[1, 2].Value = "RoomName";
                 worksheet.Cells[1, 3].Value = "TimeSlotId";
+                worksheet.Cells[1, 4].Value = "DoctorName";
 
-                // Thêm ví dụ dữ liệu mẫu dựa trên hình ảnh
-                worksheet.Cells[2, 1].Value = "8/4/2025";
-                worksheet.Cells[2, 2].Value = "Phòng Khám Tổng Quát B";
+                // Ví dụ dữ liệu mẫu
+                worksheet.Cells[2, 1].Value = "08/05/2025";
+                worksheet.Cells[2, 2].Value = "Phòng Khám Tổng Quát C";
                 worksheet.Cells[2, 3].Value = "TS001";
+                worksheet.Cells[2, 4].Value = "Nguyễn Văn A";
 
-                worksheet.Cells[3, 1].Value = "8/4/2025";
+                worksheet.Cells[3, 1].Value = "08/05/2025";
                 worksheet.Cells[3, 2].Value = "Phòng Khám Tổng Quát C";
                 worksheet.Cells[3, 3].Value = "TS002";
+                worksheet.Cells[3, 4].Value = "Nguyễn Văn A";
 
-                // Tùy chỉnh định dạng (tùy chọn)
-                using (var range = worksheet.Cells[1, 1, 1, 3])
+                // Format header
+                using (var range = worksheet.Cells[1, 1, 1, 4])
                 {
                     range.Style.Font.Bold = true;
                     range.Style.Fill.PatternType = ExcelFillStyle.Solid;
                     range.Style.Fill.BackgroundColor.SetColor(System.Drawing.Color.LightGray);
                 }
 
-                // Định dạng cột Date (nếu cần)
+                // Format Date column
                 worksheet.Column(1).Style.Numberformat.Format = "dd/MM/yyyy";
 
-                // Tự động điều chỉnh độ rộng cột
+                // Auto fit
                 worksheet.Cells.AutoFitColumns();
 
-                // Chuyển workbook thành byte array
                 var excelBytes = await package.GetAsByteArrayAsync();
 
-                // Trả về file
                 return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "ScheduleTemplate.xlsx");
             }
             catch (Exception ex)
@@ -314,6 +308,7 @@ namespace SEP490_BE.Controllers
                 return StatusCode(500, $"Lỗi khi tạo template Excel: {ex.Message}");
             }
         }
+
 
     }
 }
