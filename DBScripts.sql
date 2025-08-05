@@ -84,14 +84,16 @@ CREATE TABLE DoctorProfiles (
 CREATE TABLE ExaminationRooms (
    Id NVARCHAR(100) PRIMARY KEY,
    Name NVARCHAR(100) NOT NULL,
-   Description NVARCHAR(Max)
+   Description NVARCHAR(Max),
+   IsActive BIT DEFAULT 1,
 );
 
 --9
 CREATE TABLE LaboratoryRooms (
    Id NVARCHAR(100) PRIMARY KEY,
    Name NVARCHAR(100) NOT NULL,
-   Description NVARCHAR(Max)
+   Description NVARCHAR(Max),
+   IsActive BIT DEFAULT 1,
 );
 
 --10
