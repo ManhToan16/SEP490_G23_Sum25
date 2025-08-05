@@ -120,10 +120,24 @@ namespace SEP490_BE.Services.MaterialServices
             material.MaxQuantity = request.MaxQuantity ?? material.MaxQuantity;
             material.MinQuantity = request.MinQuantity ?? material.MinQuantity;
             material.UpdatedAt = DateTime.UtcNow;
-            if (await _materialRepository.IsMaterialExistsAsync(material.Name, material.CategoryId, material.SupplierId))
+            bool isChangedKey =
+       (request.Name != null && request.Name != material.Name) ||
+       (request.CategoryId != null && request.CategoryId != material.CategoryId) ||
+       (request.SupplierId != null && request.SupplierId != material.SupplierId);
+
+            if (isChangedKey)
             {
-                throw new InvalidOperationException("Vật tư đã tồn tại.");
+                bool existed = await _materialRepository.IsMaterialExistsAsync(
+                    request.Name ?? material.Name,
+                    request.CategoryId ?? material.CategoryId,
+                    request.SupplierId ?? material.SupplierId);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Vật tư đã tồn tại.");
+                }
             }
+
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try

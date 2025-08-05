@@ -37,13 +37,20 @@ namespace SEP490_BE.Services.DoctorProfileServices
         }
 
         public async Task<Pagination<DoctorProfileResponseDTO>> GetAll(
-            string? qualifications,
-            int? minYearsOfExperience,
-            int? maxYearsOfExperience,
-            int pageNumber,
-            int pageSize)
+      string? qualifications,
+      int? minYearsOfExperience,
+      int? maxYearsOfExperience,
+      int pageNumber,
+      int pageSize)
         {
-            var (doctorProfiles, totalItems) = await _doctorProfileRepository.FindAll(qualifications, minYearsOfExperience, maxYearsOfExperience, pageNumber, pageSize);
+            var (doctorProfiles, totalItems) = await _doctorProfileRepository
+                .FindAll(qualifications, minYearsOfExperience, maxYearsOfExperience, pageNumber, pageSize);
+
+            // Chỉ hiển thị những bác sĩ còn active
+            doctorProfiles = doctorProfiles
+                .Where(dp => dp.Doctor != null && dp.Doctor.IsActive==true)
+                .ToList();
+
             return new Pagination<DoctorProfileResponseDTO>
             {
                 Items = doctorProfiles.Select(dp => new DoctorProfileResponseDTO
@@ -54,7 +61,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                     YearsOfExperience = dp.YearsOfExperience,
                     Biography = dp.Biography,
                     Avatar = dp.Avatar,
-                     Name = dp.Doctor?.Name,
+                    Name = dp.Doctor?.Name,
                     PhoneNumber = dp.Doctor?.PhoneNumber,
                     Email = dp.Doctor?.Email,
                     DateOfBirth = dp.Doctor?.DateOfBirth
@@ -64,6 +71,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 PageSize = pageSize
             };
         }
+
 
         public async Task<DoctorProfileResponseDTO> GetById(string id)
         {

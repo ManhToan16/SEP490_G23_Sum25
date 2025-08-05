@@ -125,10 +125,15 @@ namespace SEP490_BE.Services.ExaminationRoomServices
            
             room.Name = request.Name ?? room.Name;
             room.Description = request.Description ?? room.Description;
-            if (await _examinationRoomRepository.ExistsByNameAsync(room.Name))
+            bool isNameChanged = request.Name != null && request.Name != room.Name;
+            if (isNameChanged)
             {
-                throw new InvalidOperationException("Tên phòng đã tồn tại");
+                if (await _examinationRoomRepository.ExistsByNameAsync(request.Name))
+                {
+                    throw new InvalidOperationException("Tên phòng đã tồn tại.");
+                }
             }
+
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try

@@ -69,10 +69,23 @@ namespace SEP490_BE.Services.MedicineServices
             medicine.Packaging = request.Packaging ?? medicine.Packaging;
             medicine.Unit = request.Unit ?? medicine.Unit;
             medicine.Description = request.Description ?? medicine.Description;
-            if (await _medicineRepository.IsMedicineExistsAsync(medicine.Name, medicine.Strength))
+            // Chỉ kiểm tra trùng nếu người dùng thực sự thay đổi Name hoặc Strength
+            bool isChangedNameOrStrength =
+                (request.Name != null && request.Name != medicine.Name)
+                || (request.Strength != null && request.Strength != medicine.Strength);
+
+            if (isChangedNameOrStrength)
             {
-                throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
+                bool existed = await _medicineRepository.IsMedicineExistsAsync(
+                    request.Name ?? medicine.Name,
+                    request.Strength ?? medicine.Strength);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
+                }
             }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
