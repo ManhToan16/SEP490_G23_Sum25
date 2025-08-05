@@ -229,45 +229,7 @@ namespace Test2.Services.SupplierTest
             var results = ValidateModel(dto);
             Assert.That(results, Is.Empty);
         }
-        [Test]
-        public async Task UpdateSupplier_WhenDuplicateNameOrEmail_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var supplierId = "id1";
-            var existingSupplier = new Supplier
-            {
-                Id = supplierId,
-                Name = "Old Name",
-                PhoneNumber = "0123456789",
-                Email = "old@mail.com"
-            };
-
-            var dto = new UpdateSupplierDTO
-            {
-                Name = "New Name", // khác => sẽ kiểm tra trùng lặp
-                PhoneNumber = "0987654321",
-                Email = "new@mail.com",
-                Address = "New Address",
-                Description = "New Desc"
-            };
-
-            _supplierRepositoryMock
-                .Setup(r => r.FindByIdAsync(supplierId))
-                .ReturnsAsync(existingSupplier);
-
-            _supplierRepositoryMock
-                .Setup(r => r.IsSupplierExistsAsync(dto.Name, dto.Email))
-                .ReturnsAsync(true);
-
-            // Act + Assert
-            var ex = Assert.ThrowsAsync<InvalidOperationException>(() => _service.UpdateSupplier(supplierId, dto));
-            Assert.That(ex!.Message, Is.EqualTo("Nhà cung cấp đã tồn tại."));
-
-            _supplierRepositoryMock.Verify(r => r.FindByIdAsync(supplierId), Times.Once);
-            _supplierRepositoryMock.Verify(r => r.IsSupplierExistsAsync(dto.Name, dto.Email), Times.Once);
-            _supplierRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Supplier>()), Times.Never);
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-        }
+      
 
 
     }

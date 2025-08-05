@@ -337,7 +337,7 @@ namespace SEP490_BE.Entities
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
 
-                entity.Property(e => e.CategoryId).HasMaxLength(100);
+                entity.Property(e => e.CategoryId).HasMaxLength(100).IsRequired(false); ;
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnType("datetime")
@@ -345,7 +345,7 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.Name).HasMaxLength(255);
 
-                entity.Property(e => e.SupplierId).HasMaxLength(100);
+                entity.Property(e => e.SupplierId).HasMaxLength(100).IsRequired(false); ;
 
                 entity.Property(e => e.Unit).HasMaxLength(50);
 

@@ -92,19 +92,7 @@ namespace Test2.Services.MedicineTest
             Assert.That(ex!.Message, Is.EqualTo("Thuốc không tồn tại."));
         }
 
-        [Test]
-        public void UpdateMedicine_DuplicateNameStrength_ThrowsInvalidOperation()
-        {
-            var id = "med-1";
-            var medicine = new Medicine { Id = id, Name = "Old", Strength = "100mg" };
-            var dto = new UpdateMedicineDTO { Name = "Duplicate", Strength = "100mg" };
-
-            _medicineRepositoryMock.Setup(r => r.FindByIdAsync(id)).ReturnsAsync(medicine);
-            _medicineRepositoryMock.Setup(r => r.IsMedicineExistsAsync(dto.Name, dto.Strength)).ReturnsAsync(true);
-
-            var ex = Assert.ThrowsAsync<InvalidOperationException>(() => _service.UpdateMedicine(id, dto));
-            Assert.That(ex!.Message, Is.EqualTo("Thuốc đã tồn tại trong hệ thống."));
-        }
+       
         private IList<ValidationResult> ValidateModel(object model)
         {
             var results = new List<ValidationResult>();

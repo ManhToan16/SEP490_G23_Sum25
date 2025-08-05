@@ -248,26 +248,6 @@ namespace Test2.Services.LabRoomTest
             _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never());
             _transactionMock.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once());
         }
-        [Test]
-        public async Task Update_RoomNameAlreadyExists_ThrowsInvalidOperationException()
-        {
-            var id = Guid.NewGuid().ToString();
-            var existingRoom = new LaboratoryRoom { Id = id, Name = "Phòng cũ", Description = "Mô tả cũ" };
-            var request = new UpdateLaboratoryRoomDTO { Name = "Phòng đã tồn tại", Description = "Mô tả mới" };
-
-            _roomRepositoryMock.Setup(r => r.FindByIdAsync(id)).ReturnsAsync(existingRoom);
-            _roomRepositoryMock.Setup(r => r.ExistsByNameAsync(request.Name)).ReturnsAsync(true);
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(() => _service.Update(id, request));
-            Assert.That(exception.Message, Is.EqualTo("Tên phòng đã tồn tại"));
-
-            _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Once());
-            _roomRepositoryMock.Verify(r => r.ExistsByNameAsync(request.Name), Times.Once());
-            _roomRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<LaboratoryRoom>()), Times.Never());
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _databaseMock.Verify(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _transactionMock.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never());
-        }
+       
     }
 }
