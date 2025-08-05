@@ -48,13 +48,14 @@ export const ROUTES = {
     DASHBOARD: '/admin/dashboard',
     ACCOUNT_MANAGEMENT: '/admin/accounts',
     CLINIC_MANAGEMENT: '/admin/clinic',
-    DOCTOR_FEEDBACK_LIST: '/admin/doctor-feedback',
+    // DOCTOR_FEEDBACK_LIST: '/admin/doctor-feedback',
     DOCTOR_SCHEDULE_MANAGE: '/admin/schedule-manage',
     SYSTEM_LOGS: '/admin/logs',
     MATERIAL_MANAGEMENT: '/admin/materials',
     MATERIAL_TYPE_MANAGEMENT: '/admin/material-types',
     PATIENT_LIST: '/admin/patients', // Thêm dòng này
     SUPPLIER_MANAGEMENT: '/admin/suppliers',
+    MEDICINES_MANAGEMENT: '/admin/medicines',
   },
 
   TECHNICIAN: {
@@ -109,7 +110,7 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.ADMIN.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
     { path: ROUTES.ADMIN.ACCOUNT_MANAGEMENT, label: 'Quản lý tài khoản', icon: 'Users' },
     { path: ROUTES.ADMIN.CLINIC_MANAGEMENT, label: 'Quản lý phòng khám', icon: 'Building' },
-    { path: ROUTES.ADMIN.DOCTOR_FEEDBACK_LIST, label: 'Phản hồi bác sĩ', icon: 'MessageSquare' },
+    // { path: ROUTES.ADMIN.DOCTOR_FEEDBACK_LIST, label: 'Phản hồi bác sĩ', icon: 'MessageSquare' },
     { path: ROUTES.ADMIN.DOCTOR_SCHEDULE_MANAGE, label: 'Lịch làm việc', icon: 'Library' },
     {
       label: 'Quản lý kho',
@@ -120,6 +121,7 @@ export const NAVIGATION_ITEMS = {
         { path: ROUTES.ADMIN.SUPPLIER_MANAGEMENT, label: 'Quản lý nhà cung cấp', icon: 'Truck' },
       ]
     },
+    { path: ROUTES.ADMIN.MEDICINES_MANAGEMENT, label: 'Quản lý thuốc', icon: 'Pill' },
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
     { path: ROUTES.ADMIN.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' }, // Thêm dòng này
   ],

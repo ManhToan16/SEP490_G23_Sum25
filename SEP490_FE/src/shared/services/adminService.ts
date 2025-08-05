@@ -458,6 +458,43 @@ export const adminService = {
   },
 
   /**
+   * Download template Excel cho import lịch làm việc
+   * @returns File Excel template
+   */
+  downloadScheduleTemplate: async () => {
+    try {
+      const baseURL = (import.meta as any).env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api";
+      const token = localStorage.getItem("clinic_auth_token");
+      
+      const response = await axios.get(`${baseURL}/Schedules/download-template`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        responseType: 'blob',
+      });
+      
+      // Create download link
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'ScheduleTemplate.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error("Error downloading schedule template:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
    * Lấy danh sách users theo role
    * @param role - Role cần lọc (Doctor, Nurse, Technician, Receptionist)
    * @returns Danh sách users theo role
@@ -855,6 +892,122 @@ export const adminService = {
       return response.data;
     } catch (error: any) {
       console.error("Error deleting supplier:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // ===============================================
+  // MEDICINE MANAGEMENT - Quản lý thuốc
+  // ===============================================
+  
+  /**
+   * Lấy danh sách thuốc với phân trang
+   * @param pageNumber - Số trang (mặc định: 1)
+   * @param pageSize - Số item trên mỗi trang (mặc định: 10)
+   * @returns {items, totalItems, pageNumber, pageSize}
+   */
+  getMedicineList: async (pageNumber = 1, pageSize = 10) => {
+    try {
+      const response = await api.get(`/Medicines?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      console.log('Medicine API Response:', response);
+      
+      // Handle both array and object response formats
+      let pageData;
+      if (Array.isArray(response.data)) {
+        pageData = response.data[0];
+      } else {
+        pageData = response.data;
+      }
+      
+      return {
+        items: pageData?.items || [],
+        totalItems: pageData?.totalItems || 0,
+        pageNumber: pageData?.pageNumber || 1,
+        pageSize: pageData?.pageSize || 10,
+      };
+    } catch (error: any) {
+      console.error("Error fetching medicine list:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết thuốc theo ID
+   * @param id - ID thuốc
+   * @returns Thông tin chi tiết thuốc
+   */
+  getMedicineById: async (id: string) => {
+    try {
+      const response = await api.get(`/Medicines/${id}`);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error fetching medicine by id:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Tạo thuốc mới
+   * @param medicineData - Thông tin thuốc cần tạo
+   * @param medicineData.name - Tên thuốc
+   * @param medicineData.activeIngredients - Hoạt chất
+   * @param medicineData.strength - Liều lượng
+   * @param medicineData.packaging - Quy cách đóng gói
+   * @param medicineData.unit - Đơn vị
+   * @param medicineData.description - Mô tả
+   * @returns Thuốc đã tạo
+   */
+  createMedicine: async (medicineData: {
+    name: string;
+    activeIngredients: string;
+    strength: string;
+    packaging: string;
+    unit: string;
+    description: string;
+  }) => {
+    try {
+      const response = await api.post('/Medicines', medicineData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error creating medicine:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin thuốc
+   * @param id - ID thuốc cần cập nhật
+   * @param medicineData - Thông tin mới
+   * @returns Thuốc đã cập nhật
+   */
+  updateMedicine: async (id: string, medicineData: {
+    name: string;
+    activeIngredients: string;
+    strength: string;
+    packaging: string;
+    unit: string;
+    description: string;
+  }) => {
+    try {
+      const response = await api.put(`/Medicines/${id}`, medicineData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error updating medicine:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa thuốc
+   * @param id - ID thuốc cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteMedicine: async (id: string) => {
+    try {
+      const response = await api.delete(`/Medicines/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting medicine:", error?.response?.data?.Message || error.message);
       throw error;
     }
   },
