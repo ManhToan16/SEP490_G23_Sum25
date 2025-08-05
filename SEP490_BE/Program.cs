@@ -77,7 +77,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://khanhanclinic.io.vn/api")
+        policy.WithOrigins("https://khanhanclinic.io.vn")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials(); 
