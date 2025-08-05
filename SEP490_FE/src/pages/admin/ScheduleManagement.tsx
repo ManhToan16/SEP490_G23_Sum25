@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
-import { Calendar, Clock, Users, User, Plus, Edit, Save, X, Building, AlertTriangle, Heart, Upload } from 'lucide-react';
+import { Calendar, Clock, Users, User, Plus, Edit, Save, X, Building, AlertTriangle, Heart, Upload, Download } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { adminService } from '@/shared/services/adminService';
@@ -167,6 +167,7 @@ const ScheduleManagement: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   // Hooks
   const { toast } = useToast();
@@ -494,6 +495,30 @@ const ScheduleManagement: React.FC = () => {
       setImportLoading(false);
     }
   }, [selectedFile, getUserIdFromLocalStorage, toast, refreshSchedules]);
+
+  // Handle download template
+  const handleDownloadTemplate = useCallback(async () => {
+    setDownloadLoading(true);
+    try {
+      await adminService.downloadScheduleTemplate();
+      
+      toast({
+        title: "Thành công",
+        description: "Template Excel đã được tải xuống",
+        variant: 'default',
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải template Excel";
+      console.error('Error downloading template:', error);
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [toast]);
 
   const getScheduleForDay = useCallback((day: string, timeSlotId: string) => {
     return apiSchedules.filter(schedule => {
@@ -883,6 +908,22 @@ const ScheduleManagement: React.FC = () => {
                   {selectedFile.name}
                 </span>
               )}
+            </div>
+
+            {/* Download Template Button */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleDownloadTemplate}
+                disabled={downloadLoading}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors disabled:opacity-50"
+              >
+                {downloadLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                ) : (
+                  <Download size={14} />
+                )}
+                <span>{downloadLoading ? 'Đang tải...' : 'Tải template'}</span>
+              </button>
             </div>
 
             {/* View Mode */}
