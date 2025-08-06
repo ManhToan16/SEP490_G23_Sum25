@@ -63,5 +63,11 @@ namespace SEP490_BE.Repositories.MedicineRepositories
             return await _context.Medicines
                 .AnyAsync(m => m.Name.ToLower() == name.ToLower() && m.Strength.ToLower() == strength.ToLower());
         }
+        public async Task<List<Medicine>> GetActiveMedicinesAsync()
+        {
+            return await _context.Medicines
+                .Where(m => m.IsActive==true)     
+                .ToListAsync();
+        }
     }
 }

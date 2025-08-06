@@ -396,6 +396,9 @@ namespace SEP490_BE.Entities
                 entity.Property(e => e.Packaging).HasMaxLength(50);
 
                 entity.Property(e => e.Unit).HasMaxLength(100);
+                entity.Property(e => e.IsActive)
+                  .IsRequired()
+                  .HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<PatientProfile>(entity =>

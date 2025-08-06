@@ -17,6 +17,7 @@ namespace SEP490_BE.Entities
         public string? Packaging { get; set; }
         public string? Unit { get; set; }
         public string? Description { get; set; }
+        public bool? IsActive { get; set; }
 
         public virtual ICollection<PrescriptionItem> PrescriptionItems { get; set; }
     }
