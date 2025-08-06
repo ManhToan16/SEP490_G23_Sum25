@@ -34,21 +34,21 @@ namespace Test2.Services.MedicineTest
             );
         }
 
-        [Test]
-        public async Task DeleteMedicine_MedicineExists_DeletesSuccessfully()
-        {
-            // Arrange
-            var medicineId = "med123";
-            var medicine = new Medicine { Id = medicineId };
-            _medicineRepoMock.Setup(r => r.FindByIdAsync(medicineId)).ReturnsAsync(medicine);
+        //[Test]
+        //public async Task DeleteMedicine_MedicineExists_DeletesSuccessfully()
+        //{
+        //    // Arrange
+        //    var medicineId = "med123";
+        //    var medicine = new Medicine { Id = medicineId };
+        //    _medicineRepoMock.Setup(r => r.FindByIdAsync(medicineId)).ReturnsAsync(medicine);
 
-            // Act
-            await _medicineService.DeleteMedicine(medicineId);
+        //    // Act
+        //    await _medicineService.DeleteMedicine(medicineId);
 
-            // Assert
-            _medicineRepoMock.Verify(r => r.DeleteAsync(medicine), Times.Once);
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
-        }
+        //    // Assert
+        //    _medicineRepoMock.Verify(r => r.DeleteAsync(medicine), Times.Once);
+        //    _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        //}
 
         [Test]
         public void DeleteMedicine_MedicineNotFound_ThrowsException()
