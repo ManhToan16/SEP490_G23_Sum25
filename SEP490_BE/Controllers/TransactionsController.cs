@@ -9,6 +9,8 @@ using SEP490_BE.DTO.TransactionDTO;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Services.TransactionServices;
+using Swashbuckle.AspNetCore.Annotations;
+using System.ComponentModel;
 
 namespace SEP490_BE.Controllers
 {
@@ -28,6 +30,7 @@ namespace SEP490_BE.Controllers
 
         [HttpPost("import")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [SwaggerOperation(Summary = "Tạo phiếu nhập vật tư", Description = "API để tạo phiếu nhập vật tư từ nhà cung cấp")]
         public async Task<IActionResult> CreateImportTransaction([FromBody] ImportMaterialDTO importDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -209,15 +212,15 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAllTransactions([FromQuery] string? materialId = null, [FromQuery] string? transactionType = null, [FromQuery] string? status = null, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetAllTransactions([FromQuery] string? materialId = null, [FromQuery] string? transactionType = null, [FromQuery] string? status = null)
         {
-            var pagination = await _transactionService.GetAllTransactions(materialId, transactionType, status, pageNumber, pageSize);
+            var pagination = await _transactionService.GetAllTransactions(materialId, transactionType, status);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = new[] { pagination }
+                Data = pagination 
             });
         }
         [HttpGet("total-by-room-type")]
@@ -257,6 +260,24 @@ namespace SEP490_BE.Controllers
                     Data = summary
                 });
            
+        }
+        [HttpGet("totalAllRooms")]
+        public async Task<IActionResult> GetTotalProvidedAllRooms()
+        {
+
+            var summary = await _transactionService.GetTotalProvidedForAllRooms();
+            foreach (var item in summary.Where(s => s.IsLowStock))
+            {
+                await _notificationHubService.SendLowStockAlert(item);
+            }
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = summary
+            });
+
         }
         [HttpPost("use")]
         [Authorize(Roles = RoleConstants.Nurse)]
@@ -318,23 +339,24 @@ namespace SEP490_BE.Controllers
             });
         }
         [HttpGet("defective-batches")]
-        public async Task<IActionResult> GetDefectiveBatches([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<IActionResult> GetDefectiveBatches()
         {
+            var items = await _transactionService.GetDefectiveBatches();
 
-                var pagination = await _transactionService.GetDefectiveBatches(pageNumber, pageSize);
-                if (pagination.Items.Any())
-                {
-                    await _notificationHubService.SendTransactionUpdate(pagination.Items.First()); // Gửi thông báo cho lô đầu tiên
-                }
-                return Ok(new ApiResponse
-                {
-                    StatusCode = StatusCodes.Status200OK,
-                    Success = true,
-                    Message = MessageConstants.GET_SUCCESS,
-                    Data = new[] { pagination }
-                });
-        
+            if (items.Any())
+            {
+                await _notificationHubService.SendTransactionUpdate(items.First()); // Gửi thông báo cho lô đầu tiên
+            }
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = items
+            });
         }
+
         [HttpGet("histories")]
         public async Task<IActionResult> GetTransactionHistories([FromQuery] string? transactionId = null)
         {
