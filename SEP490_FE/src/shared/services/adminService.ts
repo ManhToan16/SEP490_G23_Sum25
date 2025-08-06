@@ -1,7 +1,30 @@
-// services/adminService.ts
+/**
+ * Admin Service - Quản lý tất cả API calls cho Admin Dashboard
+ * 
+ * Các chức năng chính:
+ * - User Management (Quản lý người dùng)
+ * - Patient Management (Quản lý bệnh nhân) 
+ * - Schedule Management (Quản lý lịch làm việc)
+ * - Room Management (Quản lý phòng khám)
+ * - Service Management (Quản lý dịch vụ)
+ * - Material/Category Management (Quản lý loại vật tư)
+ * 
+ */
 import { api } from "./apiClient";
+import axios from "axios";
 
 export const adminService = {
+  // ===============================================
+  // USER MANAGEMENT - Quản lý người dùng
+  // ===============================================
+  
+  /**
+   * Lấy danh sách người dùng với phân trang và lọc theo role
+   * @param pageNumber - Số trang (mặc định: 1)
+   * @param pageSize - Số item trên mỗi trang (mặc định: 10)
+   * @param role - Lọc theo role (tùy chọn)
+   * @returns {users, totalItems, pageNumber, pageSize}
+   */
   getListUsers: async (pageNumber = 1, pageSize = 10, role?: string) => {
     try {
       let url = `/User?pageNumber=${pageNumber}&pageSize=${pageSize}`;
@@ -20,6 +43,11 @@ export const adminService = {
     }
   },
 
+  /**
+   * Tạo người dùng mới
+   * @param user - Thông tin người dùng cần tạo
+   * @returns Thông tin người dùng đã tạo
+   */
   createUser: async (user: any) => {
     try {
       const response = await api.post("/User", user);
@@ -30,6 +58,11 @@ export const adminService = {
     }
   },
 
+  /**
+   * Xóa người dùng theo ID
+   * @param userId - ID người dùng cần xóa
+   * @returns Kết quả xóa
+   */
   deleteUser: async (userId: string) => {
     try {
       const response = await api.delete(`/User/${userId}`);
@@ -39,6 +72,12 @@ export const adminService = {
     }
   },
 
+  /**
+   * Cập nhật thông tin người dùng
+   * @param userId - ID người dùng cần cập nhật
+   * @param user - Thông tin mới
+   * @returns Thông tin người dùng đã cập nhật
+   */
   updateUser: async (userId: string, user: any) => {
     try {
       const response = await api.put(`/User/${userId}`, user);
@@ -47,8 +86,13 @@ export const adminService = {
       throw error;
     }
   },
-   
-   activateUser: async (userId: string) => {
+
+  /**
+   * Kích hoạt tài khoản người dùng
+   * @param userId - ID người dùng cần kích hoạt
+   * @returns Kết quả kích hoạt
+   */
+  activateUser: async (userId: string) => {
     try {
       const response = await api.put(`/User/active/${userId}`);
       return response.data;
@@ -57,7 +101,12 @@ export const adminService = {
       throw error;
     }
   },
-  
+
+  /**
+   * Vô hiệu hóa tài khoản người dùng
+   * @param userId - ID người dùng cần vô hiệu hóa
+   * @returns Kết quả vô hiệu hóa
+   */
   deactivateUser: async (userId: string) => {
     try {
       const response = await api.put(`/User/deactive/${userId}`);
@@ -68,7 +117,20 @@ export const adminService = {
     }
   },
 
-  // Patient Management
+  // ===============================================
+  // PATIENT MANAGEMENT - Quản lý bệnh nhân
+  // ===============================================
+  
+  /**
+   * Lấy danh sách bệnh nhân với các bộ lọc
+   * @param params - Object chứa các tham số lọc
+   * @param params.name - Tên bệnh nhân (tùy chọn)
+   * @param params.dateOfBirth - Ngày sinh (tùy chọn)
+   * @param params.citizenId - CMND/CCCD (tùy chọn)
+   * @param params.pageNumber - Số trang (mặc định: 1)
+   * @param params.pageSize - Số item trên mỗi trang (mặc định: 10)
+   * @returns Danh sách bệnh nhân với thông tin phân trang
+   */
   getPatientList: async (
     params: {
       name?: string;
@@ -104,6 +166,7 @@ export const adminService = {
     }
   },
 
+<<<<<<< HEAD
   createPatient: async (patient: {
     name: string;
     citizenId: string;
@@ -113,6 +176,14 @@ export const adminService = {
     gender: string;
     address?: string;
   }) => {
+=======
+  /**
+   * Tạo hồ sơ bệnh nhân mới
+   * @param patientData - Thông tin bệnh nhân cần tạo
+   * @returns Thông tin bệnh nhân đã tạo
+   */
+  createPatient: async (patientData: any) => {
+>>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
     try {
       const response = await api.post("/PatientProfile", patient);
       // Trả về bệnh nhân mới tạo
@@ -123,6 +194,7 @@ export const adminService = {
     }
   },
 
+<<<<<<< HEAD
   updatePatient: async (
     id: string,
     patient: {
@@ -135,6 +207,15 @@ export const adminService = {
       address?: string;
     }
   ) => {
+=======
+  /**
+   * Cập nhật thông tin bệnh nhân
+   * @param id - ID bệnh nhân cần cập nhật
+   * @param patientData - Thông tin mới
+   * @returns Thông tin bệnh nhân đã cập nhật
+   */
+  updatePatient: async (id: string, patientData: any) => {
+>>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
     try {
       const response = await api.put(`/PatientProfile/${id}`, patient);
       // Trả về bệnh nhân đã cập nhật
@@ -144,6 +225,11 @@ export const adminService = {
     }
   },
 
+  /**
+   * Lấy thông tin chi tiết bệnh nhân theo ID
+   * @param id - ID bệnh nhân
+   * @returns Thông tin chi tiết bệnh nhân
+   */
   getPatientById: async (id: string) => {
     try {
       const response = await api.get(`/PatientProfile/${id}`);
@@ -166,7 +252,14 @@ export const adminService = {
     }
   },
 
-  // Time Slots
+  // ===============================================
+  // SCHEDULE MANAGEMENT - Quản lý lịch làm việc
+  // ===============================================
+  
+  /**
+   * Lấy danh sách tất cả time slots
+   * @returns Danh sách time slots
+   */
   getTimeSlots: async () => {
     try {
       const response = await api.get("/TimeSlots");
@@ -177,32 +270,38 @@ export const adminService = {
     }
   },
 
-  // Schedule Management - Updated to match BE
+  /**
+   * Lấy lịch làm việc theo role trong khoảng thời gian
+   * @param role - Role (Doctor, Nurse, Technician, Receptionist)
+   * @param fromDate - Ngày bắt đầu (format: YYYY-MM-DD)
+   * @param toDate - Ngày kết thúc (format: YYYY-MM-DD)
+   * @returns Danh sách lịch làm việc
+   */
   getSchedulesByRole: async (role: string, fromDate: string, toDate: string) => {
     try {
       // Validate inputs
       if (!role || !fromDate || !toDate) {
         throw new Error("Role, fromDate và toDate là bắt buộc");
       }
-      
+
       // Validate date format
       const fromDateObj = new Date(fromDate);
       const toDateObj = new Date(toDate);
-      
+
       if (isNaN(fromDateObj.getTime()) || isNaN(toDateObj.getTime())) {
         throw new Error("Định dạng ngày không hợp lệ");
       }
-      
+
       if (fromDateObj > toDateObj) {
         throw new Error("Ngày bắt đầu không thể sau ngày kết thúc");
       }
-      
+
       const url = `/Schedules/role/${role}?fromDate=${fromDate}&toDate=${toDate}`;
       console.log('📅 API Call:', url);
-      
+
       const response = await api.get(url);
       console.log('📅 API Response:', response.data?.length || 0, 'schedules');
-      
+
       return response.data || [];
     } catch (error: any) {
       const message = error?.response?.data?.Message || error?.message || "Không thể tải lịch làm việc";
@@ -212,6 +311,13 @@ export const adminService = {
     }
   },
 
+  /**
+   * Lấy lịch làm việc của một user cụ thể
+   * @param userId - ID của user
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Danh sách lịch làm việc của user
+   */
   getSchedulesByUserId: async (userId: string, fromDate?: string, toDate?: string) => {
     try {
       let url = `/Schedules/user/${userId}`;
@@ -226,6 +332,13 @@ export const adminService = {
     }
   },
 
+  /**
+   * Lấy lịch làm việc của một phòng cụ thể
+   * @param roomId - ID của phòng
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Danh sách lịch làm việc của phòng
+   */
   getSchedulesByRoomId: async (roomId: string, fromDate?: string, toDate?: string) => {
     try {
       let url = `/Schedules/room/${roomId}`;
@@ -240,6 +353,12 @@ export const adminService = {
     }
   },
 
+  /**
+   * Lấy tất cả lịch làm việc trong khoảng thời gian
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Danh sách tất cả lịch làm việc
+   */
   getAllSchedules: async (fromDate?: string, toDate?: string) => {
     try {
       let url = `/Schedules/range`;
@@ -254,6 +373,15 @@ export const adminService = {
     }
   },
 
+  /**
+   * Tạo lịch làm việc mới
+   * @param scheduleData - Thông tin lịch làm việc
+   * @param scheduleData.userId - ID của user
+   * @param scheduleData.roomId - ID của phòng
+   * @param scheduleData.timeSlotId - ID của time slot
+   * @param scheduleData.date - Ngày làm việc (format: YYYY-MM-DD)
+   * @returns Lịch làm việc đã tạo
+   */
   createSchedule: async (scheduleData: {
     userId: string;
     roomId: string;
@@ -269,6 +397,16 @@ export const adminService = {
     }
   },
 
+  /**
+   * Tạo nhiều lịch làm việc trong khoảng thời gian
+   * @param scheduleRangeData - Thông tin lịch làm việc range
+   * @param scheduleRangeData.userIds - Danh sách ID users
+   * @param scheduleRangeData.roomIds - Danh sách ID phòng
+   * @param scheduleRangeData.timeSlotIds - Danh sách ID time slots
+   * @param scheduleRangeData.fromDate - Ngày bắt đầu
+   * @param scheduleRangeData.toDate - Ngày kết thúc
+   * @returns Danh sách lịch làm việc đã tạo
+   */
   createScheduleRange: async (scheduleRangeData: {
     userIds: string[];
     roomIds: string[];
@@ -285,6 +423,12 @@ export const adminService = {
     }
   },
 
+  /**
+   * Cập nhật lịch làm việc
+   * @param scheduleId - ID lịch làm việc cần cập nhật
+   * @param scheduleData - Thông tin mới
+   * @returns Lịch làm việc đã cập nhật
+   */
   updateSchedule: async (scheduleId: string, scheduleData: any) => {
     try {
       const response = await api.put(`/Schedules/${scheduleId}`, scheduleData);
@@ -295,6 +439,11 @@ export const adminService = {
     }
   },
 
+  /**
+   * Xóa lịch làm việc
+   * @param scheduleId - ID lịch làm việc cần xóa
+   * @returns Kết quả xóa
+   */
   deleteSchedule: async (scheduleId: string) => {
     try {
       const response = await api.delete(`/Schedules/${scheduleId}`);
@@ -305,6 +454,13 @@ export const adminService = {
     }
   },
 
+  /**
+   * Lấy thống kê lịch làm việc theo role
+   * @param role - Role cần thống kê
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Thống kê lịch làm việc
+   */
   getScheduleStatistics: async (role: string, fromDate?: string, toDate?: string) => {
     try {
       let url = `/Schedules/statistics/${role}`;
@@ -319,7 +475,77 @@ export const adminService = {
     }
   },
 
-  // User Management by Role
+  /**
+   * Import lịch làm việc từ file Excel
+   * @param file - File Excel cần import
+   * @param userId - ID của user thực hiện import
+   * @returns Kết quả import
+   */
+  importScheduleFromExcel: async (file: File, userId: string) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      // Use axios directly for multipart/form-data
+      const baseURL = (import.meta as any).env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api";
+      const token = localStorage.getItem("clinic_auth_token");
+      
+      const response = await axios.post(`${baseURL}/Schedules/import-create?userId=${userId}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+      });
+      
+      return response.data;
+    } catch (error: any) {
+      console.error("Error importing schedule from Excel:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Download template Excel cho import lịch làm việc
+   * @returns File Excel template
+   */
+  downloadScheduleTemplate: async () => {
+    try {
+      const baseURL = (import.meta as any).env.VITE_API_URL || "https://be.khanhanclinic.io.vn/api";
+      const token = localStorage.getItem("clinic_auth_token");
+      
+      const response = await axios.get(`${baseURL}/Schedules/download-template`, {
+        headers: {
+          'Authorization': token ? `Bearer ${token}` : '',
+        },
+        responseType: 'blob',
+      });
+      
+      // Create download link
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'ScheduleTemplate.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error("Error downloading schedule template:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách users theo role
+   * @param role - Role cần lọc (Doctor, Nurse, Technician, Receptionist)
+   * @returns Danh sách users theo role
+   */
   getUsersByRole: async (role: string) => {
     try {
       const response = await api.get(`/User/role/${role}`);
@@ -332,32 +558,218 @@ export const adminService = {
     }
   },
 
-  // Room Management
+  // ===============================================
+  // ROOM MANAGEMENT - Quản lý phòng khám
+  // ===============================================
+  
+  /**
+   * Lấy danh sách phòng khám
+   * @returns Danh sách phòng khám
+   */
   getExaminationRooms: async () => {
     try {
-      const response = await api.get(`/ExaminationRooms?pageNumber=1&pageSize=1000`);
-      return response?.data[0]?.items || [];
+      const response = await api.get(`/ExaminationRooms/active`);
+      return response?.data[0]|| [];
     } catch (error: any) {
       console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
       throw error;
     }
   },
 
+  /**
+   * Lấy danh sách phòng xét nghiệm
+   * @returns Danh sách phòng xét nghiệm
+   */
   getLaboratoryRooms: async () => {
     try {
-      const response = await api.get(`/LaboratoryRooms?pageNumber=1&pageSize=1000`);
-      return response?.data[0]?.items || [];
+      const response = await api.get(`/LaboratoryRooms/active`);
+      console.log(response?.data[0]);
+      return response?.data[0]|| [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;
     }
   },
 
-  // Material/Category Management
+  /**
+   * Tạo phòng khám mới
+   * @param data - Thông tin phòng khám
+   * @param data.name - Tên phòng
+   * @param data.description - Mô tả phòng
+   * @returns Phòng khám đã tạo
+   */
+  createExaminationRoom: async (data: { name: string; description: string }) => {
+    const response = await api.post('/ExaminationRooms', data);
+    return response.data;
+  },
+
+  /**
+   * Tạo phòng xét nghiệm mới
+   * @param data - Thông tin phòng xét nghiệm
+   * @param data.name - Tên phòng
+   * @param data.description - Mô tả phòng
+   * @returns Phòng xét nghiệm đã tạo
+   */
+  createLaboratoryRoom: async (data: { name: string; description: string }) => {
+    const response = await api.post('/LaboratoryRooms', data);
+    return response.data;
+  },
+
+  /**
+   * Xóa phòng khám
+   * @param id - ID phòng khám cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteExaminationRoom: async (id: string) => {
+    try {
+      const response = await api.delete(`/ExaminationRooms/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting examination room:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa phòng xét nghiệm
+   * @param id - ID phòng xét nghiệm cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteLaboratoryRoom: async (id: string) => {
+    try {
+      const response = await api.delete(`/LaboratoryRooms/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting laboratory room:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin phòng khám
+   * @param id - ID phòng khám cần cập nhật
+   * @param roomData - Thông tin mới
+   * @returns Phòng khám đã cập nhật
+   */
+  updateExaminationRoom: async (id, roomData) => {
+    const response = await api.put(`/ExaminationRooms/${id}`, roomData);
+    return response.data;
+  },
+
+  /**
+   * Cập nhật thông tin phòng xét nghiệm
+   * @param id - ID phòng xét nghiệm cần cập nhật
+   * @param roomData - Thông tin mới
+   * @returns Phòng xét nghiệm đã cập nhật
+   */
+  updateLaboratoryRoom: async (id, roomData) => {
+    const response = await api.put(`/LaboratoryRooms/${id}`, roomData);
+    return response.data;
+  },
+
+  // ===============================================
+  // SERVICE MANAGEMENT - Quản lý dịch vụ
+  // ===============================================
+  
+  /**
+   * Tạo dịch vụ mới
+   * @param serviceData - Thông tin dịch vụ cần tạo
+   * @returns Dịch vụ đã tạo
+   */
+  createService: async (serviceData: any) => {
+    try {
+      const response = await api.post('/Services', serviceData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error creating service:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin dịch vụ
+   * @param id - ID dịch vụ cần cập nhật
+   * @param serviceData - Thông tin mới
+   * @returns Dịch vụ đã cập nhật
+   */
+  updateService: async (id: string, serviceData: any) => {
+    try {
+      const response = await api.put(`/Services/${id}`, serviceData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error updating service:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa dịch vụ
+   * @param id - ID dịch vụ cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteService: async (id: string) => {
+    try {
+      const response = await api.delete(`/Services/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting service:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết dịch vụ
+   * @param id - ID dịch vụ
+   * @returns Thông tin chi tiết dịch vụ
+   */
+  getService: async (id: string) => {
+    try {
+      const response = await api.get(`/Services/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching service:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách tất cả dịch vụ
+   * @returns Danh sách tất cả dịch vụ
+   */
+  getAllServices: async () => {
+    try {
+      const response = await api.get('/Services');
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching all services:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách dịch vụ theo phòng
+   * @param roomId - ID phòng
+   * @returns Danh sách dịch vụ của phòng
+   */
+  getServicesByRoomId: async (roomId: string) => {
+    const res = await api.get(`/Services/room/${roomId}`);
+    return res.data[0];
+  },
+
+  // ===============================================
+  // MATERIAL/CATEGORY MANAGEMENT - Quản lý loại vật tư
+  // ===============================================
+  
+  /**
+   * Lấy danh sách loại vật tư với phân trang
+   * @param pageNumber - Số trang (mặc định: 1)
+   * @param pageSize - Số item trên mỗi trang (mặc định: 10)
+   * @returns {items, totalItems, pageNumber, pageSize}
+   */
   getMaterialTypeList: async (pageNumber = 1, pageSize = 10) => {
     try {
       const response = await api.get(`/Categories?pageNumber=${pageNumber}&pageSize=${pageSize}`);
-      const pageData = response.data?.data?.[0];
+      const pageData = response.data?.[0];
       return {
         items: pageData?.items || [],
         totalItems: pageData?.totalItems || 0,
@@ -370,6 +782,11 @@ export const adminService = {
     }
   },
 
+  /**
+   * Lấy thông tin chi tiết loại vật tư
+   * @param id - ID loại vật tư
+   * @returns Thông tin chi tiết loại vật tư
+   */
   getMaterialTypeDetail: async (id: string) => {
     try {
       const response = await api.get(`/Categories/${id}`);
@@ -380,6 +797,13 @@ export const adminService = {
     }
   },
 
+  /**
+   * Tạo loại vật tư mới
+   * @param data - Thông tin loại vật tư
+   * @param data.name - Tên loại vật tư
+   * @param data.description - Mô tả loại vật tư
+   * @returns Loại vật tư đã tạo
+   */
   createMaterialType: async (data: { name: string; description: string }) => {
     try {
       const response = await api.post('/Categories', data);
@@ -390,6 +814,14 @@ export const adminService = {
     }
   },
 
+  /**
+   * Cập nhật thông tin loại vật tư
+   * @param id - ID loại vật tư cần cập nhật
+   * @param data - Thông tin mới
+   * @param data.name - Tên loại vật tư
+   * @param data.description - Mô tả loại vật tư
+   * @returns Loại vật tư đã cập nhật
+   */
   updateMaterialType: async (id: string, data: { name: string; description: string }) => {
     try {
       const response = await api.put(`/Categories/${id}`, data);
@@ -400,6 +832,11 @@ export const adminService = {
     }
   },
 
+  /**
+   * Xóa loại vật tư
+   * @param id - ID loại vật tư cần xóa
+   * @returns Kết quả xóa
+   */
   deleteMaterialType: async (id: string) => {
     try {
       const response = await api.delete(`/Categories/${id}`);
@@ -410,6 +847,7 @@ export const adminService = {
     }
   },
 
+<<<<<<< HEAD
   // Lấy hồ sơ bệnh án theo patientProfileId
   getByPatientProfileMedicalRecord: async (patientProfileId: string) => {
     try {
@@ -417,10 +855,27 @@ export const adminService = {
       return response.data?.data?.[0];
     } catch (error: any) {
       console.error("Error fetching medical record by patient profile:", error?.response?.data?.message || error.message);
+=======
+  // ===============================================
+  // SUPPLIER MANAGEMENT - Quản lý nhà cung cấp
+  // ===============================================
+  
+  /**
+   * Lấy danh sách tất cả nhà cung cấp
+   * @returns Danh sách nhà cung cấp
+   */
+  getSupplierList: async () => {
+    try {
+      const response = await api.get('/Suppliers');
+      return response.data|| [];
+    } catch (error: any) {
+      console.error("Error fetching supplier list:", error?.response?.data?.Message || error.message);
+>>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
       throw error;
     }
   },
 
+<<<<<<< HEAD
   // Lấy lịch sử khám theo patientProfileId
   getByPatientProfileVisit: async (patientProfileId: string) => {
     try {
@@ -428,6 +883,198 @@ export const adminService = {
       return response.data?.data?.[0];
     } catch (error: any) {
       console.error("Error fetching visit by patient profile:", error?.response?.data?.message || error.message);
+=======
+  /**
+   * Lấy thông tin chi tiết nhà cung cấp theo ID
+   * @param id - ID nhà cung cấp
+   * @returns Thông tin chi tiết nhà cung cấp
+   */
+  getSupplierById: async (id: string) => {
+    try {
+      const response = await api.get(`/Suppliers/${id}`);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error fetching supplier by id:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Tạo nhà cung cấp mới
+   * @param supplierData - Thông tin nhà cung cấp
+   * @param supplierData.name - Tên nhà cung cấp
+   * @param supplierData.phoneNumber - Số điện thoại
+   * @param supplierData.email - Email
+   * @param supplierData.address - Địa chỉ
+   * @param supplierData.description - Mô tả
+   * @returns Nhà cung cấp đã tạo
+   */
+  createSupplier: async (supplierData: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+    address: string;
+    description: string;
+  }) => {
+    try {
+      const response = await api.post('/Suppliers', supplierData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error creating supplier:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin nhà cung cấp
+   * @param id - ID nhà cung cấp cần cập nhật
+   * @param supplierData - Thông tin mới
+   * @returns Nhà cung cấp đã cập nhật
+   */
+  updateSupplier: async (id: string, supplierData: {
+    name: string;
+    phoneNumber: string;
+    email: string;
+    address: string;
+    description: string;
+  }) => {
+    try {
+      const response = await api.put(`/Suppliers/${id}`, supplierData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error updating supplier:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa nhà cung cấp
+   * @param id - ID nhà cung cấp cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteSupplier: async (id: string) => {
+    try {
+      const response = await api.delete(`/Suppliers/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting supplier:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // ===============================================
+  // MEDICINE MANAGEMENT - Quản lý thuốc
+  // ===============================================
+  
+  /**
+   * Lấy danh sách thuốc với phân trang
+   * @param pageNumber - Số trang (mặc định: 1)
+   * @param pageSize - Số item trên mỗi trang (mặc định: 10)
+   * @returns {items, totalItems, pageNumber, pageSize}
+   */
+  getMedicineList: async (pageNumber = 1, pageSize = 10) => {
+    try {
+      const response = await api.get(`/Medicines?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      console.log('Medicine API Response:', response);
+      
+      // Handle both array and object response formats
+      let pageData;
+      if (Array.isArray(response.data)) {
+        pageData = response.data[0];
+      } else {
+        pageData = response.data;
+      }
+      
+      return {
+        items: pageData?.items || [],
+        totalItems: pageData?.totalItems || 0,
+        pageNumber: pageData?.pageNumber || 1,
+        pageSize: pageData?.pageSize || 10,
+      };
+    } catch (error: any) {
+      console.error("Error fetching medicine list:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết thuốc theo ID
+   * @param id - ID thuốc
+   * @returns Thông tin chi tiết thuốc
+   */
+  getMedicineById: async (id: string) => {
+    try {
+      const response = await api.get(`/Medicines/${id}`);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error fetching medicine by id:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Tạo thuốc mới
+   * @param medicineData - Thông tin thuốc cần tạo
+   * @param medicineData.name - Tên thuốc
+   * @param medicineData.activeIngredients - Hoạt chất
+   * @param medicineData.strength - Liều lượng
+   * @param medicineData.packaging - Quy cách đóng gói
+   * @param medicineData.unit - Đơn vị
+   * @param medicineData.description - Mô tả
+   * @returns Thuốc đã tạo
+   */
+  createMedicine: async (medicineData: {
+    name: string;
+    activeIngredients: string;
+    strength: string;
+    packaging: string;
+    unit: string;
+    description: string;
+  }) => {
+    try {
+      const response = await api.post('/Medicines', medicineData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error creating medicine:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin thuốc
+   * @param id - ID thuốc cần cập nhật
+   * @param medicineData - Thông tin mới
+   * @returns Thuốc đã cập nhật
+   */
+  updateMedicine: async (id: string, medicineData: {
+    name: string;
+    activeIngredients: string;
+    strength: string;
+    packaging: string;
+    unit: string;
+    description: string;
+  }) => {
+    try {
+      const response = await api.put(`/Medicines/${id}`, medicineData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error updating medicine:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa thuốc
+   * @param id - ID thuốc cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteMedicine: async (id: string) => {
+    try {
+      const response = await api.delete(`/Medicines/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting medicine:", error?.response?.data?.Message || error.message);
+>>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
       throw error;
     }
   },

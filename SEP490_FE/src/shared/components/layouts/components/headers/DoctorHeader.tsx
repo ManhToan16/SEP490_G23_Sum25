@@ -77,7 +77,7 @@ const DoctorHeader: React.FC = () => {
               </Avatar>
               <div className="text-left">
                 <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-gray-500">Bác sĩ chuyên khoa</p>
+                <p className="text-xs text-gray-500">{user?.unique_name}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>

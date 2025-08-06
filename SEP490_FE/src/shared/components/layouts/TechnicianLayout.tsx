@@ -19,9 +19,13 @@ const TechnicianLayout: React.FC<TechnicianLayoutProps> = ({
       header={<TechnicianHeader />}
       sidebar={<TechnicianSidebar />}
     >
+<<<<<<< HEAD
       <div className="flex-1 p-6">
         {children}
       </div>
+=======
+      {children}
+>>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
     </BaseLayout>
   );
 };

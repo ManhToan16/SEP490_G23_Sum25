@@ -84,16 +84,28 @@ namespace SEP490_BE.Services.CategoryServices
 
         public async Task DeleteCategory(string id)
         {
-         var category = await _categoryRepository.FindByIdAsync(id);
+            var category = await _categoryRepository.FindByIdAsync(id);
             if (category == null)
             {
                 throw new ResourceNotFoundException("Danh mục không tồn tại.");
             }
 
+            // 1. Tìm các Material đang sử dụng category này
+            var relatedMaterials = await _context.Materials
+                .Where(m => m.CategoryId == id)
+                .ToListAsync();
+
+            // 2. Set CategoryId về null
+            foreach (var material in relatedMaterials)
+            {
+                material.CategoryId = null;
+            }
+
+            // 3. Xóa danh mục
             await _categoryRepository.DeleteAsync(category);
             await _context.SaveChangesAsync();
-
         }
+
 
         public async Task<CategoryResponseDTO> GetCategoryById(string id)
         {

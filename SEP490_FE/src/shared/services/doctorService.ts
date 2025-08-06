@@ -1,11 +1,12 @@
 import { api } from "./apiClient";
 
-// Đơn giản hóa Doctor Service
+// Doctor Service với API endpoints chính xác
 export const doctorService = {
   // Lấy thông tin doctor profile theo ID
   getDoctorProfile: async (doctorId: string) => {
     try {
-      return await api.get(`/Doctor/Profiles/${doctorId}`);
+      const response = await api.get(`/Doctor/Profiles/${doctorId}`);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -24,7 +25,8 @@ export const doctorService = {
   // Tạo doctor profile
   createDoctorProfile: async (profileData: any) => {
     try {
-      return await api.post("/Doctor/Profiles", profileData);
+      const response = await api.post("/Doctor/Profiles", profileData);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -33,7 +35,8 @@ export const doctorService = {
   // Cập nhật doctor profile
   updateDoctorProfile: async (doctorId: string, profileData: any) => {
     try {
-      return await api.put(`/Doctor/Profiles/${doctorId}`, profileData);
+      const response = await api.put(`/Doctor/Profiles/${doctorId}`, profileData);
+      return response;
     } catch (error) {
       throw error;
     }
@@ -42,7 +45,8 @@ export const doctorService = {
   // Xóa doctor profile
   deleteDoctorProfile: async (doctorId: string) => {
     try {
-      return await api.delete(`/Doctor/Profiles/${doctorId}`);
+      const response = await api.delete(`/Doctor/Profiles/${doctorId}`);
+      return response;
     } catch (error) {
       throw error;
     }

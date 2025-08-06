@@ -41,7 +41,6 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> GetServicesByRoom(string roomId)
         {
             var dto = await _serviceService.GetByRoom(roomId);
-            var data = dto != null ? new List<ServiceResponseDTO> { dto } : new List<ServiceResponseDTO>();
 
             return Ok(new ApiResponse
             {

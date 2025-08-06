@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
-import { Calendar, Clock, Users, User, Plus, Edit, Save, X, Building, AlertTriangle, Heart } from 'lucide-react';
+import { Calendar, Clock, Users, User, Plus, Edit, Save, X, Building, AlertTriangle, Heart, Upload, Download } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { adminService } from '@/shared/services/adminService';
@@ -165,6 +165,9 @@ const ScheduleManagement: React.FC = () => {
   const [editStatus, setEditStatus] = useState('SCHEDULED');
   const [statistics, setStatistics] = useState<any>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   // Hooks
   const { toast } = useToast();
@@ -400,6 +403,122 @@ const ScheduleManagement: React.FC = () => {
       default: return 'nhân viên';
     }
   }, [activeTab]);
+
+  // Helper function to get userId from localStorage
+  const getUserIdFromLocalStorage = useCallback(() => {
+    try {
+      const userData = localStorage.getItem('clinic_user_data');
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        return parsedData.UserId;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing localStorage data:', error);
+      return null;
+    }
+  }, []);
+
+  // Handle file selection
+  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Check if file is Excel
+      const validTypes = [
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel',
+        'application/vnd.ms-excel.sheet.macroEnabled.12'
+      ];
+      
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Lỗi định dạng file",
+          description: "Vui lòng chọn file Excel (.xlsx, .xls)",
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      setSelectedFile(file);
+    }
+  }, [toast]);
+
+  // Handle import Excel file
+  const handleImportExcel = useCallback(async () => {
+    if (!selectedFile) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn file Excel để import",
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const userId = getUserIdFromLocalStorage();
+    if (!userId) {
+      toast({
+        title: "Lỗi",
+        description: "Không thể lấy thông tin người dùng",
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setImportLoading(true);
+    try {
+      await adminService.importScheduleFromExcel(selectedFile, userId);
+      
+      toast({
+        title: "Thành công",
+        description: "Import lịch làm việc thành công",
+        variant: 'default',
+      });
+      
+      // Refresh schedules after import
+      await refreshSchedules();
+      setSelectedFile(null);
+      
+      // Reset file input
+      const fileInput = document.getElementById('excel-file-input') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể import file Excel";
+      console.error('Error importing Excel:', error);
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setImportLoading(false);
+    }
+  }, [selectedFile, getUserIdFromLocalStorage, toast, refreshSchedules]);
+
+  // Handle download template
+  const handleDownloadTemplate = useCallback(async () => {
+    setDownloadLoading(true);
+    try {
+      await adminService.downloadScheduleTemplate();
+      
+      toast({
+        title: "Thành công",
+        description: "Template Excel đã được tải xuống",
+        variant: 'default',
+      });
+    } catch (error: any) {
+      const message = error?.response?.data?.Message || error?.message || "Không thể tải template Excel";
+      console.error('Error downloading template:', error);
+      toast({
+        title: "Lỗi",
+        description: message,
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [toast]);
 
   const getScheduleForDay = useCallback((day: string, timeSlotId: string) => {
     return apiSchedules.filter(schedule => {
@@ -753,6 +872,59 @@ const ScheduleManagement: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
+
+            {/* Import Excel Button */}
+            <div className="flex items-center space-x-2">
+              <input
+                id="excel-file-input"
+                type="file"
+                accept=".xlsx,.xls"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <button
+                onClick={() => document.getElementById('excel-file-input')?.click()}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
+              >
+                <Upload size={14} />
+                <span>Chọn file Excel</span>
+              </button>
+              {selectedFile && (
+                <button
+                  onClick={handleImportExcel}
+                  disabled={importLoading}
+                  className="flex items-center space-x-1 px-3 py-1.5 bg-clinic-blue text-white rounded text-sm hover:bg-blue-600 transition-colors disabled:opacity-50"
+                >
+                  {importLoading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                  ) : (
+                    <Upload size={14} />
+                  )}
+                  <span>{importLoading ? 'Đang import...' : 'Import'}</span>
+                </button>
+              )}
+              {selectedFile && (
+                <span className="text-xs text-gray-600">
+                  {selectedFile.name}
+                </span>
+              )}
+            </div>
+
+            {/* Download Template Button */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleDownloadTemplate}
+                disabled={downloadLoading}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors disabled:opacity-50"
+              >
+                {downloadLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                ) : (
+                  <Download size={14} />
+                )}
+                <span>{downloadLoading ? 'Đang tải...' : 'Tải template'}</span>
+              </button>
+            </div>
 
             {/* View Mode */}
             <div className="flex bg-gray-100 rounded-lg p-1">
@@ -1174,7 +1346,7 @@ const ScheduleManagement: React.FC = () => {
                 className="flex items-center space-x-1 px-3 py-1.5 bg-clinic-blue text-white rounded text-sm hover:bg-blue-600"
                 disabled={editLoading}
               >
-                {editLoading ? <span className="loader mr-1"></span> : <Save size={14} />}
+                {editLoading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div> : <Save size={14} />}
                 <span>Cập nhật</span>
               </button>
             </div>
@@ -1201,7 +1373,7 @@ const ScheduleManagement: React.FC = () => {
                 className="flex items-center space-x-1 px-3 py-1.5 bg-red-600 text-white rounded text-sm hover:bg-red-700"
                 disabled={deleteLoading}
               >
-                {deleteLoading ? <span className="loader mr-1"></span> : <X size={14} />}
+                {deleteLoading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div> : <X size={14} />}
                 <span>Xóa</span>
               </button>
         </div>

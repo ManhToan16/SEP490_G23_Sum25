@@ -77,12 +77,16 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("https://khanhanclinic.io.vn")
-              .AllowAnyHeader()
-              .AllowAnyMethod()
-              .AllowCredentials(); 
+        policy
+            .WithOrigins(
+                "https://khanhanclinic.io.vn",
+                "http://localhost:3000"
+            )
+            .AllowAnyHeader()
+            .AllowAnyMethod(); 
     });
 });
+
 
 #endregion
 
@@ -251,9 +255,9 @@ app.UseMiddleware<GlobalExceptionHandler>();
 app.UseHttpsRedirection();
 
 // tạm thời để dev
-app.UseCors("AllowAllOrigins");
+//app.UseCors("AllowAllOrigins");
 // sau chuyển lại
-// app.UseCors("AllowFrontend");
+app.UseCors("AllowFrontend");
 
 app.UseRouting();
 

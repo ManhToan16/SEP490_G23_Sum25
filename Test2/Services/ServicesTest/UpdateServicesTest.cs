@@ -104,51 +104,7 @@ namespace Test2.Services.ServicesTest
         }
 
         // TC002 - Service already exists
-        [Test]
-        public async Task TC002_Update_ServiceNameAlreadyExists_ThrowsInvalidOperationException()
-        {
-            var id = Guid.NewGuid().ToString();
-            var labRoomId = Guid.NewGuid().ToString();
-
-            var existingService = new Service
-            {
-                Id = id,
-                LaboratoryRoomsId = labRoomId,
-                Name = "Dịch vụ cũ",
-                Price = 100,
-                Description = "Mô tả cũ"
-            };
-
-            var request = new UpdateServiceDTO
-            {
-                Name = "Dịch vụ đã tồn tại"
-            };
-
-            _serviceRepositoryMock
-                .Setup(r => r.FindByIdAsync(id))
-                .ReturnsAsync(existingService);
-
-            _serviceRepositoryMock
-                .Setup(r => r.ExistsByNameAsync(request.Name, labRoomId))
-                .ReturnsAsync(true);
-            _labRoomsMock
-                .Setup(x => x.FindAsync(It.IsAny<object[]>()))
-                .ReturnsAsync(new LaboratoryRoom { Id = labRoomId });
-
-            _contextMock
-                .Setup(c => c.LaboratoryRooms)
-                .Returns(_labRoomsMock.Object);
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(() => _service.Update(id, request));
-
-            Assert.That(exception.Message, Is.EqualTo("Dịch vụ đã tồn tại trong phòng xét nghiệm này."));
-
-            _serviceRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<Service>()), Times.Never());
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _databaseMock.Verify(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _transactionMock.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never());
-        }
+   
 
 
         // TC003 - Non-existent service

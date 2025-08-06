@@ -68,6 +68,7 @@ namespace SEP490_BE.Services.ScheduleServices
 
             return result;
         }
+       
 
         public async Task<List<ScheduleResponseDTO>> GetSchedulesByRoomId(string roomId, DateTime? fromDate, DateTime? toDate)
         {
@@ -177,15 +178,9 @@ namespace SEP490_BE.Services.ScheduleServices
 
         public async Task<List<ScheduleResponseDTO>> CreateScheduleRange(CreateScheduleRangeDTO request)
         {
-            var user = await _context.Users
-                .Include(u => u.UserRoles)
-                .FirstOrDefaultAsync(u => u.Id == request.UserId);
-            if (user == null)
-            {
-                throw new ResourceNotFoundException("Không tìm thấy người dùng.");
-            }
+          
 
-            var userRole = user.UserRoles.First().RoleName;
+            //var userRole = user.UserRoles.First().RoleName;
 
             if (request.ScheduleAssignments == null || !request.ScheduleAssignments.Any())
             {
@@ -198,7 +193,7 @@ namespace SEP490_BE.Services.ScheduleServices
             {
                 var date = assignment.Date.Date;
                 var hasSameTimeSlot = await _context.Schedules.AnyAsync(s =>
-                    s.UserId == request.UserId &&
+                    s.UserId == assignment.UserId &&
                     s.Date == date &&
                     s.TimeSlotId == assignment.TimeSlotId);
 
@@ -212,11 +207,13 @@ namespace SEP490_BE.Services.ScheduleServices
                 {
                     throw new ResourceNotFoundException("Không tìm thấy phòng.");
                 }
+                var userRole = assignment.Role;              // <--- dùng role theo từng bác sĩ trong file
 
                 if (!IsValidRoleForRoomType(roomType, userRole))
                 {
                     throw new UnauthorizedAccessException($"Role {userRole} không được phép vào phòng {roomType}.");
                 }
+               
 
                 var timeSlot = await _context.TimeSlots.FindAsync(assignment.TimeSlotId);
                 if (timeSlot == null)
@@ -259,7 +256,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 var schedule = new Schedule
                 {
                     Id = Guid.NewGuid().ToString(),
-                    UserId = request.UserId,
+                    UserId = assignment.UserId,
                     Role = userRole,
                     RoomId = assignment.RoomId,
                     RoomType = roomType,
@@ -287,6 +284,7 @@ namespace SEP490_BE.Services.ScheduleServices
             var responseList = new List<ScheduleResponseDTO>();
             foreach (var s in schedules)
             {
+                var user = await _context.Users.FindAsync(s.UserId);
                 var roomName = await GetRoomNameAsync(s.RoomId); // tuần tự
                 var response = new ScheduleResponseDTO
                 {
@@ -376,7 +374,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 var nurseCount = existingSlotSchedules.Count(s => s.Role == "NURSE");
                 if (techCount > 0 && nurseCount > 0)
                 {
-                    throw new ConflictDataException("Phòng xét nghiệm chỉ được phép có một KỸ THUẬT VIÊN và một Y TÁ cho mỗi khung giờ.");
+                    throw new   ("Phòng xét nghiệm chỉ được phép có một KỸ THUẬT VIÊN và một Y TÁ cho mỗi khung giờ.");
                 }
                 if (techCount > 0 && user.UserRoles.First().RoleName == "TECHNICIAN" ||
                     nurseCount > 0 && user.UserRoles.First().RoleName == "NURSE")
@@ -649,7 +647,7 @@ namespace SEP490_BE.Services.ScheduleServices
                 ShiftsPerDay = Math.Round(shiftsPerDay, 2)
             };
         }
-        public async Task<List<ScheduleAssignment>> ReadScheduleExcelAsync(IFormFile file, string role)
+        public async Task<List<ScheduleAssignment>> ReadScheduleExcelAsync(IFormFile file)
         {
             ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
             var scheduleList = new List<ScheduleAssignment>();
@@ -671,20 +669,35 @@ namespace SEP490_BE.Services.ScheduleServices
                     var dateStr = worksheet.Cells[row, 1].Value?.ToString();
                     var roomName = worksheet.Cells[row, 2].Value?.ToString();
                     var timeSlotId = worksheet.Cells[row, 3].Value?.ToString();
+                    var doctorName = worksheet.Cells[row, 4].Value?.ToString();
 
-                    if (string.IsNullOrWhiteSpace(dateStr) || string.IsNullOrWhiteSpace(roomName) || string.IsNullOrWhiteSpace(timeSlotId))
+                    if (string.IsNullOrWhiteSpace(dateStr) || string.IsNullOrWhiteSpace(roomName)
+                        || string.IsNullOrWhiteSpace(timeSlotId) || string.IsNullOrWhiteSpace(doctorName))
                     {
-                        throw new Exception($"Dữ liệu thiếu ở dòng {row}");
+                        throw new Exception($"Dữ liệu thiếu tại dòng {row}");
                     }
 
-                    string? roomId = null;
+                    // Tìm bác sĩ theo tên:
+                    var doctor = await _context.Users
+                        .Include(u => u.UserRoles)
+                        .FirstOrDefaultAsync(u => u.Name == doctorName.Trim());
 
+                    if (doctor == null) throw new Exception($"Không tìm thấy bác sĩ '{doctorName}' (row {row})");
+
+                    // Kiểm tra role của doctor
+                    var role = doctor.UserRoles.FirstOrDefault()?.RoleName;
+                    if (role == null || !(new[] { "DOCTOR", "TECHNICIAN", "NURSE" }.Contains(role)))
+                    {
+                        throw new Exception($"Bác sĩ '{doctorName}' không có role hợp lệ tại dòng {row}");
+                    }
+
+                    // Tìm phòng theo role của user
+                    string? roomId = null;
                     if (role == "DOCTOR")
                     {
                         var room = await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
                         if (room == null)
                             throw new Exception($"Không tìm thấy phòng khám '{roomName}' tại dòng {row}");
-
                         roomId = room.Id;
                     }
                     else if (role == "TECHNICIAN")
@@ -692,19 +705,20 @@ namespace SEP490_BE.Services.ScheduleServices
                         var room = await _context.LaboratoryRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
                         if (room == null)
                             throw new Exception($"Không tìm thấy phòng xét nghiệm '{roomName}' tại dòng {row}");
-
                         roomId = room.Id;
                     }
                     else
                     {
-                        throw new Exception("Chỉ hỗ trợ role DOCTOR hoặc TECHNICIAN.");
+                        throw new Exception($"Role của '{doctorName}' không được hỗ trợ tại dòng {row}");
                     }
 
                     scheduleList.Add(new ScheduleAssignment
                     {
                         Date = DateTime.Parse(dateStr),
                         RoomId = roomId,
-                        TimeSlotId = timeSlotId.Trim()
+                        TimeSlotId = timeSlotId.Trim(),
+                        UserId = doctor.Id,        // <-- tự gán userId 
+                        Role = role               // <-- giữ thông tin role
                     });
                 }
                 catch (Exception ex)
@@ -712,9 +726,9 @@ namespace SEP490_BE.Services.ScheduleServices
                     throw new Exception($"Lỗi tại dòng {row}: {ex.Message}");
                 }
             }
-
             return scheduleList;
         }
+
 
 
 

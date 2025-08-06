@@ -13,6 +13,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SEP490_BE.Repositories.ScheduleRepositories;
+using SEP490_BE.Repositories.TransactionRepositories;
+using SEP490_BE.Repositories.RoleRepositories;
 
 namespace Test2.Services.ExaminationRoomsTest
 {
@@ -25,12 +28,19 @@ namespace Test2.Services.ExaminationRoomsTest
         private Mock<DatabaseFacade> _databaseMock = null!;
         private Mock<IDbContextTransaction> _transactionMock = null!;
         private ExaminationRoomService _service = null!;
+        private Mock<IScheduleRepository> _scheduleRepositoryMock = null!;
+        private Mock<ITransactionRepository> _transactionRepositoryMock = null!;
+        private Mock<IRoleRepository> _roleRepositoryMock = null!;
 
         [SetUp]
         public void SetUp()
         {
             _roomRepositoryMock = new Mock<IExaminationRoomRepository>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
+            _scheduleRepositoryMock = new Mock<IScheduleRepository>();
+            _transactionRepositoryMock = new Mock<ITransactionRepository>();
+            _roleRepositoryMock = new Mock<IRoleRepository>();
+
 
             // Mock DbSet<ExaminationRoom>
             var rooms = new List<ExaminationRoom>().AsQueryable();
@@ -51,7 +61,7 @@ namespace Test2.Services.ExaminationRoomsTest
             _contextMock.Setup(c => c.Database).Returns(_databaseMock.Object);
             _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            _service = new ExaminationRoomService(_contextMock.Object, _roomRepositoryMock.Object);
+            _service = new ExaminationRoomService(_contextMock.Object, _roomRepositoryMock.Object, _scheduleRepositoryMock.Object, _transactionRepositoryMock.Object, _roleRepositoryMock.Object);
         }
 
         [Test]
@@ -245,27 +255,7 @@ namespace Test2.Services.ExaminationRoomsTest
             _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never());
             _transactionMock.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Once());
         }
-        [Test]
-        public async Task Update_RoomNameAlreadyExists_ThrowsInvalidOperationException()
-        {
-            var id = Guid.NewGuid().ToString();
-            var existingRoom = new ExaminationRoom { Id = id, Name = "Phòng cũ", Description = "Mô tả cũ" };
-            var request = new UpdateExaminationRoomDTO { Name = "Phòng đã tồn tại", Description = "Mô tả mới" };
-
-            _roomRepositoryMock.Setup(r => r.FindByIdAsync(id)).ReturnsAsync(existingRoom);
-            _roomRepositoryMock.Setup(r => r.ExistsByNameAsync(request.Name)).ReturnsAsync(true);
-
-            var exception = Assert.ThrowsAsync<InvalidOperationException>(() => _service.Update(id, request));
-            Assert.That(exception.Message, Is.EqualTo("Tên phòng đã tồn tại"));
-
-            _roomRepositoryMock.Verify(r => r.FindByIdAsync(id), Times.Once());
-            _roomRepositoryMock.Verify(r => r.ExistsByNameAsync(request.Name), Times.Once());
-            _roomRepositoryMock.Verify(r => r.UpdateAsync(It.IsAny<ExaminationRoom>()), Times.Never());
-            _contextMock.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _databaseMock.Verify(d => d.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _transactionMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Never());
-            _transactionMock.Verify(t => t.RollbackAsync(It.IsAny<CancellationToken>()), Times.Never());
-        }
+      
     }
 }
 

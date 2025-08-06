@@ -4,6 +4,7 @@ using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Services.LaboratoryRoomServices;
+using SEP490_BE.Services.ServiceServices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,13 +19,15 @@ namespace Test2.Services.LabRoomTest
         private Mock<ILaboratoryRoomRepository> _roomRepositoryMock = null!;
         private Mock<KhanhAnNeurologyClinicContext> _contextMock = null!;
         private LaboratoryRoomService _service = null!;
+        private Mock<IServiceService> _serviceMock = null!;
 
         [SetUp]
         public void SetUp()
         {
             _roomRepositoryMock = new Mock<ILaboratoryRoomRepository>();
+            _serviceMock = new Mock<IServiceService>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
-            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object);
+            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object,_serviceMock.Object);
         }
 
         [Test]

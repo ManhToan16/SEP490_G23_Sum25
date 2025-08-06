@@ -21,6 +21,7 @@ using SEP490_BE.Controllers;
 using QuestPDF.Infrastructure;
 using Microsoft.AspNetCore.SignalR;
 using SEP490_BE.Hubs;
+using SEP490_BE.Repositories.TimeSlotRepositories;
 
 namespace SEP490_BE.Services.AppointmentServices
 {
@@ -38,6 +39,7 @@ namespace SEP490_BE.Services.AppointmentServices
         private readonly IAssignmentService _assignmentService; 
         private readonly ILogger<AppointmentService> _logger;
         private readonly IHubContext<KhanhAnHub> _hubContext;
+        private readonly ITimeSlotRepository _timeSlotRepository;
 
         public AppointmentService(
             KhanhAnNeurologyClinicContext context,
@@ -50,7 +52,8 @@ namespace SEP490_BE.Services.AppointmentServices
             IVisitService visitService,
             IAssignmentService assignmentService,
             ILogger<AppointmentService> logger,
-            IHubContext<KhanhAnHub> hubContext
+            IHubContext<KhanhAnHub> hubContext,
+            ITimeSlotRepository timeSlotRepository
             )
         {
             _context = context;
@@ -64,6 +67,7 @@ namespace SEP490_BE.Services.AppointmentServices
             _assignmentService = assignmentService;
             _logger = logger;
             _hubContext = hubContext;
+            _timeSlotRepository = timeSlotRepository;
         }
 
         public async Task<Pagination<AppointmentResponseDTO>> GetAll(
@@ -161,6 +165,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "CREATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -257,6 +262,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "CREATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -328,7 +334,7 @@ namespace SEP490_BE.Services.AppointmentServices
             {
                 throw new ResourceNotFoundException(MessageConstants.TIMESLOT_NOT_FOUND);
             }
-            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION || appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
+            if (appointment.Status != AppointmentStatus.WAITING_FOR_CONFIRMATION && appointment.Status != AppointmentStatus.WAITING_FOR_CHECK_IN)
             {
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
@@ -353,6 +359,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -414,6 +421,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -471,6 +479,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -563,6 +572,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,
@@ -570,26 +580,36 @@ namespace SEP490_BE.Services.AppointmentServices
                     Status = appointment.Status,
                 });
 
-                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                if (visit != null)
                 {
-                    Action = "UPDATE",
-                    VisitId = visit.Id,
-                    ExaminationRoomId = visit.ExaminationRoomId,
-                    QueueNumber = visit.QueueNumber,
-                    Status = visit.Status,
-                    IsPrioritized = visit.IsPrioritized,
-                });
-
-                foreach (var asm in assignments)
-                {
-                    await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                    await _hubContext.Clients.All.SendAsync("VisitChanged", new
                     {
                         Action = "UPDATE",
-                        AssignmentId = asm.Id,
-                        LaboratoryRoomId = asm.LaboratoryRoomId,
-                        Status = asm.Status
+                        VisitId = visit.Id,
+                        PatientName = visit.PatientName,
+                        ExaminationRoomId = visit.ExaminationRoomId,
+                        QueueNumber = visit.QueueNumber,
+                        Status = visit.Status,
+                        IsPrioritized = visit.IsPrioritized,
                     });
+
+                    if (assignments != null)
+                    {
+                        foreach (var asm in assignments)
+                        {
+                            await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                            {
+                                Action = "UPDATE",
+                                AssignmentId = asm.Id,
+                                PatientName = visit.PatientName,
+                                LaboratoryRoomId = asm.LaboratoryRoomId,
+                                Status = asm.Status
+                            });
+                        }
+                    }
                 }
+
+                
             }
             catch
             {
@@ -684,6 +704,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     Action = "UPDATE",
                     Id = appointment.Id,
+                    Name = appointment.Name,
                     Email = appointment.Email,
                     PhoneNumber = appointment.PhoneNumber,
                     DateOfBirth = appointment.DateOfBirth,

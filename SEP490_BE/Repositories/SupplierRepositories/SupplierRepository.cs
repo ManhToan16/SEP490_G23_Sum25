@@ -39,5 +39,10 @@ namespace SEP490_BE.Repositories.SupplierRepositories
         {
             return await _context.Suppliers.ToListAsync();
         }
-    }
+        public async Task<bool> IsSupplierExistsAsync(string name, string email)
+        {
+            return await _context.Suppliers
+                .AnyAsync(s => s.Name == name || s.Email == email);
+        }
+        }
 }

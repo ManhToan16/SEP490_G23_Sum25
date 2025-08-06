@@ -12,6 +12,9 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
+using SEP490_BE.Repositories.ScheduleRepositories;
+using SEP490_BE.Repositories.TransactionRepositories;
+using SEP490_BE.Repositories.RoleRepositories;
 namespace Test2.Services.ExaminationRooms
 {
     [TestFixture]
@@ -23,12 +26,19 @@ namespace Test2.Services.ExaminationRooms
         private Mock<DatabaseFacade> _databaseMock = null!;
         private Mock<IDbContextTransaction> _transactionMock = null!;
         private ExaminationRoomService _service = null!;
+        private Mock<IScheduleRepository> _scheduleRepositoryMock = null!;
+        private Mock<ITransactionRepository> _transactionRepositoryMock = null!;
+        private Mock<IRoleRepository> _roleRepositoryMock = null!;
 
         [SetUp]
         public void SetUp()
         {
             _roomRepositoryMock = new Mock<IExaminationRoomRepository>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
+            _scheduleRepositoryMock = new Mock<IScheduleRepository>();
+            _transactionRepositoryMock = new Mock<ITransactionRepository>();
+            _roleRepositoryMock = new Mock<IRoleRepository>();
+
 
             // Mock DbSet<ExaminationRoom>
             var rooms = new List<ExaminationRoom>().AsQueryable();
@@ -49,7 +59,7 @@ namespace Test2.Services.ExaminationRooms
             _contextMock.Setup(c => c.Database).Returns(_databaseMock.Object);
             _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            _service = new ExaminationRoomService(_contextMock.Object, _roomRepositoryMock.Object);
+            _service = new ExaminationRoomService(_contextMock.Object, _roomRepositoryMock.Object,_scheduleRepositoryMock.Object,_transactionRepositoryMock.Object, _roleRepositoryMock.Object);
         }
 
         [Test]

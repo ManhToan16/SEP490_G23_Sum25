@@ -39,7 +39,7 @@ namespace SEP490_BE.Services.MaterialServices
                     throw new InvalidOperationException("Số lượng tối thiểu không được lớn hơn số lượng tối đa.");
                 }
             }
-            if (await IsMaterialExistsAsync(request.Name, request.CategoryId, request.SupplierId))
+            if (await _materialRepository.IsMaterialExistsAsync(request.Name, request.CategoryId, request.SupplierId))
             {
                 throw new InvalidOperationException("Vật tư đã tồn tại.");
             }
@@ -116,10 +116,28 @@ namespace SEP490_BE.Services.MaterialServices
 
             material.Name = request.Name ?? material.Name;
             material.Unit = request.Unit ?? material.Unit;
-            material.QuantityInStock = request.QuantityInStock ?? material.QuantityInStock;
+            material.QuantityInStock = request.QuantityInStock ;
             material.MaxQuantity = request.MaxQuantity ?? material.MaxQuantity;
             material.MinQuantity = request.MinQuantity ?? material.MinQuantity;
             material.UpdatedAt = DateTime.UtcNow;
+            bool isChangedKey =
+       (request.Name != null && request.Name != material.Name) ||
+       (request.CategoryId != null && request.CategoryId != material.CategoryId) ||
+       (request.SupplierId != null && request.SupplierId != material.SupplierId);
+
+            if (isChangedKey)
+            {
+                bool existed = await _materialRepository.IsMaterialExistsAsync(
+                    request.Name ?? material.Name,
+                    request.CategoryId ?? material.CategoryId,
+                    request.SupplierId ?? material.SupplierId);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Vật tư đã tồn tại.");
+                }
+            }
+
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -160,21 +178,13 @@ namespace SEP490_BE.Services.MaterialServices
             return MapToResponseDTO(material);
         }
 
-        public async Task<Pagination<MaterialResponseDTO>> GetAllMaterials(string? name, string? categoryId, string? supplierId, int pageNumber = 1, int pageSize = 10)
+        public async Task<List<MaterialResponseDTO>> GetAllMaterials()
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-
-            var (materials, totalItems) = await _materialRepository.FindAll(name, categoryId, supplierId, pageNumber, pageSize);
+            var materials = await _materialRepository.FindAll();
             var responseDtos = materials.Select(MapToResponseDTO).ToList();
-            return new Pagination<MaterialResponseDTO>
-            {
-                Items = responseDtos,
-                TotalItems = totalItems,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
+            return responseDtos;
         }
+
 
         private MaterialResponseDTO MapToResponseDTO(Material material)
         {

@@ -1,9 +1,11 @@
-﻿using SEP490_BE.DTO.LaboratoryRoomDTO;
+﻿using Microsoft.EntityFrameworkCore;
 using SEP490_BE.DTO;
+using SEP490_BE.DTO.ExaminationRoomDTO;
+using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
-using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Services.ServiceServices;
 
 namespace SEP490_BE.Services.LaboratoryRoomServices
 {
@@ -11,13 +13,15 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly ILaboratoryRoomRepository _laboratoryRoomRepository;
+        private readonly IServiceService _serviceService;
 
         public LaboratoryRoomService(
             KhanhAnNeurologyClinicContext context,
-            ILaboratoryRoomRepository laboratoryRoomRepository)
+            ILaboratoryRoomRepository laboratoryRoomRepository, IServiceService serviceService)
         {
             _context = context;
             _laboratoryRoomRepository = laboratoryRoomRepository;
+            _serviceService = serviceService;
         }
 
         public async Task<Pagination<LaboratoryRoomResponseDTO>> GetAll(
@@ -105,10 +109,15 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
             room.Name = request.Name ?? room.Name;
             room.Description = request.Description ?? room.Description;
-            if (await _laboratoryRoomRepository.ExistsByNameAsync(room.Name))
+            bool isNameChanged = request.Name != null && request.Name != room.Name;
+            if (isNameChanged)
             {
-                throw new InvalidOperationException("Tên phòng đã tồn tại");
+                if (await _laboratoryRoomRepository.ExistsByNameAsync(request.Name))
+                {
+                    throw new InvalidOperationException("Tên phòng đã tồn tại.");
+                }
             }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -137,9 +146,41 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy phòng cận lâm sàng.");
             }
-
+            await _serviceService.DeleteByLaboId(id);
             await _laboratoryRoomRepository.DeleteAsync(room);
             await _context.SaveChangesAsync();
+        }
+
+
+        public async Task ActiveLaboratoryRoom(string id)
+        {
+            var room = await _laboratoryRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm");
+            room.IsActive = true;
+            await _laboratoryRoomRepository.UpdateAsync(room);
+        }
+
+        public async Task InactiveLaboratoryRoom(string id)
+        {
+            var room = await _laboratoryRoomRepository.FindByIdAsync(id)
+                      ?? throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm");
+            room.IsActive = false;
+            await _laboratoryRoomRepository.UpdateAsync(room);
+        }
+        public async Task<List<LaboratoryRoomResponseDTO>> GetActiveLaboratoryRoomsAsync()
+        {
+            var rooms = await _laboratoryRoomRepository
+                .GetActiveRoomsAsync();
+
+            var result = rooms.Select(r => new LaboratoryRoomResponseDTO
+            {
+                Id = r.Id,
+                Name = r.Name,
+                Description = r.Description,
+                IsActive = r.IsActive
+            }).ToList();
+
+            return result;
         }
     }
 }

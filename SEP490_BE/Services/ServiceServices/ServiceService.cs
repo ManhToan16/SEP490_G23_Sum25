@@ -5,6 +5,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.ServiceRepositories;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.IdentityModel.Tokens;
 
 namespace SEP490_BE.Services.ServiceServices
 {
@@ -63,22 +64,24 @@ namespace SEP490_BE.Services.ServiceServices
                 Description = service.Description
             };
         }
-        public async Task<ServiceResponseDTO> GetByRoom(string roomId)
+        public async Task<List<ServiceResponseDTO>> GetByRoom(string roomId)
         {
-            var service = await _serviceRepository.FindByRoomAsync(roomId);
-            if (service == null)
+            var services = await _serviceRepository.FindAllByRoomAsync(roomId);
+            if (services == null || !services.Any())
             {
-                throw new ResourceNotFoundException("Không tìm thấy dịch vụ trong phòng xét nghiệm này.");
+                throw new ResourceNotFoundException("Không tìm thấy dịch vụ nào trong phòng xét nghiệm này.");
             }
-            return new ServiceResponseDTO
+
+            return services.Select(service => new ServiceResponseDTO
             {
                 Id = service.Id,
                 LaboratoryRoomId = service.LaboratoryRoomsId,
                 Name = service.Name,
                 Price = service.Price,
                 Description = service.Description
-            };
+            }).ToList();
         }
+
 
         public async Task<ServiceResponseDTO> Create(CreateServiceDTO request)
         {
@@ -157,10 +160,23 @@ namespace SEP490_BE.Services.ServiceServices
             service.Name = request.Name ?? service.Name;
             service.Price = request.Price ?? service.Price;
             service.Description = request.Description ?? service.Description;
-            if (await _serviceRepository.ExistsByNameAsync(service.Name, service.LaboratoryRoomsId))
+            // chỉ check trùng khi đổi tên hoặc đổi phòng
+            bool isChanged =
+                (request.Name != null && request.Name != service.Name) ||
+                (request.LaboratoryRoomId != null && request.LaboratoryRoomId != service.LaboratoryRoomsId);
+
+            if (isChanged)
             {
-                throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
+                bool existed = await _serviceRepository.ExistsByNameAsync(
+                    request.Name ?? service.Name,
+                    request.LaboratoryRoomId ?? service.LaboratoryRoomsId);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
+                }
             }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -195,5 +211,19 @@ namespace SEP490_BE.Services.ServiceServices
             await _serviceRepository.DeleteAsync(service);
             await _context.SaveChangesAsync();
         }
+        public async Task DeleteByLaboId(string laboratoryRoomId)
+        {
+            var services = await _context.Services
+        .Where(s => s.LaboratoryRoomsId == laboratoryRoomId)
+        .ToListAsync(); ;
+            if (!services.Any())
+            {
+                return;
+            }
+            _context.Services.RemoveRange(services);
+            await _context.SaveChangesAsync();
+
+        }
+      
     }
 }

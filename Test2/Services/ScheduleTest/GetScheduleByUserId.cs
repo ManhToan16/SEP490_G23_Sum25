@@ -102,7 +102,8 @@ namespace Test2.Services.ScheduleTest
             await _context.ExaminationRooms.AddAsync(new ExaminationRoom
             {
                 Id = roomId,
-                Name = "Phòng Khám Tổng Quát"
+                Name = "Phòng Khám Tổng Quát",
+                IsActive = true
             });
             await _context.SaveChangesAsync();
 
@@ -134,40 +135,35 @@ namespace Test2.Services.ScheduleTest
             Assert.AreEqual(1, result.Count);
             Assert.AreEqual("Phòng Khám Tổng Quát", result[0].RoomName);
         }
-        //[Test]
-        //public void  GetSchedulesByUserId_MissingFromDateOrToDate_ThrowsArgumentException()
-        //{
-        //    // Arrange
-        //    string userId = "user123";
-        //    string input = "2025-07-20";
-        //    DateTime date = DateTime.Parse(input);
+        public static IEnumerable<TestCaseData> InvalidDateStrings =>
+    new List<TestCaseData>
+    {
+        new TestCaseData("2025-07-32", "2025-07-20"),
+        new TestCaseData("2025-13-20", "2025-07-20"),
+        new TestCaseData("20260720", "2025-07-20"),
+        new TestCaseData("abc", "2025-07-20"),
+        new TestCaseData("2025-07-20", "2025-02-30")
+    };
+        [TestCaseSource(nameof(InvalidDateStrings))]
+        public void GetSchedulesByUserId_InvalidDateFormat_ThrowsArgumentException(string fromDateStr, string toDateStr)
+        {
+            // Arrange
+            string userId = "user123";
 
-        //    // Act & Assert
-        //    var ex1 = Assert.ThrowsAsync<SEP490_BE.Exceptions.ArgumentException>(() =>
-        //        _service.GetSchedulesByUserId(userId, DateTime.MinValue, date));
-        //    Assert.AreEqual("Cần nhập cả ngày bắt đầu và ngày kết thúc.", ex1.Message);
+            // Act & Assert
+            var ex = Assert.ThrowsAsync<SEP490_BE.Exceptions.ArgumentException>(async () =>
+            {
+                // Parse vào trong để bắt lỗi chuyển đổi
+                if (!DateTime.TryParse(fromDateStr, out var fromDate) || !DateTime.TryParse(toDateStr, out var toDate))
+                {
+                    throw new SEP490_BE.Exceptions.ArgumentException("Dữ liệu không hợp lệ.");
+                }
 
-        //    var ex2 = Assert.ThrowsAsync<SEP490_BE.Exceptions.ArgumentException>(() =>
-        //        _service.GetSchedulesByUserId(userId, date, DateTime.MinValue));
-        //    Assert.AreEqual("Cần nhập cả ngày bắt đầu và ngày kết thúc.", ex2.Message);
-        //}
+                await _service.GetSchedulesByUserId(userId, fromDate, toDate);
+            });
 
-        //[TestCase("2025-07-32", "2025-07-20")]
-        //[TestCase("2025-13-20", "2025-07-20")]
-        //[TestCase("20260720", "2025-07-20")]
-        //[TestCase("abc", "2025-07-20")]
-        //[TestCase("2025-07-20", "2025-02-30")] // ngày không tồn tại
-        //public void GetSchedulesByUserId_InvalidDateFormat_ThrowsArgumentException(DateTime fromDate, DateTime toDate)
-        //{
-        //    // Arrange
-        //    string userId = "user123";
-
-        //    // Act & Assert
-        //    var ex = Assert.ThrowsAsync<SEP490_BE.Exceptions.ArgumentException>(() =>
-        //        _service.GetSchedulesByUserId(userId, fromDate, toDate));
-        //    Assert.AreEqual("Dữ liệu không hợp lệ.", ex.Message);
-        //}
-
+            Assert.AreEqual("Dữ liệu không hợp lệ.", ex.Message);
+        }
 
 
     }

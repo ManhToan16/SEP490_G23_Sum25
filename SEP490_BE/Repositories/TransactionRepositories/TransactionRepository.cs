@@ -26,7 +26,11 @@ namespace SEP490_BE.Repositories.TransactionRepositories
             await _context.Transactions.AddAsync(transaction);
             await _context.SaveChangesAsync();
         }
-
+        public async Task<bool> AnyTransactionUsingRoomAsync(string roomId, string roomType)
+        {
+            return await _context.Transactions
+                .AnyAsync(s => s.RoomId == roomId && s.RoomType == roomType);
+        }
         public async Task UpdateAsync(Transaction transaction)
         {
             _context.Transactions.Update(transaction);
