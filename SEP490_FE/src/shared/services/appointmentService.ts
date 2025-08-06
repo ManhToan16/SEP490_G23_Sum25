@@ -139,6 +139,13 @@ export interface PrescriptionRequestDTO {
 
 export const appointmentService = {
   // Lấy danh sách time slots
+  getAppointments: async (params?: any) => {
+    try {
+      return await api.get("/appointments", params);
+    } catch (error) {
+      throw error;
+    }
+  },
   getTimeSlots: async (): Promise<TimeSlot[]> => {
     try {
       const response = await api.get("/TimeSlots");
@@ -414,7 +421,7 @@ export const appointmentService = {
     try {
       // Xây dựng query parameters
       const queryParams = new URLSearchParams();
-      
+
       queryParams.append('examinationRoomId', params.examinationRoomId);
       if (params.status) queryParams.append('status', params.status);
       queryParams.append('date', params.date);
@@ -474,7 +481,13 @@ export const appointmentService = {
       throw error;
     }
   },
-
+  deleteAppointment: async (id: string) => {
+    try {
+      return await api.delete(`/appointments/${id}`);
+    } catch (error) {
+      throw error;
+    }
+  },
   // Tạo kết quả khám cho Visit
   createExaminationResult: async (visitId: string, examinationData: any): Promise<any> => {
     try {
@@ -537,19 +550,19 @@ export const appointmentService = {
       // API trả về: { statusCode: 200, success: true, message: "...", data: [[ServiceResponseDTO, ...]] }
       if (response && (response as any).statusCode === 200) {
         const data = (response as any).data;
-        
+
         // Kiểm tra nếu data là array và có phần tử đầu tiên là array
         if (Array.isArray(data) && data[0] && Array.isArray(data[0])) {
           console.log('Found services:', data[0]);
           return data[0]; // Trả về array of services
         }
-        
+
         // Fallback: nếu data trực tiếp là array of services
         if (Array.isArray(data) && data.length > 0 && data[0].id) {
           console.log('Found services (direct array):', data);
           return data;
         }
-        
+
         // Trường hợp không có dữ liệu
         console.log('No services found for room:', roomId);
         return [];
@@ -642,7 +655,7 @@ export const appointmentService = {
     try {
       // Xây dựng query parameters
       const queryParams = new URLSearchParams();
-      
+
       queryParams.append('laboratoryRoomId', params.laboratoryRoomId);
       if (params.status) queryParams.append('status', params.status);
       queryParams.append('date', params.date);
@@ -707,15 +720,15 @@ export const appointmentService = {
   createLaboratoryResult: async (assignmentId: string, laboratoryData?: any): Promise<any> => {
     try {
       const url = `/LaboratoryResult/assignment/${assignmentId}`;
-      
+
       // Tạo request body với dữ liệu mặc định
       const requestBody = laboratoryData || {
         note: '', // Ghi chú mặc định rỗng
         // Có thể thêm các field khác nếu cần
       };
-      
+
       console.log('Creating laboratory result for assignment:', assignmentId, 'with data:', requestBody);
-      
+
       const response = await api.post(url, requestBody);
 
       // Vì axios interceptor đã return response.data, nên response ở đây chính là API response
@@ -736,7 +749,7 @@ export const appointmentService = {
   uploadFiles: async (laboratoryResultId: string, files: File[]): Promise<any> => {
     try {
       const url = `/LaboratoryResult/${laboratoryResultId}/upload-files`;
-      
+
       // Tạo FormData để upload files
       const formData = new FormData();
       files.forEach((file) => {
@@ -760,13 +773,13 @@ export const appointmentService = {
           return response.data;
         }
       }
-      
+
       // Nếu response có data nhưng không có statusCode, vẫn trả về
       if (response && response.data) {
         console.log('Upload files response without expected statusCode, but has data:', response.data);
         return response.data;
       }
-      
+
       throw new Error('Invalid response from API');
     } catch (error: any) {
       console.error("Error uploading files:", error?.response?.data?.Message || error.message);
@@ -1088,7 +1101,14 @@ export const appointmentService = {
       throw error;
     }
   },
-
+  updateAppointment: async (id: string, appointmentData: any) => {
+    // Lấy kết quả khám theo Visit ID
+    try {
+      return await api.put(`/appointments/${id}`, appointmentData);
+    } catch (error) {
+      throw error;
+    }
+  },
   // Lấy kết quả khám theo ID
   getExaminationResultById: async (id: string): Promise<any> => {
     try {

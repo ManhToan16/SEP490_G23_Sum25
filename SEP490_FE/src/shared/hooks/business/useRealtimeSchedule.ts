@@ -11,11 +11,11 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
   const { loadSchedulesByRole } = useSchedule();
   const { toast } = useToast();
   const callbacksRef = useRef<{
-    scheduleUpdate?: Function;
-    scheduleDelete?: Function;
-    scheduleChangeRequest?: Function;
+    scheduleUpdate?: (schedule: any) => void;
+    scheduleDelete?: (scheduleId: string) => void;
+    scheduleChangeRequest?: (changeRequest: any) => void;
   }>({});
-  
+
   // Store current params to avoid unnecessary re-initializations
   const currentParamsRef = useRef<string>('');
 
@@ -23,11 +23,11 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
   const showToastWithDebounce = useCallback((key: string, toastConfig: any) => {
     const now = Date.now();
     const lastToast = recentToasts.get(key);
-    
+
     if (!lastToast || now - lastToast > TOAST_DEBOUNCE_TIME) {
       recentToasts.set(key, now);
       toast(toastConfig);
-      
+
       // Clean up old entries
       setTimeout(() => {
         recentToasts.delete(key);
@@ -42,20 +42,20 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
     console.log('🔍 Debug - Schedule role:', schedule.role || schedule.Role);
     console.log('🔍 Debug - Date range:', { fromDate, toDate });
     console.log('🔍 Debug - Schedule date:', schedule.date || schedule.Date);
-    
+
     // Check if the updated schedule belongs to current view
     // BE returns ScheduleResponseDTO with Role field
     const scheduleRole = schedule.role || schedule.Role;
     const roleMatches = scheduleRole === currentRole;
     console.log('🔍 Debug - Role matches:', roleMatches);
-    
+
     if (roleMatches) {
       // Parse date from BE format (dd/MM/yyyy) to compare
       let scheduleDate: Date;
       try {
         const dateString = schedule.Date || schedule.date;
         console.log('🔍 Debug - Raw date string:', dateString);
-        
+
         if (dateString && typeof dateString === 'string' && dateString.includes('/')) {
           // BE format: "dd/MM/yyyy"
           const dateParts = dateString.split('/');
@@ -81,29 +81,29 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
         console.error('Error parsing schedule date:', error);
         scheduleDate = new Date();
       }
-      
+
       const fromDateObj = new Date(fromDate);
       const toDateObj = new Date(toDate);
-      
+
       // Check if scheduleDate is valid before comparison
       if (isNaN(scheduleDate.getTime())) {
         console.error('❌ Invalid schedule date - skipping refresh');
         return;
       }
-      
+
       console.log('🔍 Debug - Date comparison:', {
         scheduleDate: scheduleDate.toISOString(),
         fromDate: fromDateObj.toISOString(),
         toDate: toDateObj.toISOString(),
         inRange: scheduleDate >= fromDateObj && scheduleDate <= toDateObj
       });
-      
+
       if (scheduleDate >= fromDateObj && scheduleDate <= toDateObj) {
         console.log('✅ Conditions met - refreshing data and showing toast');
-        
+
         // Refresh the current view
         loadSchedulesByRole(currentRole, fromDate, toDate);
-        
+
         // Show toast with debounce to prevent duplicates
         const toastKey = `schedule-update-${schedule.Id || schedule.id || 'unknown'}`;
         showToastWithDebounce(toastKey, {
@@ -122,10 +122,10 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
   // Handle schedule delete from SignalR
   const handleScheduleDelete = useCallback((scheduleId: string) => {
     console.log('Realtime schedule delete:', scheduleId);
-    
+
     // Always refresh when a schedule is deleted as we don't know which role it belonged to
     loadSchedulesByRole(currentRole, fromDate, toDate);
-    
+
     // Show toast with debounce to prevent duplicates
     const toastKey = `schedule-delete-${scheduleId}`;
     showToastWithDebounce(toastKey, {
@@ -138,7 +138,7 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
   // Handle schedule change request from SignalR
   const handleScheduleChangeRequest = useCallback((changeRequest: any) => {
     console.log('Realtime schedule change request:', changeRequest);
-    
+
     // Show toast with debounce to prevent duplicates
     const toastKey = `schedule-change-${changeRequest.Id || changeRequest.id || Date.now()}`;
     showToastWithDebounce(toastKey, {
@@ -151,21 +151,21 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
   // Setup SignalR connection and event listeners (only once)
   useEffect(() => {
     let isSubscribed = true;
-    
+
     const initializeSignalR = async () => {
       try {
         // Start connection
         await signalRService.startConnection();
-        
+
         if (!isSubscribed) return; // Component unmounted during connection
-        
+
         // Setup event listeners (only once)
         signalRService.on("scheduleUpdate", (schedule: any) => {
           if (isSubscribed) {
             callbacksRef.current.scheduleUpdate?.(schedule);
           }
         });
-        
+
         signalRService.on("scheduleDelete", (scheduleId: string) => {
           if (isSubscribed) {
             callbacksRef.current.scheduleDelete?.(scheduleId);
@@ -177,7 +177,7 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
             callbacksRef.current.scheduleChangeRequest?.(changeRequest);
           }
         });
-        
+
         console.log("SignalR initialized for schedule management");
       } catch (error) {
         console.error("Failed to initialize SignalR:", error);
@@ -198,15 +198,15 @@ export const useRealtimeSchedule = (currentRole: string, fromDate: string, toDat
   // Update callbacks when role/date params change (but don't re-initialize connection)
   useEffect(() => {
     const paramsKey = `${currentRole}-${fromDate}-${toDate}`;
-    
+
     // Only update callbacks if params actually changed
     if (currentParamsRef.current !== paramsKey) {
       console.log('📅 Updating realtime callbacks for:', paramsKey);
-      
+
       callbacksRef.current.scheduleUpdate = handleScheduleUpdate;
       callbacksRef.current.scheduleDelete = handleScheduleDelete;
       callbacksRef.current.scheduleChangeRequest = handleScheduleChangeRequest;
-      
+
       currentParamsRef.current = paramsKey;
     }
   }, [currentRole, fromDate, toDate, handleScheduleUpdate, handleScheduleDelete, handleScheduleChangeRequest]);
