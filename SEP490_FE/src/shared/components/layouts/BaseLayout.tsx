@@ -3,11 +3,7 @@ import { cn } from "@/shared/utils";
 
 interface BaseLayoutProps {
   children: React.ReactNode;
-<<<<<<< HEAD
   role?: "patient" | "doctor" | "receptionist" | "nurse" | "technician" | "admin";
-=======
-  role?: "patient" | "doctor" | "receptionist" | "admin" | "technician" | "nurse";
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
   className?: string;
   header?: React.ReactNode;
   sidebar?: React.ReactNode;

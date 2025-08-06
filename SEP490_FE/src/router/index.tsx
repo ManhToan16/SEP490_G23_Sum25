@@ -25,11 +25,8 @@ const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const HomePage = React.lazy(() => import("@/pages/Home"));
 const Health = React.lazy(() => import("@/pages/Health"));
 const Forbidden = React.lazy(() => import("@/pages/Forbiden"));
-<<<<<<< HEAD
 const WaitingRoomDisplay = React.lazy(() => import("@/pages/WaitingRoomDisplay"));
-=======
 const MySchedule = React.lazy(() => import("@/pages/doctor/MySchedule"));
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
 
 interface AppRouterProps {
   className?: string;

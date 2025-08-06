@@ -59,7 +59,6 @@ export const ROUTES = {
     MEDICINES_MANAGEMENT: '/admin/medicines',
   },
 
-<<<<<<< HEAD
   // Nurse routes
   NURSE: {
     DASHBOARD: '/nurse/dashboard',
@@ -75,22 +74,10 @@ export const ROUTES = {
     TEST_DETAIL: '/technician/test-detail',
   },
 
-=======
-  TECHNICIAN: {
-    DASHBOARD: '/technician/dashboard',
-    MY_INFO: '/technician/my-info',
-    PROFILE: '/technician/profile',
-  },
 
-  NURSE: {
-    DASHBOARD: '/nurse/dashboard',
-    MY_INFO: '/nurse/my-info',
-    PROFILE: '/nurse/profile',
-  },
 
   MY_SCHEDULE: '/staff/schedule',
 
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
   // Error routes
   NOT_FOUND: '/404',
   UNAUTHORIZED: '/unauthorized',
@@ -145,7 +132,6 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.ADMIN.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' }, // Thêm dòng này
   ],
 
-<<<<<<< HEAD
   NURSE: [
     { path: ROUTES.NURSE.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
     { path: ROUTES.NURSE.PATIENT_QUEUE, label: 'Bệnh nhân tổng quát', icon: 'Users' },
@@ -157,22 +143,6 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.TECHNICIAN.DASHBOARD, label: 'Thông tin của tôi', icon: 'User' },
     { path: ROUTES.TECHNICIAN.TEST_SCHEDULE, label: 'Lịch xét nghiệm', icon: 'Calendar' },
   ],
-=======
-  TECHNICIAN: [
-    { path: ROUTES.TECHNICIAN.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
-    { path: ROUTES.TECHNICIAN.MY_INFO, label: 'Thông tin cá nhân', icon: 'User' },
-    { path: ROUTES.TECHNICIAN.PROFILE, label: 'Hồ sơ chuyên môn', icon: 'FileText' },
-    { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
-  ],
-
-  NURSE: [
-    { path: ROUTES.NURSE.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
-    { path: ROUTES.NURSE.MY_INFO, label: 'Thông tin cá nhân', icon: 'User' },
-    { path: ROUTES.NURSE.PROFILE, label: 'Hồ sơ chuyên môn', icon: 'FileText' },
-    { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
-  ],
-
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
 } as const;
 
 // Route patterns for dynamic matching
@@ -193,11 +163,6 @@ export const ROUTE_PERMISSIONS = {
   ],
   RECEPTIONIST: Object.values(ROUTES.RECEPTIONIST),
   ADMIN: Object.values(ROUTES.ADMIN),
-<<<<<<< HEAD
   NURSE: Object.values(ROUTES.NURSE),
   TECHNICIAN: Object.values(ROUTES.TECHNICIAN),
-=======
-  TECHNICIAN: Object.values(ROUTES.TECHNICIAN),
-  NURSE: Object.values(ROUTES.NURSE),
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
 } as const; 

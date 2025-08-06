@@ -166,7 +166,6 @@ export const adminService = {
     }
   },
 
-<<<<<<< HEAD
   createPatient: async (patient: {
     name: string;
     citizenId: string;
@@ -176,14 +175,6 @@ export const adminService = {
     gender: string;
     address?: string;
   }) => {
-=======
-  /**
-   * Tạo hồ sơ bệnh nhân mới
-   * @param patientData - Thông tin bệnh nhân cần tạo
-   * @returns Thông tin bệnh nhân đã tạo
-   */
-  createPatient: async (patientData: any) => {
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
     try {
       const response = await api.post("/PatientProfile", patient);
       // Trả về bệnh nhân mới tạo
@@ -194,7 +185,6 @@ export const adminService = {
     }
   },
 
-<<<<<<< HEAD
   updatePatient: async (
     id: string,
     patient: {
@@ -207,15 +197,6 @@ export const adminService = {
       address?: string;
     }
   ) => {
-=======
-  /**
-   * Cập nhật thông tin bệnh nhân
-   * @param id - ID bệnh nhân cần cập nhật
-   * @param patientData - Thông tin mới
-   * @returns Thông tin bệnh nhân đã cập nhật
-   */
-  updatePatient: async (id: string, patientData: any) => {
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
     try {
       const response = await api.put(`/PatientProfile/${id}`, patient);
       // Trả về bệnh nhân đã cập nhật
@@ -847,7 +828,6 @@ export const adminService = {
     }
   },
 
-<<<<<<< HEAD
   // Lấy hồ sơ bệnh án theo patientProfileId
   getByPatientProfileMedicalRecord: async (patientProfileId: string) => {
     try {
@@ -855,7 +835,6 @@ export const adminService = {
       return response.data?.data?.[0];
     } catch (error: any) {
       console.error("Error fetching medical record by patient profile:", error?.response?.data?.message || error.message);
-=======
   // ===============================================
   // SUPPLIER MANAGEMENT - Quản lý nhà cung cấp
   // ===============================================
@@ -864,18 +843,18 @@ export const adminService = {
    * Lấy danh sách tất cả nhà cung cấp
    * @returns Danh sách nhà cung cấp
    */
+    }},
+  
   getSupplierList: async () => {
     try {
       const response = await api.get('/Suppliers');
       return response.data|| [];
     } catch (error: any) {
       console.error("Error fetching supplier list:", error?.response?.data?.Message || error.message);
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
       throw error;
     }
   },
 
-<<<<<<< HEAD
   // Lấy lịch sử khám theo patientProfileId
   getByPatientProfileVisit: async (patientProfileId: string) => {
     try {
@@ -883,12 +862,13 @@ export const adminService = {
       return response.data?.data?.[0];
     } catch (error: any) {
       console.error("Error fetching visit by patient profile:", error?.response?.data?.message || error.message);
-=======
   /**
    * Lấy thông tin chi tiết nhà cung cấp theo ID
    * @param id - ID nhà cung cấp
    * @returns Thông tin chi tiết nhà cung cấp
    */
+    }},
+    
   getSupplierById: async (id: string) => {
     try {
       const response = await api.get(`/Suppliers/${id}`);
@@ -1074,7 +1054,6 @@ export const adminService = {
       return response.data;
     } catch (error: any) {
       console.error("Error deleting medicine:", error?.response?.data?.Message || error.message);
->>>>>>> 8bf3b0d71ba8a0f00c078455d7de6d8cbd1d09c7
       throw error;
     }
   },
