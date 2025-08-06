@@ -16,6 +16,12 @@ const CreatePatient = React.lazy(
 const CreateAppointment = React.lazy(
   () => import("@/pages/receptionist/CreateAppointment")
 );
+const AppointmentPendingConfirm = React.lazy(
+  () => import("@/pages/receptionist/AppointmentPendingConfirm")
+);
+const AppointmentDetail = React.lazy(
+  () => import("@/pages/receptionist/AppointmentDetail")
+);
 
 const ReceptionistRoutes: React.FC = () => {
   return (
@@ -24,8 +30,10 @@ const ReceptionistRoutes: React.FC = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="patients" element={<PatientList />} />
         <Route path="appointments" element={<AppointmentList />} />
+        <Route path="appointments/:id" element={<AppointmentDetail />} />
         <Route path="create-patient" element={<CreatePatient />} />
         <Route path="create-appointment" element={<CreateAppointment />} />
+        <Route path="appointments-pending-confirm" element={<AppointmentPendingConfirm />} />
       </Routes>
     </Suspense>
   );

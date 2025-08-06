@@ -5,7 +5,7 @@ import { Bell, User, LogOut } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
 import { useNavigate } from 'react-router-dom';
 
-const TechnicianHeader = () => {
+const TechnicianHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -17,11 +17,11 @@ const TechnicianHeader = () => {
   return (
     <div className="h-16 px-6 flex items-center justify-between bg-white border-b">
       <div className="flex items-center space-x-4">
-        <div className="font-bold text-xl text-[#374151]">
+        <div className="font-bold text-xl text-[#8B5CF6]">
           Phòng Khám - Kỹ Thuật Viên
         </div>
-        <Badge variant="secondary" className="bg-gray-100 text-gray-800">
-          Technician
+        <Badge variant="secondary" className="bg-purple-100 text-purple-800">
+          Kỹ thuật viên
         </Badge>
       </div>
 

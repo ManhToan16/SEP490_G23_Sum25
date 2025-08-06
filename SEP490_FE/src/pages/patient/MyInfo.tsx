@@ -137,7 +137,7 @@ const MyInfo: React.FC = () => {
               >
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
+
               </select>
             </div>
 

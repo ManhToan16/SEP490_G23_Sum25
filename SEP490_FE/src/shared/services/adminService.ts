@@ -146,46 +146,63 @@ export const adminService = {
       if (name) url += `&name=${encodeURIComponent(name)}`;
       if (dateOfBirth) url += `&dateOfBirth=${encodeURIComponent(dateOfBirth)}`;
       if (citizenId) url += `&citizenId=${encodeURIComponent(citizenId)}`;
-
+      
       const response = await api.get(url);
-      return response;
+      
+      // Dữ liệu trả về là mảng, lấy phần tử đầu tiên
+      const pageData = Array.isArray(response.data) ? response.data[0] : undefined;
+      
+      const result = {
+        items: pageData?.items || [],
+        totalItems: pageData?.totalItems || 0,
+        pageNumber: pageData?.pageNumber || 1,
+        pageSize: pageData?.pageSize || 10,
+      };
+      
+      return result;
     } catch (error: any) {
-      console.error("Error fetching patient list:", error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách bệnh nhân";
-      throw new Error(message);
+      console.error("Error fetching patient list:", error?.response?.data?.message || error.message);
+      throw error;
     }
   },
 
-  /**
-   * Tạo hồ sơ bệnh nhân mới
-   * @param patientData - Thông tin bệnh nhân cần tạo
-   * @returns Thông tin bệnh nhân đã tạo
-   */
-  createPatient: async (patientData: any) => {
+  createPatient: async (patient: {
+    name: string;
+    citizenId: string;
+    phoneNumber: string;
+    email: string;
+    dateOfBirth: string; // Định dạng: "YYYY-MM-DD"
+    gender: string;
+    address?: string;
+  }) => {
     try {
-      const response = await api.post("/PatientProfile", patientData);
-      return response;
+      const response = await api.post("/PatientProfile", patient);
+      // Trả về bệnh nhân mới tạo
+      return response.data?.data?.[0];
     } catch (error: any) {
-      console.error("Error creating patient:", error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể tạo bệnh nhân mới";
-      throw new Error(message);
+      console.error("Error creating patient:", error?.response?.data?.message || error.message);
+      throw error;
     }
   },
 
-  /**
-   * Cập nhật thông tin bệnh nhân
-   * @param id - ID bệnh nhân cần cập nhật
-   * @param patientData - Thông tin mới
-   * @returns Thông tin bệnh nhân đã cập nhật
-   */
-  updatePatient: async (id: string, patientData: any) => {
+  updatePatient: async (
+    id: string,
+    patient: {
+      name: string;
+      citizenId: string;
+      phoneNumber: string;
+      email: string;
+      dateOfBirth: string; // "YYYY-MM-DD" hoặc ISO string
+      gender: string;
+      address?: string;
+    }
+  ) => {
     try {
-      const response = await api.put(`/PatientProfile/${id}`, patientData);
-      return response;
+      const response = await api.put(`/PatientProfile/${id}`, patient);
+      // Trả về bệnh nhân đã cập nhật
+      return response.data?.data?.[0];
     } catch (error: any) {
-      console.error("Error updating patient:", error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể cập nhật bệnh nhân";
-      throw new Error(message);
+      console.error("Error updating patient:", error?.response?.data?.message || error.message);
     }
   },
 
@@ -197,11 +214,22 @@ export const adminService = {
   getPatientById: async (id: string) => {
     try {
       const response = await api.get(`/PatientProfile/${id}`);
-      return response;
+      
+      
+      // Vì axios interceptor đã return response.data, nên response ở đây chính là API response
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200 && (response as any).success === true) {
+        // Data là array với 1 phần tử
+        if (Array.isArray((response as any).data) && (response as any).data[0]) {
+          return (response as any).data[0];
+        }
+      }
+      
+      console.error('Unexpected API response format:', response);
+      throw new Error('Invalid response from API');
     } catch (error: any) {
-      console.error("Error fetching patient by id:", error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể tải thông tin bệnh nhân";
-      throw new Error(message);
+      console.error("Error fetching patient by id:", error?.response?.data?.message || error.message);
+      throw error;
     }
   },
 
@@ -800,6 +828,13 @@ export const adminService = {
     }
   },
 
+  // Lấy hồ sơ bệnh án theo patientProfileId
+  getByPatientProfileMedicalRecord: async (patientProfileId: string) => {
+    try {
+      const response = await api.get(`/MedicalRecord/patient-profile/${patientProfileId}`);
+      return response.data?.data?.[0];
+    } catch (error: any) {
+      console.error("Error fetching medical record by patient profile:", error?.response?.data?.message || error.message);
   // ===============================================
   // SUPPLIER MANAGEMENT - Quản lý nhà cung cấp
   // ===============================================
@@ -808,6 +843,8 @@ export const adminService = {
    * Lấy danh sách tất cả nhà cung cấp
    * @returns Danh sách nhà cung cấp
    */
+    }},
+  
   getSupplierList: async () => {
     try {
       const response = await api.get('/Suppliers');
@@ -818,11 +855,20 @@ export const adminService = {
     }
   },
 
+  // Lấy lịch sử khám theo patientProfileId
+  getByPatientProfileVisit: async (patientProfileId: string) => {
+    try {
+      const response = await api.get(`/Visit/patient-profile/${patientProfileId}`);
+      return response.data?.data?.[0];
+    } catch (error: any) {
+      console.error("Error fetching visit by patient profile:", error?.response?.data?.message || error.message);
   /**
    * Lấy thông tin chi tiết nhà cung cấp theo ID
    * @param id - ID nhà cung cấp
    * @returns Thông tin chi tiết nhà cung cấp
    */
+    }},
+    
   getSupplierById: async (id: string) => {
     try {
       const response = await api.get(`/Suppliers/${id}`);
