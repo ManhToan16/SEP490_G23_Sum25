@@ -109,8 +109,8 @@ namespace SEP490_BE.Services.MedicineServices
             {
                 throw new ResourceNotFoundException("Thuốc không tồn tại.");
             }
-                await _medicineRepository.DeleteAsync(medicine);
-                await _context.SaveChangesAsync();
+            medicine.IsActive = false;
+            await _context.SaveChangesAsync();
 
         }
 
@@ -140,6 +140,12 @@ namespace SEP490_BE.Services.MedicineServices
                 PageSize = pageSize
             };
         }
+        public async Task<List<MedicineResponseDTO>> GetActiveMedicinesAsync()
+        {
+            var medicines = await _medicineRepository.GetActiveMedicinesAsync();
+            return medicines.Select(m => MapToResponseDTO(m)).ToList();
+        }
+
 
         private MedicineResponseDTO MapToResponseDTO(Medicine medicine)
         {
@@ -151,7 +157,8 @@ namespace SEP490_BE.Services.MedicineServices
                 Strength = medicine.Strength,
                 Packaging = medicine.Packaging,
                 Unit = medicine.Unit,
-                Description = medicine.Description
+                Description = medicine.Description,
+                IsActive = medicine.IsActive
             };
         }
     }

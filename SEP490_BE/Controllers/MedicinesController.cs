@@ -93,5 +93,18 @@ namespace SEP490_BE.Controllers
                 Data = new[] { pagination }
             });
         }
+        [HttpGet("active")]
+        public async Task<IActionResult> GetActiveMedicines()
+        {
+            var result = await _medicineService.GetActiveMedicinesAsync();
+            return Ok(new
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = result 
+            });
+        }
+
     }
 }

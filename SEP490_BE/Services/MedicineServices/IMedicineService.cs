@@ -10,5 +10,6 @@ namespace SEP490_BE.Services.MedicineServices
         Task DeleteMedicine(string id);
         Task<MedicineResponseDTO> GetMedicineById(string id);
         Task<Pagination<MedicineResponseDTO>> GetAllMedicine(string? name, string? description, int pageNumber, int pageSize);
+        Task<List<MedicineResponseDTO>> GetActiveMedicinesAsync();
     }
 }

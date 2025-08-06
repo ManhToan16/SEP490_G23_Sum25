@@ -61,7 +61,8 @@ namespace Test2.Services.PrescriptionTest
                 Unit = "viên",
                 Strength = "500mg",
                 Packaging = "Hộp 10 vỉ x 10 viên",
-                ActiveIngredients = "Paracetamol"
+                ActiveIngredients = "Paracetamol",
+                IsActive= true
             };
 
             var med2 = new Medicine
@@ -71,7 +72,8 @@ namespace Test2.Services.PrescriptionTest
                 Unit = "viên",
                 Strength = "500mg",
                 Packaging = "Hộp 2 vỉ x 10 viên",
-                ActiveIngredients = "Amoxicillin"
+                ActiveIngredients = "Amoxicillin",
+                IsActive = true
             };
 
             _context.Medicines.AddRange(med1, med2);
