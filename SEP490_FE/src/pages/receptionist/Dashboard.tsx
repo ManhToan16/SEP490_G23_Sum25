@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Users,
   Calendar,
-  UserPlus,
+  Clock,
   ClipboardList,
   Phone,
   AlertCircle,
@@ -14,16 +14,16 @@ const ReceptionistDashboard: React.FC = () => {
 
   const quickActions = [
     {
-      icon: UserPlus,
-      title: "Tạo bệnh nhân mới",
-      description: "Đăng ký thông tin bệnh nhân mới",
-      path: "/receptionist/create-patient",
-      color: "bg-clinic-blue",
+      icon: Clock,
+      title: "Chờ xác nhận lịch hẹn",
+      description: "Xác nhận lịch hẹn chờ duyệt",
+      path: "/receptionist/appointments-pending-confirm",
+      color: "bg-orange-500",
     },
     {
       icon: ClipboardList,
-      title: "Tạo lịch hẹn",
-      description: "Đặt lịch hẹn cho bệnh nhân",
+      title: "Tạo lịch khám",
+      description: "Tạo lịch khám cho bệnh nhân",
       path: "/receptionist/create-appointment",
       color: "bg-clinic-green",
     },
@@ -31,7 +31,7 @@ const ReceptionistDashboard: React.FC = () => {
       icon: Users,
       title: "Danh sách bệnh nhân",
       description: "Quản lý thông tin bệnh nhân",
-      path: "/receptionist/list",
+      path: "/receptionist/patients",
       color: "bg-clinic-navy",
     },
     {
