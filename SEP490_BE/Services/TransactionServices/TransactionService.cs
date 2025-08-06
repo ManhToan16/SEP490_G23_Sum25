@@ -363,20 +363,10 @@ namespace SEP490_BE.Services.TransactionServices
             return  MapToResponseDTO(transaction);
         }
 
-        public async Task<Pagination<TransactionResponseDTO>> GetAllTransactions(string? materialId, string? transactionType, string? status, int pageNumber = 1, int pageSize = 10)
+        public async Task<List<TransactionResponseDTO>> GetAllTransactions(string? materialId, string? transactionType, string? status)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
-
-            var (transactions, totalItems) = await _transactionRepository.FindAll(materialId, transactionType, status, pageNumber, pageSize);
-            var responseDtos = transactions.Select(MapToResponseDTO).ToList();
-            return new Pagination<TransactionResponseDTO>
-            {
-                Items = responseDtos,
-                TotalItems = totalItems,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
+            var (transactions, _) = await _transactionRepository.FindAll(materialId, transactionType, status, 1, int.MaxValue);
+            return transactions.Select(MapToResponseDTO).ToList();
         }
 
         private TransactionResponseDTO MapToResponseDTO(Transaction transaction)
@@ -426,8 +416,11 @@ namespace SEP490_BE.Services.TransactionServices
                     RoomId = g.Key.RoomId,
                     RoomType = roomType
                 })
-                .ToListAsync();           
-
+                .ToListAsync();
+            foreach (var s in summaries)
+            {
+                s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+            }
             return summaries;
         }
 
@@ -455,13 +448,43 @@ namespace SEP490_BE.Services.TransactionServices
                     MaterialName = g.Key,
                     TotalQuantity = g.Sum(t => t.Quantity),
                     RoomId = roomId,
-                    RoomType = roomType
+                    RoomType = roomType,
                 })
                 .ToListAsync();
-          
+            foreach (var s in summaries)
+            {
+                s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+            }
 
             return summaries;
         }
+        public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms()
+        {
+            var summaries = await _context.Transactions               
+                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
+                .GroupBy(t => new { t.RoomId, t.RoomType, t.Material.Name })
+                .Select(g => new ProvidedSummaryDTO
+                {
+                    MaterialName = g.Key.Name,
+                    TotalQuantity = g.Sum(t => t.Quantity),
+                    RoomId = g.Key.RoomId,
+                    RoomType = g.Key.RoomType,
+                    RoomName=g.First().RoomId
+                })
+                .ToListAsync();
+
+            if (!summaries.Any())
+            {
+                throw new ResourceNotFoundException("Không có giao dịch vật tư được phê duyệt nào.");
+            }
+            foreach (var s in summaries)
+            {
+                s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+            }
+
+            return summaries;
+        }
+
         public async Task<TransactionResponseDTO> UseMaterial(UseMaterialDTO useDto, string userId)
         {
 
@@ -659,34 +682,34 @@ namespace SEP490_BE.Services.TransactionServices
 
             throw new ResourceNotFoundException("Không tìm thấy phòng.");
         }
-        public async Task<Pagination<TransactionResponseDTO>> GetDefectiveBatches(int pageNumber = 1, int pageSize = 10)
+        private async Task<string> GetRoomNameAsync(string roomId, string roomType)
         {
-            if (pageNumber < 1) pageNumber = 1;
-            if (pageSize < 1) pageSize = 10;
+            if (roomType == "EXAMINATION")
+            {
+                var room = await _context.ExaminationRooms.FindAsync(roomId);
+                return room?.Name;
+            }
+            else if (roomType == "LABORATORY")
+            {
+                var room = await _context.LaboratoryRooms.FindAsync(roomId);
+                return room?.Name;
+            }
+            return null;
+        }
 
+        public async Task<List<TransactionResponseDTO>> GetDefectiveBatches()
+        {
             var defectiveTransactions = await _context.Transactions
                 .Where(t => t.TransactionType == "IMPORT" && t.DefectiveQuantity > 0)
                 .OrderBy(t => t.CreatedAt)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
                 .ToListAsync();
-
-            var totalItems = await _context.Transactions
-                .CountAsync(t => t.TransactionType == "IMPORT" && t.DefectiveQuantity > 0);
 
             if (!defectiveTransactions.Any())
             {
                 throw new ResourceNotFoundException("Không có lô hàng nào có hàng lỗi.");
             }
 
-            var responseDtos = defectiveTransactions.Select(MapToResponseDTO).ToList();
-            return new Pagination<TransactionResponseDTO>
-            {
-                Items = responseDtos,
-                TotalItems = totalItems,
-                PageNumber = pageNumber,
-                PageSize = pageSize
-            };
+            return defectiveTransactions.Select(MapToResponseDTO).ToList();
         }
         public async Task<TransactionResponseDTO> ApproveAdminReturnTransaction(string transactionId, string adminId)
         {
