@@ -38,6 +38,7 @@ export const ROUTES = {
   RECEPTIONIST: {
     DASHBOARD: '/receptionist/dashboard',
     PATIENT_LIST: '/receptionist/patients',
+    APPOINTMENT_PENDING_CONFIRM: '/receptionist/appointments-pending-confirm',
     APPOINTMENT_LIST: '/receptionist/appointments',
     CREATE_PATIENT: '/receptionist/create-patient',
     CREATE_APPOINTMENT: '/receptionist/create-appointment',
@@ -54,6 +55,21 @@ export const ROUTES = {
     MATERIAL_MANAGEMENT: '/admin/materials',
     MATERIAL_TYPE_MANAGEMENT: '/admin/material-types',
     PATIENT_LIST: '/admin/patients', // Thêm dòng này
+  },
+
+  // Nurse routes
+  NURSE: {
+    DASHBOARD: '/nurse/dashboard',
+    PATIENT_QUEUE: '/nurse/patient-queue',
+    LAB_PATIENT_QUEUE: '/nurse/lab-patient-queue',
+    SUPPLY_MANAGEMENT: '/nurse/supply-management',
+  },
+
+  // Technician routes
+  TECHNICIAN: {
+    DASHBOARD: '/technician/dashboard',
+    TEST_SCHEDULE: '/technician/test-schedule',
+    TEST_DETAIL: '/technician/test-detail',
   },
 
   // Error routes
@@ -86,9 +102,9 @@ export const NAVIGATION_ITEMS = {
   RECEPTIONIST: [
     { path: ROUTES.RECEPTIONIST.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
     { path: ROUTES.RECEPTIONIST.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' },
+    { path: ROUTES.RECEPTIONIST.APPOINTMENT_PENDING_CONFIRM, label: 'Chờ xác nhận lịch hẹn', icon: 'Calendar' },
     { path: ROUTES.RECEPTIONIST.APPOINTMENT_LIST, label: 'Quản lý lịch hẹn', icon: 'Calendar' },
-    { path: ROUTES.RECEPTIONIST.CREATE_PATIENT, label: 'Đăng ký bệnh nhân', icon: 'UserPlus' },
-    { path: ROUTES.RECEPTIONIST.CREATE_APPOINTMENT, label: 'Tạo lịch hẹn', icon: 'Plus' },
+    { path: ROUTES.RECEPTIONIST.CREATE_APPOINTMENT, label: 'Tạo lịch khám', icon: 'Plus' },
   ],
 
   ADMIN: [
@@ -108,6 +124,18 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.ADMIN.SYSTEM_LOGS, label: 'Nhật ký hệ thống', icon: 'FileText' },
     { path: ROUTES.ADMIN.PATIENT_LIST, label: 'Danh sách bệnh nhân', icon: 'Users' }, // Thêm dòng này
   ],
+
+  NURSE: [
+    { path: ROUTES.NURSE.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
+    { path: ROUTES.NURSE.PATIENT_QUEUE, label: 'Bệnh nhân tổng quát', icon: 'Users' },
+    { path: ROUTES.NURSE.LAB_PATIENT_QUEUE, label: 'Bệnh nhân xét nghiệm', icon: 'TestTube' },
+    { path: ROUTES.NURSE.SUPPLY_MANAGEMENT, label: 'Quản lý vật tư trong phòng', icon: 'Package' },
+  ],
+
+  TECHNICIAN: [
+    { path: ROUTES.TECHNICIAN.DASHBOARD, label: 'Thông tin của tôi', icon: 'User' },
+    { path: ROUTES.TECHNICIAN.TEST_SCHEDULE, label: 'Lịch xét nghiệm', icon: 'Calendar' },
+  ],
 } as const;
 
 // Route patterns for dynamic matching
@@ -125,4 +153,6 @@ export const ROUTE_PERMISSIONS = {
   DOCTOR: Object.values(ROUTES.DOCTOR),
   RECEPTIONIST: Object.values(ROUTES.RECEPTIONIST),
   ADMIN: Object.values(ROUTES.ADMIN),
+  NURSE: Object.values(ROUTES.NURSE),
+  TECHNICIAN: Object.values(ROUTES.TECHNICIAN),
 } as const; 

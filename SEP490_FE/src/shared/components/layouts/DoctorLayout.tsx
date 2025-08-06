@@ -19,7 +19,9 @@ const DoctorLayout: React.FC<DoctorLayoutProps> = ({
       header={<DoctorHeader />}
       sidebar={<DoctorSidebar />}
     >
-      {children}
+      <div className="flex-1 p-6">
+        {children}
+      </div>
     </BaseLayout>
   );
 };

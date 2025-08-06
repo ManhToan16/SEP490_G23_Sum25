@@ -4,17 +4,16 @@ import * as LucideIcons from 'lucide-react';
 import { cn } from '@/shared/utils';
 import { NAVIGATION_ITEMS } from '@/shared/constants/routes';
 import { Button } from '@/shared/components/ui/button';
-import { Badge } from '@/shared/components/ui/badge';
 
 function isMenuGroup(item: any): item is { label: string; icon: string; children: any[] } {
   return Array.isArray(item.children);
 }
 
-const DoctorSidebar: React.FC = () => {
+const TechnicianSidebar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [openMenus, setOpenMenus] = useState<string[]>([]);
-  const menuItems = NAVIGATION_ITEMS.DOCTOR;
+  const menuItems = NAVIGATION_ITEMS.TECHNICIAN;
 
   const isActive = (path: string) => location.pathname === path;
   const getIcon = (iconName: string) => {
@@ -29,19 +28,9 @@ const DoctorSidebar: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full bg-white">
-      {/* User Profile Section */}
       <div className="p-6 border-b">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-[#2C3E50] rounded-lg flex items-center justify-center">
-            {getIcon('Stethoscope')}
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Khu vực Bác sĩ</h3>
-            <p className="text-sm text-gray-600">Chuyên khoa Nội thần kinh</p>
-          </div>
-        </div>
+        <h3 className="font-semibold text-[#B2C4B1]">Khu vực Kỹ thuật viên</h3>
       </div>
-      {/* Navigation Menu */}
       <nav className="flex-1 px-4 py-6 space-y-2">
         {menuItems.map((item: any, index: number) => {
           if (isMenuGroup(item)) {
@@ -52,7 +41,7 @@ const DoctorSidebar: React.FC = () => {
                   variant="ghost"
                   className={cn(
                     'w-full flex items-center justify-between px-4 py-3 rounded-lg text-left',
-                    isOpen ? 'bg-[#2C3E50] text-white' : 'text-gray-700 hover:bg-gray-100'
+                    isOpen ? 'bg-[#B2C4B1] text-white' : 'text-gray-700 hover:bg-green-50'
                   )}
                   onClick={() => handleToggle(item.label)}
                 >
@@ -71,8 +60,8 @@ const DoctorSidebar: React.FC = () => {
                         className={cn(
                           'w-full justify-start text-sm',
                           isActive(child.path)
-                            ? 'bg-[#2C3E50] text-white'
-                            : 'text-gray-700 hover:bg-gray-100'
+                            ? 'bg-[#B2C4B1] text-white'
+                            : 'text-gray-700 hover:bg-green-50'
                         )}
                         onClick={() => navigate(child.path)}
                       >
@@ -91,26 +80,23 @@ const DoctorSidebar: React.FC = () => {
                 key={item.path}
                 variant={isActive(item.path) ? 'default' : 'ghost'}
                 className={cn(
-                  'w-full justify-start text-left',
+                  'w-full justify-start',
                   isActive(item.path)
-                    ? 'bg-[#2C3E50] text-white hover:bg-[#34495E]'
-                    : 'text-gray-700 hover:bg-gray-100'
+                    ? 'bg-[#B2C4B1] text-white'
+                    : 'text-gray-700 hover:bg-green-50'
                 )}
                 onClick={() => navigate(item.path)}
               >
-                <div className="flex items-center space-x-3">
-                  {getIcon(item.icon)}
-                  <span>{item.label}</span>
-                </div>
+                {getIcon(item.icon)}
+                <span className="ml-3">{item.label}</span>
               </Button>
             );
           }
           return null;
         })}
       </nav>
-
     </div>
   );
 };
 
-export default DoctorSidebar; 
+export default TechnicianSidebar; 
