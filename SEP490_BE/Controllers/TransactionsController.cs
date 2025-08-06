@@ -57,6 +57,10 @@ namespace SEP490_BE.Controllers
 
         [HttpPost("provide")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [SwaggerOperation(
+    Summary = "Tạo phiếu cấp phát vật tư",
+    Description = "Admin cấp phát vật tư cho phòng khám hoặc phòng xét nghiệm (PROVIDE transaction)"
+)]
         public async Task<IActionResult> CreateProvideTransaction([FromBody] ProvideMaterialDTO provideDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -84,6 +88,10 @@ namespace SEP490_BE.Controllers
 
         [HttpPost("return/nurse-request")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [SwaggerOperation(
+    Summary = "Yêu cầu điều dưỡng trả vật tư",
+    Description = "Điều dưỡng gửi yêu cầu trả vật tư về kho (NURSE_RETURN request)"
+)]
         public async Task<IActionResult> RequestReturnTransaction([FromBody] NurseReturnDTO returnDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -112,6 +120,10 @@ namespace SEP490_BE.Controllers
         }
         [HttpPost("return/admin-request")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [SwaggerOperation(
+    Summary = "Yêu cầu nhà cung cấp nhận lại vật tư lỗi",
+    Description = "Admin tạo yêu cầu trả vật tư lỗi về nhà cung cấp (SUPPLIER_RETURN request)"
+)]
         public async Task<IActionResult> RequestAdminReturnTransaction([FromBody] AdminReturnDTO returnDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -139,6 +151,10 @@ namespace SEP490_BE.Controllers
         }
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPut("return/approve-nurse-return/{transactionId}")]
+        [SwaggerOperation(
+    Summary = "Duyệt yêu cầu trả vật tư của điều dưỡng",
+    Description = "Admin phê duyệt yêu cầu điều dưỡng trả vật tư (Approve NURSE_RETURN)"
+)]
         public async Task<IActionResult> ApproveReturnTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -154,6 +170,10 @@ namespace SEP490_BE.Controllers
 
         [HttpPut("return/reject-nurse-return/{transactionId}")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [SwaggerOperation(
+    Summary = "Từ chối yêu cầu trả vật tư của điều dưỡng",
+    Description = "Admin từ chối yêu cầu trả vật tư của điều dưỡng"
+)]
         public async Task<IActionResult> RejectReturnTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -169,6 +189,10 @@ namespace SEP490_BE.Controllers
         }
         [HttpPut("return/approve-supplier-return/{transactionId}")]
         [Authorize(Roles = RoleConstants.Admin)]
+        [SwaggerOperation(
+    Summary = "Duyệt yêu cầu trả vật tư về nhà cung cấp",
+    Description = "Admin duyệt yêu cầu trả vật tư lỗi về nhà cung cấp"
+)]
         public async Task<IActionResult> ApproveAdminReturnTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -185,6 +209,10 @@ namespace SEP490_BE.Controllers
 
         [HttpPut("return/reject-supplier-return/{transactionId}")]
         [Authorize(Roles = RoleConstants.Admin)]
+            [SwaggerOperation(
+    Summary = "Từ chối yêu cầu trả vật tư về nhà cung cấp",
+    Description = "Admin từ chối yêu cầu trả vật tư lỗi về nhà cung cấp"
+)]
         public async Task<IActionResult> RejectAdminReturnTransaction(string transactionId)
         {
             var adminId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -224,6 +252,10 @@ namespace SEP490_BE.Controllers
             });
         }
         [HttpGet("total-by-room-type")]
+        [SwaggerOperation(
+    Summary = "Tổng cấp phát theo loại phòng",
+    Description = "Thống kê tổng số vật tư đã cấp phát (PROVIDE) theo loại phòng (EXAMINATION / LABORATORY)"
+)]
         public async Task<IActionResult> GetTotalProvidedByRoomType([FromQuery] string roomType)
         {
             
@@ -244,6 +276,10 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpGet("total-by-room-id")]
+        [SwaggerOperation(
+    Summary = "Tổng cấp phát theo mã phòng",
+    Description = "Thống kê tổng số vật tư đã cấp phát theo một phòng cụ thể"
+)]
         public async Task<IActionResult> GetTotalProvidedByRoomId([FromQuery] string roomId)
         {
            
@@ -262,6 +298,10 @@ namespace SEP490_BE.Controllers
            
         }
         [HttpGet("totalAllRooms")]
+        [SwaggerOperation(
+    Summary = "Tổng cấp phát tất cả các phòng",
+    Description = "Thống kê tổng số vật tư đã cấp phát cho tất cả các phòng"
+)]
         public async Task<IActionResult> GetTotalProvidedAllRooms()
         {
 
@@ -281,6 +321,10 @@ namespace SEP490_BE.Controllers
         }
         [HttpPost("use")]
         [Authorize(Roles = RoleConstants.Nurse)]
+        [SwaggerOperation(
+    Summary = "Điều dưỡng sử dụng vật tư",
+    Description = "Nurse sử dụng vật tư trong phòng khám/xét nghiệm"
+)]
         public async Task<IActionResult> UseMaterial([FromBody] UseMaterialDTO useDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
@@ -339,6 +383,10 @@ namespace SEP490_BE.Controllers
             });
         }
         [HttpGet("defective-batches")]
+        [SwaggerOperation(
+    Summary = "Lô hàng lỗi",
+    Description = "Lấy danh sách các giao dịch nhập vật tư có số lượng lỗi (>0)"
+)]
         public async Task<IActionResult> GetDefectiveBatches()
         {
             var items = await _transactionService.GetDefectiveBatches();
@@ -358,6 +406,10 @@ namespace SEP490_BE.Controllers
         }
 
         [HttpGet("histories")]
+        [SwaggerOperation(
+    Summary = "Lịch sử giao dịch",
+    Description = "Lấy lịch sử xử lý của một giao dịch (approve/reject)"
+)]
         public async Task<IActionResult> GetTransactionHistories([FromQuery] string? transactionId = null)
         {
             var histories = await _transactionService.GetTransactionHistories(transactionId);
