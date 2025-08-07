@@ -79,14 +79,20 @@ namespace SEP490_BE.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllMaterials()
         {
-            var pagination = await _materialService.GetAllMaterials();
+            var (items, totalItems) = await _materialService.GetAllMaterials();
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = new[] { pagination }
+                Data = new
+                {
+                    Items = items,
+                    TotalItems = totalItems
+                }
             });
         }
+
     }
 }

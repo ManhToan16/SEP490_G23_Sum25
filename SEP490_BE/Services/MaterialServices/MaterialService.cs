@@ -178,12 +178,15 @@ namespace SEP490_BE.Services.MaterialServices
             return MapToResponseDTO(material);
         }
 
-        public async Task<List<MaterialResponseDTO>> GetAllMaterials()
+        public async Task<(List<MaterialResponseDTO> Items, int TotalItems)> GetAllMaterials()
         {
             var materials = await _materialRepository.FindAll();
             var responseDtos = materials.Select(MapToResponseDTO).ToList();
-            return responseDtos;
+            int totalItems = responseDtos.Count;
+
+            return (responseDtos, totalItems);
         }
+
 
 
         private MaterialResponseDTO MapToResponseDTO(Material material)
