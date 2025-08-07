@@ -10,5 +10,6 @@ namespace SEP490_BE.Services.MaterialServices
         Task DeleteMaterial(string id);
         Task<MaterialResponseDTO> GetMaterialById(string id);
         Task<(List<MaterialResponseDTO> Items, int TotalItems)> GetAllMaterials();
+        Task<List<MaterialImportSummaryDTO>> GetImportSummaryAsync();
     }
 }

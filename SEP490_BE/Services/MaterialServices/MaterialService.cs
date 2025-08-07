@@ -187,6 +187,36 @@ namespace SEP490_BE.Services.MaterialServices
             return (responseDtos, totalItems);
         }
 
+        public async Task<List<MaterialImportSummaryDTO>> GetImportSummaryAsync()
+        {
+            var importTransactions = await _context.Transactions
+                .Where(t => t.TransactionType == "IMPORT")
+                .Include(t => t.Material)
+                .ToListAsync();
+
+            var summary = importTransactions
+                .GroupBy(t => new { t.MaterialId, t.Material.Name, t.Material.Unit })
+                .Select(g =>
+                {
+                    var totalQuantity = g.Sum(x => x.Quantity);
+                    var totalDefective = g.Sum(x => x.DefectiveQuantity ?? 0);
+                    var weightedTotalPrice = g.Sum(x => x.Quantity * (x.Price ?? 0));
+                    var averagePrice = totalQuantity > 0 ? weightedTotalPrice / totalQuantity : 0;
+
+                    return new MaterialImportSummaryDTO
+                    {
+                        MaterialId = g.Key.MaterialId,
+                        MaterialName = g.Key.Name,
+                        Unit = g.Key.Unit,
+                        Quantity = totalQuantity,
+                        AvailableQuantity = totalQuantity - totalDefective,
+                        TotalPrice = Math.Round(averagePrice * totalQuantity, 2)
+                    };
+                })
+                .ToList();
+
+            return summary;
+        }
 
 
         private MaterialResponseDTO MapToResponseDTO(Material material)

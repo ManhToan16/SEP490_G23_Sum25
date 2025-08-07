@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.SignalR;
 using SEP490_BE.Constants;
 using SEP490_BE.DTO;
 using SEP490_BE.DTO.MaterialDTO;
+using SEP490_BE.Entities;
 using SEP490_BE.Services.MaterialServices;
 using System.ComponentModel;
 
@@ -93,6 +94,19 @@ namespace SEP490_BE.Controllers
                 }
             });
         }
+        [HttpGet("import-summary")]
+        public async Task<IActionResult> GetImportSummary()
+        {
+            var result = await _materialService.GetImportSummaryAsync();
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+
 
     }
 }
