@@ -5,6 +5,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.MaterialRepositories;
 using SEP490_BE.Repositories.TransactionRepositories;
 using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Repositories.TransactionDetailRepository;
 
 namespace SEP490_BE.Services.TransactionServices
 {
@@ -12,13 +13,16 @@ namespace SEP490_BE.Services.TransactionServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionDetailRepository _transactionDetailRepository ;
         private readonly IMaterialRepository _materialRepository;
 
-        public TransactionService(KhanhAnNeurologyClinicContext context, ITransactionRepository transactionRepository, IMaterialRepository materialRepository)
+        public TransactionService(KhanhAnNeurologyClinicContext context, ITransactionRepository transactionRepository, IMaterialRepository materialRepository, ITransactionDetailRepository transactionDetailRepository)
+
         {
             _context = context;
             _transactionRepository = transactionRepository;
             _materialRepository = materialRepository;
+            _transactionDetailRepository = transactionDetailRepository;
         }
 
         public async Task<TransactionResponseDTO> CreateImportTransaction(ImportMaterialDTO importDto, string userId)
@@ -93,14 +97,14 @@ namespace SEP490_BE.Services.TransactionServices
                 throw new UnauthorizedAccessException("Chỉ admin mới có quyền phân phát vật tư.");
             }
 
-            var material = await _materialRepository.FindByIdAsync(provideDto.MaterialId);
-            if (material == null)
+            var importTransaction = await _transactionRepository.FindByIdAsync(provideDto.TransactionId);
+            if (importTransaction == null || importTransaction.TransactionType != "IMPORT")
             {
-                throw new ResourceNotFoundException("Vật tư không tồn tại.");
+                throw new ResourceNotFoundException("Transaction nhập hàng không tồn tại.");
             }
-            if (material.QuantityInStock < provideDto.Quantity)
+            if (importTransaction.Quantity < provideDto.Quantity)
             {
-                throw new Exceptions.ArgumentException("Số lượng tồn kho không đủ để phân phát.");
+                throw new Exceptions.ArgumentException($"Lô hàng không đủ số lượng để phân phát. Còn lại: {importTransaction.Quantity}.");
             }
             var room = await DetectRoomTypeAsync(provideDto.RoomId);
             if (room == null)
@@ -110,7 +114,7 @@ namespace SEP490_BE.Services.TransactionServices
             var transaction = new Transaction
             {
                 Id = Guid.NewGuid().ToString(),
-                MaterialId = provideDto.MaterialId,
+                MaterialId = importTransaction.MaterialId,
                 TransactionType = "PROVIDE",
                 Quantity = provideDto.Quantity,
                 RoomId = provideDto.RoomId,
@@ -120,11 +124,32 @@ namespace SEP490_BE.Services.TransactionServices
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
+            var detail = new TransactionDetail
+            {
+                Id = Guid.NewGuid(),
+                TransactionId = transaction.Id,
+                ParentTransactionId = importTransaction.Id,
+                QuantityProvided = provideDto.Quantity
+            };
 
             using var transactionScope = await _context.Database.BeginTransactionAsync();
             try
             {
+               
                 await _transactionRepository.AddAsync(transaction);
+                await _transactionDetailRepository.AddAsync(detail);
+                var material = await _materialRepository.FindByIdAsync(importTransaction.MaterialId);
+                if (material != null)
+                {
+                    material.QuantityInStock -= provideDto.Quantity;
+                   await _materialRepository.UpdateAsync(material);
+                }
+                var trabsactionDelete = await _transactionRepository.FindByIdAsync(provideDto.TransactionId);
+                if (trabsactionDelete != null)
+                {
+                    trabsactionDelete.Quantity -= provideDto.Quantity;
+                    await _transactionRepository.UpdateAsync(trabsactionDelete);
+                }
                 await _context.SaveChangesAsync();
                 await transactionScope.CommitAsync();
             }

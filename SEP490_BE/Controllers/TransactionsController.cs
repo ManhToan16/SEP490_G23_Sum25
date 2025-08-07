@@ -65,13 +65,13 @@ namespace SEP490_BE.Controllers
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
 
-            if (string.IsNullOrEmpty(provideDto.MaterialId) || string.IsNullOrEmpty(provideDto.RoomId) )
+            if (string.IsNullOrEmpty(provideDto.TransactionId) || string.IsNullOrEmpty(provideDto.RoomId) )
             {
                 return BadRequest(new ApiResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Success = false,
-                    Message = "MaterialId và RoomId là bắt buộc.",
+                    Message = "TransactionId và RoomId là bắt buộc.",
                     Data = null
                 });
             }
