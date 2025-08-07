@@ -14,5 +14,6 @@
         public int? MinQuantity { get; set; }
         public string CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
+        public bool IsLowStock { get; set; }
     }
 }

@@ -454,22 +454,31 @@ namespace SEP490_BE.Services.TransactionServices
             foreach (var s in summaries)
             {
                 s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                s.IsLowStock = s.TotalQuantity < 10;
             }
 
             return summaries;
         }
         public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms()
         {
-            var summaries = await _context.Transactions               
+            var summaries = await _context.Transactions
                 .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
                 .GroupBy(t => new { t.RoomId, t.RoomType, t.Material.Name })
-                .Select(g => new ProvidedSummaryDTO
+                .Select(g => new
                 {
                     MaterialName = g.Key.Name,
                     TotalQuantity = g.Sum(t => t.Quantity),
                     RoomId = g.Key.RoomId,
-                    RoomType = g.Key.RoomType,
-                    RoomName=g.First().RoomId
+                    RoomType = g.Key.RoomType
+                })
+                .Where(x => x.TotalQuantity > 0) // <-- Chỉ lấy nhóm có tổng số lượng > 0
+                .Select(x => new ProvidedSummaryDTO
+                {
+                    MaterialName = x.MaterialName,
+                    TotalQuantity = x.TotalQuantity,
+                    RoomId = x.RoomId,
+                    RoomType = x.RoomType,
+                    RoomName = x.RoomId // gán tạm, sẽ cập nhật lại bên dưới
                 })
                 .ToListAsync();
 
@@ -477,13 +486,16 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new ResourceNotFoundException("Không có giao dịch vật tư được phê duyệt nào.");
             }
+
             foreach (var s in summaries)
             {
                 s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                s.IsLowStock = s.TotalQuantity < 10;
             }
 
             return summaries;
         }
+
 
         public async Task<TransactionResponseDTO> UseMaterial(UseMaterialDTO useDto, string userId)
         {

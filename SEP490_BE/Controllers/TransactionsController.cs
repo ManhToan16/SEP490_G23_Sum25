@@ -260,7 +260,7 @@ namespace SEP490_BE.Controllers
         {
             
                 var summary = await _transactionService.GetTotalProvidedByRoomType(roomType);
-                foreach (var item in summary.Where(s => s.IsLowStock))
+                foreach (var item in summary.Where(s => s.IsLowStock ==true))
                 {
                     await _notificationHubService.SendLowStockAlert(item);
                 }
@@ -284,7 +284,7 @@ namespace SEP490_BE.Controllers
         {
            
                 var summary = await _transactionService.GetTotalProvidedByRoomId(roomId);
-                foreach (var item in summary.Where(s => s.IsLowStock))
+                foreach (var item in summary.Where(s => s.IsLowStock==true))
                 {
                     await _notificationHubService.SendLowStockAlert(item);
                 }
@@ -306,7 +306,7 @@ namespace SEP490_BE.Controllers
         {
 
             var summary = await _transactionService.GetTotalProvidedForAllRooms();
-            foreach (var item in summary.Where(s => s.IsLowStock))
+            foreach (var item in summary.Where(s => s.IsLowStock == true))
             {
                 await _notificationHubService.SendLowStockAlert(item);
             }
