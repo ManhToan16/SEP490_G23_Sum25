@@ -454,6 +454,7 @@ namespace SEP490_BE.Services.TransactionServices
             foreach (var s in summaries)
             {
                 s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                s.IsLowStock = s.TotalQuantity < 10;
             }
 
             return summaries;
@@ -489,6 +490,7 @@ namespace SEP490_BE.Services.TransactionServices
             foreach (var s in summaries)
             {
                 s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                s.IsLowStock = s.TotalQuantity < 10;
             }
 
             return summaries;

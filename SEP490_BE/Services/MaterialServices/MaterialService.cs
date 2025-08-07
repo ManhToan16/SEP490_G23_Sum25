@@ -204,7 +204,8 @@ namespace SEP490_BE.Services.MaterialServices
                 MaxQuantity = material.MaxQuantity,
                 MinQuantity = material.MinQuantity,
                 CreatedAt = material.CreatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
-                UpdatedAt = material.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                UpdatedAt = material.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                IsLowStock = material.MinQuantity.HasValue && material.QuantityInStock < material.MinQuantity.Value
             };
         }
     }
