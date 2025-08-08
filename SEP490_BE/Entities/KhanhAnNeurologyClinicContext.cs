@@ -15,19 +15,18 @@ namespace SEP490_BE.Entities
             : base(options)
         {
         }
-   
 
         public virtual DbSet<Appointment> Appointments { get; set; } = null!;
         public virtual DbSet<Assignment> Assignments { get; set; } = null!;
         public virtual DbSet<AssignmentService> AssignmentServices { get; set; } = null!;
         public virtual DbSet<AuditLog> AuditLogs { get; set; } = null!;
-        public virtual DbSet<Category> Categories { get; set; } = null!;       
+        public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<DoctorProfile> DoctorProfiles { get; set; } = null!;
         public virtual DbSet<ExaminationResult> ExaminationResults { get; set; } = null!;
         public virtual DbSet<ExaminationRoom> ExaminationRooms { get; set; } = null!;    
         public virtual DbSet<LaboratoryFile> LaboratoryFiles { get; set; } = null!;
         public virtual DbSet<LaboratoryResult> LaboratoryResults { get; set; } = null!;
-        public virtual DbSet<LaboratoryRoom> LaboratoryRooms { get; set; } = null!;
+        public virtual DbSet<LaboratoryRoom> LaboratoryRooms { get; set; } = null!;     
         public virtual DbSet<Material> Materials { get; set; } = null!;
         public virtual DbSet<MedicalRecord> MedicalRecords { get; set; } = null!;
         public virtual DbSet<Medicine> Medicines { get; set; } = null!;
@@ -38,11 +37,12 @@ namespace SEP490_BE.Entities
         public virtual DbSet<Role> Roles { get; set; } = null!;
         public virtual DbSet<RolePermission> RolePermissions { get; set; } = null!;
         public virtual DbSet<Schedule> Schedules { get; set; } = null!;
-        public virtual DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; set; } = null!;
-        public virtual DbSet<Service> Services { get; set; } = null!;
+        public virtual DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; set; } = null!;    
+        public virtual DbSet<Service> Services { get; set; } = null!;    
         public virtual DbSet<Supplier> Suppliers { get; set; } = null!;
         public virtual DbSet<TimeSlot> TimeSlots { get; set; } = null!;
         public virtual DbSet<Transaction> Transactions { get; set; } = null!;
+        public virtual DbSet<TransactionDetail> TransactionDetails { get; set; } = null!;
         public virtual DbSet<TransactionHistory> TransactionHistories { get; set; } = null!;
         public virtual DbSet<User> Users { get; set; } = null!;
         public virtual DbSet<UserRole> UserRoles { get; set; } = null!;
@@ -53,19 +53,19 @@ namespace SEP490_BE.Entities
             if (!optionsBuilder.IsConfigured)
             {
                 var config = new ConfigurationBuilder()
-                    .SetBasePath(AppContext.BaseDirectory)
-                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                    .Build();
+                .SetBasePath(AppContext.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
 
                 var connectionString = config.GetConnectionString("MyDB");
                 optionsBuilder.UseSqlServer(connectionString);
+
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-         
-
+          
             modelBuilder.Entity<Appointment>(entity =>
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -197,7 +197,7 @@ namespace SEP490_BE.Entities
                     .HasDefaultValueSql("(getdate())");
             });
 
-        
+          
 
             modelBuilder.Entity<DoctorProfile>(entity =>
             {
@@ -267,7 +267,8 @@ namespace SEP490_BE.Entities
                 entity.Property(e => e.Name).HasMaxLength(100);
             });
 
-          
+    
+
             modelBuilder.Entity<LaboratoryFile>(entity =>
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -337,7 +338,7 @@ namespace SEP490_BE.Entities
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
 
-                entity.Property(e => e.CategoryId).HasMaxLength(100).IsRequired(false); ;
+                entity.Property(e => e.CategoryId).HasMaxLength(100);
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnType("datetime")
@@ -345,7 +346,7 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.Name).HasMaxLength(255);
 
-                entity.Property(e => e.SupplierId).HasMaxLength(100).IsRequired(false); ;
+                entity.Property(e => e.SupplierId).HasMaxLength(100);
 
                 entity.Property(e => e.Unit).HasMaxLength(50);
 
@@ -391,14 +392,15 @@ namespace SEP490_BE.Entities
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
 
+                entity.Property(e => e.IsActive)
+                    .IsRequired()
+                    .HasDefaultValueSql("((1))");
+
                 entity.Property(e => e.Name).HasMaxLength(255);
 
                 entity.Property(e => e.Packaging).HasMaxLength(50);
 
                 entity.Property(e => e.Unit).HasMaxLength(100);
-                entity.Property(e => e.IsActive)
-                  .IsRequired()
-                  .HasDefaultValueSql("((1))");
             });
 
             modelBuilder.Entity<PatientProfile>(entity =>
@@ -583,7 +585,6 @@ namespace SEP490_BE.Entities
             });
 
           
-
             modelBuilder.Entity<Service>(entity =>
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -671,13 +672,35 @@ namespace SEP490_BE.Entities
                 entity.HasOne(d => d.Supplier)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.SupplierId)
-                    .HasConstraintName("FK__Transacti__Suppl__37703C52");
+                    .OnDelete(DeleteBehavior.SetNull)
+                    .HasConstraintName("FK_Transactions_Suppliers");
 
                 entity.HasOne(d => d.User)
                     .WithMany(p => p.Transactions)
                     .HasForeignKey(d => d.UserId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Transacti__UserI__367C1819");
+            });
+
+            modelBuilder.Entity<TransactionDetail>(entity =>
+            {
+                entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+
+                entity.Property(e => e.ParentTransactionId).HasMaxLength(100);
+
+                entity.Property(e => e.QuantityProvided).HasDefaultValueSql("((0))");
+
+                entity.Property(e => e.TransactionId).HasMaxLength(100);
+
+                entity.HasOne(d => d.ParentTransaction)
+                    .WithMany(p => p.TransactionDetailParentTransactions)
+                    .HasForeignKey(d => d.ParentTransactionId)
+                    .HasConstraintName("FK__Transacti__Paren__11158940");
+
+                entity.HasOne(d => d.Transaction)
+                    .WithMany(p => p.TransactionDetailTransactions)
+                    .HasForeignKey(d => d.TransactionId)
+                    .HasConstraintName("FK__Transacti__Trans__10216507");
             });
 
             modelBuilder.Entity<TransactionHistory>(entity =>

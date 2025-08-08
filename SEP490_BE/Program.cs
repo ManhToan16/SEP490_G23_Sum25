@@ -62,6 +62,7 @@ using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.FileProviders;
+using SEP490_BE.Repositories.TransactionDetailRepository;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -236,6 +237,7 @@ builder.Services.AddScoped<IExaminationResultRepository, ExaminationResultReposi
 builder.Services.AddScoped<ILaboratoryFileRepository, LaboratoryFileRepository>();
 builder.Services.AddScoped<ILaboratoryResultRepository, LaboratoryResultRepository>();
 builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
+builder.Services.AddScoped<ITransactionDetailRepository, TransactionDetailRepository>();
 
 
 

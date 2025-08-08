@@ -34,13 +34,13 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateImportTransaction([FromBody] ImportMaterialDTO importDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-            if (string.IsNullOrEmpty(importDto.MaterialId) || string.IsNullOrEmpty(importDto.SupplierId))
+            if (string.IsNullOrEmpty(importDto.MaterialId) )
             {
                 return BadRequest(new ApiResponse
                 {
                     StatusCode = StatusCodes.Status400BadRequest,
                     Success = false,
-                    Message = "MaterialId và SupplierId là bắt buộc.",
+                    Message = "MaterialId là bắt buộc.",
                     Data = null
                 });
             }
@@ -64,17 +64,6 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateProvideTransaction([FromBody] ProvideMaterialDTO provideDto)
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
-
-            if (string.IsNullOrEmpty(provideDto.MaterialId) || string.IsNullOrEmpty(provideDto.RoomId) )
-            {
-                return BadRequest(new ApiResponse
-                {
-                    StatusCode = StatusCodes.Status400BadRequest,
-                    Success = false,
-                    Message = "MaterialId và RoomId là bắt buộc.",
-                    Data = null
-                });
-            }
 
             var transaction = await _transactionService.CreateProvideTransaction(provideDto,userId);
             return Ok(new ApiResponse

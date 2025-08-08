@@ -5,6 +5,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.MaterialRepositories;
 using SEP490_BE.Repositories.TransactionRepositories;
 using Microsoft.EntityFrameworkCore;
+using SEP490_BE.Repositories.TransactionDetailRepository;
 
 namespace SEP490_BE.Services.TransactionServices
 {
@@ -12,13 +13,16 @@ namespace SEP490_BE.Services.TransactionServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly ITransactionRepository _transactionRepository;
+        private readonly ITransactionDetailRepository _transactionDetailRepository ;
         private readonly IMaterialRepository _materialRepository;
 
-        public TransactionService(KhanhAnNeurologyClinicContext context, ITransactionRepository transactionRepository, IMaterialRepository materialRepository)
+        public TransactionService(KhanhAnNeurologyClinicContext context, ITransactionRepository transactionRepository, IMaterialRepository materialRepository, ITransactionDetailRepository transactionDetailRepository)
+
         {
             _context = context;
             _transactionRepository = transactionRepository;
             _materialRepository = materialRepository;
+            _transactionDetailRepository = transactionDetailRepository;
         }
 
         public async Task<TransactionResponseDTO> CreateImportTransaction(ImportMaterialDTO importDto, string userId)
@@ -36,11 +40,7 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new ResourceNotFoundException("Vật tư không tồn tại.");
             }
-            var supplier = await _context.Suppliers.FindAsync(importDto.SupplierId);
-            if (supplier == null)
-            {
-                throw new ResourceNotFoundException("Nhà cung cấp không tồn tại.");
-            }
+          
 
             if (importDto.DefectiveQuantity >= importDto.Quantity)
             {
@@ -57,7 +57,7 @@ namespace SEP490_BE.Services.TransactionServices
                 UserId = userId,
                 Reason = importDto.Reason,
                 Status = "APPROVED",
-                SupplierId = importDto.SupplierId,
+                SupplierId = material.SupplierId,
                 Price = importDto.Price,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -82,60 +82,102 @@ namespace SEP490_BE.Services.TransactionServices
 
         }
 
-        public async Task<TransactionResponseDTO> CreateProvideTransaction(ProvideMaterialDTO provideDto,string userId)
+        public async Task<List<TransactionResponseDTO>> CreateProvideTransaction(ProvideMaterialDTO provideDto, string userId)
         {
             var user = await _context.Users
                 .Include(u => u.UserRoles)
                 .FirstOrDefaultAsync(u => u.Id == userId);
-            if (user == null || !user.UserRoles.Any(ur => ur.RoleName == "ADMIN" ))
 
+            if (user == null || !user.UserRoles.Any(ur => ur.RoleName == "ADMIN"))
             {
                 throw new UnauthorizedAccessException("Chỉ admin mới có quyền phân phát vật tư.");
             }
 
-            var material = await _materialRepository.FindByIdAsync(provideDto.MaterialId);
-            if (material == null)
+            var importTransaction = await _transactionRepository.FindByIdAsync(provideDto.TransactionId);
+            if (importTransaction == null || importTransaction.TransactionType != "IMPORT")
             {
-                throw new ResourceNotFoundException("Vật tư không tồn tại.");
+                throw new ResourceNotFoundException("Transaction nhập hàng không tồn tại.");
             }
-            if (material.QuantityInStock < provideDto.Quantity)
+
+            // Tính tổng số lượng muốn phân phát
+            var totalProvideQty = provideDto.Rooms.Sum(r => r.Quantity);
+            if (totalProvideQty > importTransaction.Quantity)
             {
-                throw new Exceptions.ArgumentException("Số lượng tồn kho không đủ để phân phát.");
+                throw new Exceptions.ArgumentException(
+                    $"Lô hàng không đủ số lượng để phân phát. Còn lại: {importTransaction.Quantity}."
+                );
             }
-            var room = await DetectRoomTypeAsync(provideDto.RoomId);
-            if (room == null)
-            {
-                throw new ResourceNotFoundException("Phòng không tồn tại.");
-            }
-            var transaction = new Transaction
-            {
-                Id = Guid.NewGuid().ToString(),
-                MaterialId = provideDto.MaterialId,
-                TransactionType = "PROVIDE",
-                Quantity = provideDto.Quantity,
-                RoomId = provideDto.RoomId,
-                RoomType = room, 
-                UserId = userId,
-                Status = "PENDING",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+
+            var resultList = new List<TransactionResponseDTO>();
 
             using var transactionScope = await _context.Database.BeginTransactionAsync();
             try
             {
-                await _transactionRepository.AddAsync(transaction);
+                foreach (var roomItem in provideDto.Rooms)
+                {
+                    var roomType = await DetectRoomTypeAsync(roomItem.RoomId);
+                    if (roomType == null)
+                    {
+                        throw new ResourceNotFoundException($"Phòng {roomItem.RoomId} không tồn tại.");
+                    }
+
+                    // Tạo transaction PROVIDE
+                    var provideTransaction = new Transaction
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        MaterialId = importTransaction.MaterialId,
+                        TransactionType = "PROVIDE",
+                        Quantity = roomItem.Quantity,
+                        RoomId = roomItem.RoomId,
+                        RoomType = roomType,
+                        UserId = userId,
+                        Status = "PENDING",
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    // Tạo TransactionDetail
+                    var detail = new TransactionDetail
+                    {
+                        Id = Guid.NewGuid(),
+                        TransactionId = provideTransaction.Id,
+                        ParentTransactionId = importTransaction.Id,
+                        QuantityProvided = roomItem.Quantity
+                    };
+
+                    await _transactionRepository.AddAsync(provideTransaction);
+                    await _transactionDetailRepository.AddAsync(detail);
+
+                    resultList.Add(MapToResponseDTO(provideTransaction));
+                }
+
+                // Giảm số lượng trong lô nhập
+                var transactionToUpdate = await _transactionRepository.FindByIdAsync(provideDto.TransactionId);
+                //if (transactionToUpdate != null)
+                //{
+                //    var deleteMaterial = provideDto.Rooms.Sum(r => r.Quantity);
+                //    transactionToUpdate.Quantity -= deleteMaterial;
+                //    await _transactionRepository.UpdateAsync(transactionToUpdate);
+                //}
+
+                //// Giảm số lượng tồn kho vật tư
+                //var material = await _materialRepository.FindByIdAsync(importTransaction.MaterialId);
+                //if (material != null)
+                //{
+                //    material.QuantityInStock -= totalProvideQty;
+                //    await _materialRepository.UpdateAsync(material);
+                //}
+
                 await _context.SaveChangesAsync();
                 await transactionScope.CommitAsync();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 await transactionScope.RollbackAsync();
-                throw ex;
-              
+                throw;
             }
-            return MapToResponseDTO(transaction);
 
+            return resultList;
         }
 
         public async Task<TransactionResponseDTO> RequestReturnTransaction(NurseReturnDTO returnDto, string userId)
@@ -398,31 +440,56 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new Exceptions.ArgumentException("RoomType phải là EXAMINATION hoặc LABORATORY.");
             }
-            var approvedTransactions = await _context.Transactions
-                           .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomType == roomType)
-                           .ToListAsync();
 
-            if (!approvedTransactions.Any())
-            {
-                throw new ResourceNotFoundException("Không có giao dịch được phê duyệt cho phòng này.");
-            }
-            var summaries = await _context.Transactions
+            var data = await _context.Transactions
                 .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomType == roomType)
-                .GroupBy(t => new { t.Material.Name, t.RoomId })
+                .Join(_context.TransactionDetails,
+                    provide => provide.Id,
+                    detail => detail.TransactionId,
+                    (provide, detail) => new { provide, detail })
+                .Join(_context.Transactions,
+                    pd => pd.detail.ParentTransactionId,
+                    import => import.Id,
+                    (pd, import) => new
+                    {
+                        MaterialName = import.Material.Name,
+                        pd.provide.RoomId,
+                        pd.provide.RoomType,
+                        BatchId = import.Id,
+                        Quantity = pd.provide.Quantity
+                    })
+                .ToListAsync();
+
+            if (!data.Any())
+            {
+                throw new ResourceNotFoundException("Không có giao dịch được phê duyệt cho loại phòng này.");
+            }
+
+            var summaries = data
+                .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
                 .Select(g => new ProvidedSummaryDTO
                 {
-                    MaterialName = g.Key.Name,
-                    TotalQuantity = g.Sum(t => t.Quantity),
+                    MaterialName = g.Key.MaterialName,
                     RoomId = g.Key.RoomId,
-                    RoomType = roomType
+                    RoomType = g.Key.RoomType,
+                    BatchInfo = g.GroupBy(b => b.BatchId)
+                                 .Select(bg => new BatchInfoDTO
+                                 {
+                                     TransactionId = bg.Key,
+                                     Quantity = bg.Sum(x => x.Quantity)
+                                 }).ToList()
                 })
-                .ToListAsync();
+                .ToList();
+
             foreach (var s in summaries)
             {
                 s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                s.IsLowStock = s.TotalQuantity < 10;
             }
+
             return summaries;
         }
+
 
         public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedByRoomId(string roomId)
         {
@@ -432,25 +499,47 @@ namespace SEP490_BE.Services.TransactionServices
             }
 
             var roomType = await DetectRoomTypeAsync(roomId);
-            var approvedTransactions = await _context.Transactions
-               .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomType == roomType)
-               .ToListAsync();
 
-            if (!approvedTransactions.Any())
+            var data = await _context.Transactions
+                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomId == roomId)
+                .Join(_context.TransactionDetails,
+                    provide => provide.Id,
+                    detail => detail.TransactionId,
+                    (provide, detail) => new { provide, detail })
+                .Join(_context.Transactions,
+                    pd => pd.detail.ParentTransactionId,
+                    import => import.Id,
+                    (pd, import) => new
+                    {
+                        MaterialName = import.Material.Name,
+                        pd.provide.RoomId,
+                        pd.provide.RoomType,
+                        BatchId = import.Id,
+                        Quantity = pd.provide.Quantity
+                    })
+                .ToListAsync();
+
+            if (!data.Any())
             {
                 throw new ResourceNotFoundException("Không có giao dịch được phê duyệt cho phòng này.");
             }
-            var summaries = await _context.Transactions
-                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomId == roomId)
-                .GroupBy(t => t.Material.Name)
+
+            var summaries = data
+                .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
                 .Select(g => new ProvidedSummaryDTO
                 {
-                    MaterialName = g.Key,
-                    TotalQuantity = g.Sum(t => t.Quantity),
-                    RoomId = roomId,
-                    RoomType = roomType,
+                    MaterialName = g.Key.MaterialName,
+                    RoomId = g.Key.RoomId,
+                    RoomType = g.Key.RoomType,
+                    BatchInfo = g.GroupBy(b => b.BatchId)
+                                 .Select(bg => new BatchInfoDTO
+                                 {
+                                     TransactionId = bg.Key,
+                                     Quantity = bg.Sum(x => x.Quantity)
+                                 }).ToList()
                 })
-                .ToListAsync();
+                .ToList();
+
             foreach (var s in summaries)
             {
                 s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
@@ -459,41 +548,58 @@ namespace SEP490_BE.Services.TransactionServices
 
             return summaries;
         }
+
         public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms()
         {
-            var summaries = await _context.Transactions
-                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
-                .GroupBy(t => new { t.RoomId, t.RoomType, t.Material.Name })
-                .Select(g => new
-                {
-                    MaterialName = g.Key.Name,
-                    TotalQuantity = g.Sum(t => t.Quantity),
-                    RoomId = g.Key.RoomId,
-                    RoomType = g.Key.RoomType
-                })
-                .Where(x => x.TotalQuantity > 0) // <-- Chỉ lấy nhóm có tổng số lượng > 0
-                .Select(x => new ProvidedSummaryDTO
-                {
-                    MaterialName = x.MaterialName,
-                    TotalQuantity = x.TotalQuantity,
-                    RoomId = x.RoomId,
-                    RoomType = x.RoomType,
-                    RoomName = x.RoomId // gán tạm, sẽ cập nhật lại bên dưới
-                })
-                .ToListAsync();
+            var data = await _context.Transactions
+          .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
+          .Join(_context.TransactionDetails,
+              provide => provide.Id,
+              detail => detail.TransactionId,
+              (provide, detail) => new { provide, detail })
+          .Join(_context.Transactions,
+              pd => pd.detail.ParentTransactionId,
+              import => import.Id,
+              (pd, import) => new
+              {
+                  MaterialName = import.Material.Name,
+                  pd.provide.RoomId,
+                  pd.provide.RoomType,
+                  BatchId = import.Id,
+                  Quantity = pd.provide.Quantity
+              })
+          .ToListAsync();
 
-            if (!summaries.Any())
+            if (!data.Any())
             {
                 throw new ResourceNotFoundException("Không có giao dịch vật tư được phê duyệt nào.");
             }
 
-            foreach (var s in summaries)
+            var grouped = data
+                .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
+                .Select(g => new ProvidedSummaryDTO
+                {
+                    MaterialName = g.Key.MaterialName,
+                    RoomId = g.Key.RoomId,
+                    RoomType = g.Key.RoomType,
+                    RoomName = "", // sẽ set sau
+                    BatchInfo = g.GroupBy(b => b.BatchId)
+                               .Select(bg => new BatchInfoDTO
+                               {
+                                   TransactionId = bg.Key,
+                                   Quantity = bg.Sum(x => x.Quantity)
+                               }).ToList()
+                })
+                .ToList();
+
+            // Bổ sung tên phòng
+            foreach (var item in grouped)
             {
-                s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
-                s.IsLowStock = s.TotalQuantity < 10;
+                item.RoomName = await GetRoomNameAsync(item.RoomId, item.RoomType);
+                item.IsLowStock = item.TotalQuantity < 10;
             }
 
-            return summaries;
+            return grouped;
         }
 
 
@@ -603,10 +709,31 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new ResourceNotFoundException("Vật tư không tồn tại.");
             }
+            var provideDetails = await _transactionDetailRepository.GetByTransactionIdAsync(transactionId);
+            if (!provideDetails.Any())
+            {
+                throw new Exceptions.ArgumentException("Không tìm thấy chi tiết giao dịch phân phát.");
+            }
 
+            foreach (var detail in provideDetails)
+            {
+                if (!string.IsNullOrEmpty(detail.ParentTransactionId))
+                {
+                    var parentTransaction = await _transactionRepository.FindByIdAsync(detail.ParentTransactionId);
+                    if (parentTransaction != null)
+                    {
+                        parentTransaction.Quantity -= detail.QuantityProvided ?? 0;
+
+                        if (parentTransaction.Quantity < 0)
+                            throw new Exceptions.ArgumentException("Số lượng trong lô nhập không đủ để phân phát.");
+
+                        await _transactionRepository.UpdateAsync(parentTransaction);
+                    }
+                }
+            }
             transaction.Status = "APPROVED";
             transaction.UpdatedAt = DateTime.UtcNow;
-            material.QuantityInStock -= transaction.Quantity; // Giảm số lượng tồn kho
+            material.QuantityInStock -= transaction.Quantity; 
             if (material.QuantityInStock < 0)
             {
                 throw new Exceptions.ArgumentException("Số lượng tồn kho không đủ để phân phát.");
