@@ -545,8 +545,8 @@ const UserProfileCommon: React.FC<UserProfileCommonProps> = ({
                 <select
                   id="role"
                   value={formData.role}
-                  onChange={(e) => handleInputChange('role', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={true}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed text-gray-600"
                 >
                   <option value="">Chọn vai trò</option>
                   <option value="Admin">Admin</option>
