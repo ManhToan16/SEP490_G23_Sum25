@@ -608,8 +608,6 @@ namespace SEP490_BE.Services.AppointmentServices
                         }
                     }
                 }
-
-                
             }
             catch
             {
@@ -711,6 +709,33 @@ namespace SEP490_BE.Services.AppointmentServices
                     Date = appointment.Date,
                     Status = appointment.Status,
                 });
+                if (visit != null)
+                {
+                    await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                    {
+                        Action = "UPDATE",
+                        VisitId = visit.Id,
+                        PatientName = visit.PatientName,
+                        ExaminationRoomId = visit.ExaminationRoomId,
+                        QueueNumber = visit.QueueNumber,
+                        Status = visit.Status,
+                        IsPrioritized = visit.IsPrioritized,
+                    });
+                    if (assignments != null)
+                    {
+                        foreach (var asm in assignments)
+                        {
+                            await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                            {
+                                Action = "UPDATE",
+                                AssignmentId = asm.Id,
+                                PatientName = visit.PatientName,
+                                LaboratoryRoomId = asm.LaboratoryRoomId,
+                                Status = asm.Status
+                            });
+                        }
+                    }
+                }
             }
             catch
             {

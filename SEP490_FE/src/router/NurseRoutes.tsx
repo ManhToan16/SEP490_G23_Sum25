@@ -7,6 +7,7 @@ const Dashboard = React.lazy(() => import("@/pages/nurse/Dashboard"));
 const PatientQueue = React.lazy(() => import("@/pages/nurse/PatientQueue"));
 const LabPatientQueue = React.lazy(() => import("@/pages/nurse/LabPatientQueue"));
 const SupplyManagement = React.lazy(() => import("@/pages/nurse/SupplyManagement"));
+const UserProfile = React.lazy(() => import("@/pages/nurse/UserProfile"));
 
 const NurseRoutes: React.FC = () => {
   return (
@@ -16,6 +17,7 @@ const NurseRoutes: React.FC = () => {
         <Route path="patient-queue" element={<PatientQueue />} />
         <Route path="lab-patient-queue" element={<LabPatientQueue />} />
         <Route path="supply-management" element={<SupplyManagement />} />
+        <Route path="profile" element={<UserProfile />} />
       </Routes>
     </Suspense>
   );

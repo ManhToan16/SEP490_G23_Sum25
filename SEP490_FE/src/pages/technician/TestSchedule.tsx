@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
@@ -153,6 +153,16 @@ const TestSchedule: React.FC = () => {
     }
   }, [user]);
 
+  // Refs để store current values và tránh infinite loop
+  const assignmentsRef = useRef(assignments);
+  const selectedDateRef = useRef(selectedDate);
+  const fetchFunctionRef = useRef(fetchTechnicianScheduleAndAssignments);
+  
+  // Update refs khi values thay đổi
+  assignmentsRef.current = assignments;
+  selectedDateRef.current = selectedDate;
+  fetchFunctionRef.current = fetchTechnicianScheduleAndAssignments;
+
   // useEffect để gọi API khi component mount hoặc khi selectedDate thay đổi
   useEffect(() => {
     // Lấy userId từ user.UserId (từ token) hoặc user.id
@@ -167,6 +177,7 @@ const TestSchedule: React.FC = () => {
   useEffect(() => {
     
     const handleAssignmentChanged = (assignmentData: any) => {
+      console.log('🔔 [TestSchedule] Received AssignmentChanged event:', assignmentData);
       
       // Normalize data structure - backend sends camelCase, we expect PascalCase
       const normalizedData = {
@@ -177,10 +188,15 @@ const TestSchedule: React.FC = () => {
         Status: assignmentData.status || assignmentData.Status
       };
       
+      console.log('🔄 [TestSchedule] Normalized data:', normalizedData);
+      console.log('🏠 [TestSchedule] Current room ID:', currentRoomId);
+      
       // Chỉ xử lý nếu assignment thuộc về phòng xét nghiệm hiện tại
       if (normalizedData.LaboratoryRoomId === currentRoomId) {
+        console.log('✅ [TestSchedule] Assignment belongs to current room, processing...');
         
         if (normalizedData.Action === 'CREATE') {
+          console.log('➕ [TestSchedule] Creating new assignment');
           // Thêm assignment mới vào danh sách
           const newAssignment = {
             id: normalizedData.AssignmentId,
@@ -205,23 +221,53 @@ const TestSchedule: React.FC = () => {
           // Tự động ẩn thông báo sau 5 giây
           setTimeout(() => setRealtimeNotification(null), 5000);
         } else if (normalizedData.Action === 'UPDATE') {
-          // Cập nhật assignment trong danh sách
-          setAssignments(prev => prev.map(assignment => 
-            assignment.id === normalizedData.AssignmentId 
-              ? { ...assignment, status: normalizedData.Status }
-              : assignment
-          ));
+          console.log('🔄 [TestSchedule] Updating existing assignment');
+          console.log('🔍 [TestSchedule] Looking for assignment ID:', normalizedData.AssignmentId);
+          console.log('📋 [TestSchedule] Current assignments:', assignmentsRef.current.map(a => ({ id: a.id, assignmentId: a.assignmentId, status: a.status })));
           
-          // Hiển thị thông báo real-time
+          // Cập nhật assignment trong danh sách - thử cả id và assignmentId
+          setAssignments(prev => {
+            const updated = prev.map(assignment => {
+              const isMatch = assignment.id === normalizedData.AssignmentId || 
+                             assignment.assignmentId === normalizedData.AssignmentId;
+              
+              if (isMatch) {
+                console.log('✅ [TestSchedule] Found matching assignment, updating status from', assignment.status, 'to', normalizedData.Status);
+                return { ...assignment, status: normalizedData.Status };
+              }
+              return assignment;
+            });
+            
+            console.log('📋 [TestSchedule] Updated assignments:', updated.map(a => ({ id: a.id, assignmentId: a.assignmentId, status: a.status })));
+            return updated;
+          });
+          
+          // Hiển thị thông báo real-time với thông tin chi tiết hơn
+          const statusText = normalizedData.Status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
+                           normalizedData.Status === 'IN_LABORATORY' ? 'Vào phòng xét nghiệm' :
+                           normalizedData.Status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
+                           normalizedData.Status === 'WAITING' ? 'Đang chờ' :
+                           normalizedData.Status;
+          
           setRealtimeNotification({
             show: true,
-            message: `🔄 Cập nhật: ${normalizedData.PatientName} - ${normalizedData.Status}`,
+            message: `🔔 Y tá đã gọi: ${normalizedData.PatientName} - ${statusText}`,
             type: 'success'
           });
           
           // Tự động ẩn thông báo sau 5 giây
           setTimeout(() => setRealtimeNotification(null), 5000);
+          
+          // Force refresh để đảm bảo UI được cập nhật
+          setTimeout(() => {
+            console.log('🔄 [TestSchedule] Force refreshing data after SignalR update');
+            if (selectedDateRef.current) {
+              fetchFunctionRef.current(selectedDateRef.current);
+            }
+          }, 1000);
         }
+      } else {
+        console.log('❌ [TestSchedule] Assignment does not belong to current room, ignoring');
       }
     };
 
@@ -244,24 +290,37 @@ const TestSchedule: React.FC = () => {
     setSignalRStatus('connecting');
     signalRService.startConnection().then(() => {
       setSignalRStatus('connected');
+      console.log('🔗 [TestSchedule] SignalR connected successfully');
     }).catch(() => {
       setSignalRStatus('disconnected');
+      console.error('❌ [TestSchedule] SignalR connection failed');
     });
     
     // Theo dõi connection status định kỳ
     const statusInterval = setInterval(checkConnectionStatus, 5000);
     
+    // Fallback: Refresh data định kỳ nếu SignalR không hoạt động
+    const fallbackRefreshInterval = setInterval(() => {
+      if (!signalRService.isConnected()) {
+        console.log('🔄 [TestSchedule] SignalR disconnected, refreshing data as fallback');
+        const currentDate = selectedDateRef.current || new Date().toISOString().split('T')[0];
+        fetchFunctionRef.current(currentDate);
+      }
+    }, 30000); // Refresh mỗi 30 giây nếu SignalR không hoạt động
+    
     // Cleanup khi component unmount
     return () => {
       signalRService.off('assignmentChanged', handleAssignmentChanged);
       clearInterval(statusInterval);
+      clearInterval(fallbackRefreshInterval);
     };
-  }, [currentRoomId]);
+  }, [currentRoomId]); // Chỉ dependency currentRoomId để tránh infinite loop
 
   // Convert assignments to tests format for compatibility with existing UI
   const convertAssignmentsToTests = (assignments: any[]) => {
     return assignments.map((assignment: any) => ({
       id: assignment.id || assignment.assignmentId,
+      assignmentId: assignment.assignmentId || assignment.id, // Thêm assignmentId để matching
       patientName: assignment.patientName || 'N/A',
       patientId: assignment.patientId || assignment.patientProfileId || 'N/A',
       testType: assignment.serviceName || assignment.testType || 'Xét nghiệm',
@@ -302,246 +361,244 @@ const TestSchedule: React.FC = () => {
 
 
   return (
-    <TechnicianLayout>
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Lịch xét nghiệm</h1>
-            <p className="text-gray-600 mt-2">Quản lý lịch trình xét nghiệm và theo dõi tiến độ</p>
-          </div>
-          
-          {/* SignalR Status Indicator */}
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Lịch xét nghiệm</h1>
+          <p className="text-gray-600 mt-2">Quản lý lịch trình xét nghiệm và theo dõi tiến độ</p>
+        </div>
+        
+        {/* SignalR Status Indicator */}
+        <div className="flex items-center space-x-2">
+          <div className={`w-3 h-3 rounded-full ${
+            signalRStatus === 'connected' ? 'bg-green-500' :
+            signalRStatus === 'connecting' ? 'bg-yellow-500' :
+            'bg-red-500'
+          }`}></div>
+          <span className={`text-sm font-medium ${
+            signalRStatus === 'connected' ? 'text-green-600' :
+            signalRStatus === 'connecting' ? 'text-yellow-600' :
+            'text-red-600'
+          }`}>
+            {signalRStatus === 'connected' ? 'Real-time kết nối' :
+             signalRStatus === 'connecting' ? 'Đang kết nối...' :
+             'Mất kết nối'}
+          </span>
+        </div>
+      </div>
+
+      {/* Real-time Notification */}
+      {realtimeNotification && (
+        <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
+          realtimeNotification.type === 'success' 
+            ? 'bg-green-100 border border-green-300 text-green-800' 
+            : realtimeNotification.type === 'warning'
+            ? 'bg-yellow-100 border border-yellow-300 text-yellow-800'
+            : 'bg-blue-100 border border-blue-300 text-blue-800'
+        }`}>
           <div className="flex items-center space-x-2">
-            <div className={`w-3 h-3 rounded-full ${
-              signalRStatus === 'connected' ? 'bg-green-500' :
-              signalRStatus === 'connecting' ? 'bg-yellow-500' :
-              'bg-red-500'
-            }`}></div>
-            <span className={`text-sm font-medium ${
-              signalRStatus === 'connected' ? 'text-green-600' :
-              signalRStatus === 'connecting' ? 'text-yellow-600' :
-              'text-red-600'
-            }`}>
-              {signalRStatus === 'connected' ? 'Real-time kết nối' :
-               signalRStatus === 'connecting' ? 'Đang kết nối...' :
-               'Mất kết nối'}
+            <div className="animate-pulse">🔔</div>
+            <span className="font-medium">{realtimeNotification.message}</span>
+            <button 
+              onClick={() => setRealtimeNotification(null)}
+              className="ml-2 text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Bộ lọc và tìm kiếm */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Bộ lọc</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-4">
+            <div>
+              <label className="text-sm font-medium">Ngày</label>
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="ml-2 px-3 py-1 border rounded-md"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Danh sách xét nghiệm */}
+      <div className="clinic-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy">
+            Danh sách xét nghiệm
+          </h2>
+          <div className="flex items-center space-x-2">
+            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+              {tests.length} xét nghiệm
             </span>
+            {currentRoomInfo && (
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                {currentRoomInfo.name}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Real-time Notification */}
-        {realtimeNotification && (
-          <div className={`fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transition-all duration-300 ${
-            realtimeNotification.type === 'success' 
-              ? 'bg-green-100 border border-green-300 text-green-800' 
-              : realtimeNotification.type === 'warning'
-              ? 'bg-yellow-100 border border-yellow-300 text-yellow-800'
-              : 'bg-blue-100 border border-blue-300 text-blue-800'
-          }`}>
-            <div className="flex items-center space-x-2">
-              <div className="animate-pulse">🔔</div>
-              <span className="font-medium">{realtimeNotification.message}</span>
-              <button 
-                onClick={() => setRealtimeNotification(null)}
-                className="ml-2 text-gray-500 hover:text-gray-700"
-              >
-                ✕
-              </button>
-            </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+            <p className="text-gray-500">Đang tải dữ liệu...</p>
           </div>
         )}
 
-        {/* Bộ lọc và tìm kiếm */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Bộ lọc</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-4">
-              <div>
-                <label className="text-sm font-medium">Ngày</label>
-                <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="ml-2 px-3 py-1 border rounded-md"
-                />
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-8">
+            <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
+            <p className="text-red-500 mb-4">{error}</p>
+            <button 
+              onClick={() => fetchTechnicianScheduleAndAssignments(selectedDate)}
+              className="clinic-button-primary"
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
+
+        {/* No Schedule Message */}
+        {noScheduleMessage && !loading && !error && (
+          <div className="text-center py-8">
+            <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
+            <p className="text-gray-500">{noScheduleMessage}</p>
+          </div>
+        )}
+
+        {/* Assignments Table */}
+        {!loading && !error && !noScheduleMessage && (
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-purple-50 rounded-t-lg border-b">
+              <div className="col-span-6 text-sm font-semibold text-clinic-navy">
+                Thông tin bệnh nhân
+              </div>
+              <div className="col-span-3 text-sm font-semibold text-clinic-navy">
+                Trạng thái
+              </div>
+              <div className="col-span-3 text-sm font-semibold text-clinic-navy text-center">
+                Thao tác
               </div>
             </div>
-          </CardContent>
-        </Card>
 
-        {/* Danh sách xét nghiệm */}
-        <div className="clinic-card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-poppins font-semibold text-clinic-navy">
-              Danh sách xét nghiệm
-            </h2>
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
-                {tests.length} xét nghiệm
-              </span>
-              {currentRoomInfo && (
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                  {currentRoomInfo.name}
-                </span>
+            {/* Table Body */}
+            <div className="divide-y divide-gray-100">
+              {tests.map((test) => (
+                <div key={test.id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                  {/* Patient Info */}
+                  <div className="col-span-6 flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center">
+                      <User className="text-white" size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-clinic-navy text-lg">
+                        {test.patientName}
+                      </h4>
+                      {test.notes && (
+                        <div className="text-xs text-orange-600 mt-1">{test.notes}</div>
+                      )}
+                      </div>
+                    </div>
+
+                  {/* Status */}
+                  <div className="col-span-3 flex items-center">
+                    <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
+                      test.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                      test.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      test.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                      test.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800 border border-green-200' :
+                      test.status === 'PENDING' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                      test.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      test.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                      test.status === 'IN_LABORATORY' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                      test.status === 'IN_LABORATORY_PROGRESS' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                      test.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
+                      test.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
+                      test.status === 'scheduled' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                      test.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                      test.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
+                      test.status === 'cancelled' ? 'bg-red-100 text-red-800 border border-red-200' :
+                      'bg-gray-100 text-gray-800 border border-gray-200'
+                    }`}>
+                      {test.status === 'WAITING' ? 'Đang chờ' :
+                       test.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
+                       test.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
+                       test.status === 'CHECKED_IN' ? 'Đã check-in' :
+                       test.status === 'PENDING' ? 'Đang chờ thanh toán' :
+                       test.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
+                       test.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
+                       test.status === 'IN_LABORATORY' ? 'Đang xét nghiệm' :
+                       test.status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
+                       test.status === 'COMPLETED' ? 'Hoàn thành' :
+                       test.status === 'CANCELLED' ? 'Đã hủy' :
+                       test.status === 'scheduled' ? 'Đã lên lịch' :
+                       test.status === 'in-progress' ? 'Đang thực hiện' :
+                       test.status === 'completed' ? 'Hoàn thành' :
+                       test.status === 'cancelled' ? 'Đã hủy' :
+                       test.status}
+                      {test.priority === 'urgent' && (
+                        <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                          Ưu tiên
+                        </span>
+                      )}
+                    </span>
+                    </div>
+
+                  {/* Actions */}
+                  <div className="col-span-3 flex items-center justify-center space-x-2">
+                    <button 
+                      onClick={() => navigate(`/technician/test-detail/${test.id}`)}
+                      className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 text-sm"
+                    >
+                        Chi tiết
+                    </button>
+                      {test.status === 'scheduled' && (
+                      <button className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 text-sm">
+                          Bắt đầu
+                      </button>
+                      )}
+                      {test.status === 'in-progress' && (
+                      <button className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-sm">
+                          Hoàn thành
+                      </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {tests.length === 0 && (
+                <div className="text-center py-16">
+                  <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Calendar className="text-purple-400" size={32} />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Chưa có xét nghiệm nào
+                  </h3>
+                  <p className="text-gray-500 max-w-sm mx-auto">
+                    Hiện tại chưa có xét nghiệm nào được lên lịch trong ngày được chọn
+                  </p>
+                </div>
               )}
             </div>
           </div>
-
-          {/* Loading State */}
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-              <p className="text-gray-500">Đang tải dữ liệu...</p>
-            </div>
-          )}
-
-          {/* Error State */}
-          {error && !loading && (
-            <div className="text-center py-8">
-              <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
-              <p className="text-red-500 mb-4">{error}</p>
-              <button 
-                onClick={() => fetchTechnicianScheduleAndAssignments(selectedDate)}
-                className="clinic-button-primary"
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
-
-          {/* No Schedule Message */}
-          {noScheduleMessage && !loading && !error && (
-            <div className="text-center py-8">
-              <Calendar className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500">{noScheduleMessage}</p>
-            </div>
-          )}
-
-          {/* Assignments Table */}
-          {!loading && !error && !noScheduleMessage && (
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-purple-50 rounded-t-lg border-b">
-                <div className="col-span-6 text-sm font-semibold text-clinic-navy">
-                  Thông tin bệnh nhân
-                </div>
-                <div className="col-span-3 text-sm font-semibold text-clinic-navy">
-                  Trạng thái
-                </div>
-                <div className="col-span-3 text-sm font-semibold text-clinic-navy text-center">
-                  Thao tác
-                </div>
-              </div>
-
-              {/* Table Body */}
-              <div className="divide-y divide-gray-100">
-                {tests.map((test) => (
-                  <div key={test.id} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                    {/* Patient Info */}
-                    <div className="col-span-6 flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-purple-800 rounded-full flex items-center justify-center">
-                        <User className="text-white" size={20} />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-clinic-navy text-lg">
-                          {test.patientName}
-                        </h4>
-                        {test.notes && (
-                          <div className="text-xs text-orange-600 mt-1">{test.notes}</div>
-                        )}
-                        </div>
-                      </div>
-
-                    {/* Status */}
-                    <div className="col-span-3 flex items-center">
-                      <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
-                        test.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                        test.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                        test.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                        test.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800 border border-green-200' :
-                        test.status === 'PENDING' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                        test.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                        test.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                        test.status === 'IN_LABORATORY' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                        test.status === 'IN_LABORATORY_PROGRESS' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                        test.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
-                        test.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
-                        test.status === 'scheduled' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                        test.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                        test.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
-                        test.status === 'cancelled' ? 'bg-red-100 text-red-800 border border-red-200' :
-                        'bg-gray-100 text-gray-800 border border-gray-200'
-                      }`}>
-                        {test.status === 'WAITING' ? 'Đang chờ' :
-                         test.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
-                         test.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
-                         test.status === 'CHECKED_IN' ? 'Đã check-in' :
-                         test.status === 'PENDING' ? 'Đang chờ thanh toán' :
-                         test.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
-                         test.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
-                         test.status === 'IN_LABORATORY' ? 'Đang xét nghiệm' :
-                         test.status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
-                         test.status === 'COMPLETED' ? 'Hoàn thành' :
-                         test.status === 'CANCELLED' ? 'Đã hủy' :
-                         test.status === 'scheduled' ? 'Đã lên lịch' :
-                         test.status === 'in-progress' ? 'Đang thực hiện' :
-                         test.status === 'completed' ? 'Hoàn thành' :
-                         test.status === 'cancelled' ? 'Đã hủy' :
-                         test.status}
-                        {test.priority === 'urgent' && (
-                          <span className="ml-2 px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                            Ưu tiên
-                          </span>
-                        )}
-                      </span>
-                      </div>
-
-                    {/* Actions */}
-                    <div className="col-span-3 flex items-center justify-center space-x-2">
-                      <button 
-                        onClick={() => navigate(`/technician/test-detail/${test.id}`)}
-                        className="inline-flex items-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-all duration-200 text-sm"
-                      >
-                          Chi tiết
-                      </button>
-                        {test.status === 'scheduled' && (
-                        <button className="inline-flex items-center px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all duration-200 text-sm">
-                            Bắt đầu
-                        </button>
-                        )}
-                        {test.status === 'in-progress' && (
-                        <button className="inline-flex items-center px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 text-sm">
-                            Hoàn thành
-                        </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {tests.length === 0 && (
-                  <div className="text-center py-16">
-                    <div className="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Calendar className="text-purple-400" size={32} />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                      Chưa có xét nghiệm nào
-                    </h3>
-                    <p className="text-gray-500 max-w-sm mx-auto">
-                      Hiện tại chưa có xét nghiệm nào được lên lịch trong ngày được chọn
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
       </div>
-    </TechnicianLayout>
+    </div>
   );
 };
 

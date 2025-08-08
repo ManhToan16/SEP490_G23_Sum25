@@ -510,9 +510,6 @@ const completedAppointments = appointments.filter(apt => apt.status === 'Hoàn t
                         <h4 className="font-semibold text-clinic-navy text-lg">
                           {visit.patientName || 'N/A'}
                         </h4>
-                        <p className="text-sm text-gray-500">
-                          ID: {visit.patientProfileId?.slice(0, 8)}...
-                        </p>
                       </div>
                     </div>
 

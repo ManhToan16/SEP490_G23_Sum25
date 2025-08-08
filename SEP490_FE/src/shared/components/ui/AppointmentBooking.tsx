@@ -5,7 +5,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Textarea } from '@/shared/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/shared/components/ui/select';
-import { Calendar } from 'lucide-react';
+import { Calendar, X, CheckCircle } from 'lucide-react';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { appointmentService, TimeSlot, Doctor } from '@/shared/services/appointmentService';
 import DoctorSchedule from './DoctorSchedule';
@@ -18,6 +18,9 @@ const AppointmentBooking = () => {
   const [submitting, setSubmitting] = useState(false);
   const [showDoctorSchedule, setShowDoctorSchedule] = useState(false);
   const [selectedDoctor, setSelectedDoctor] = useState<Doctor | null>(null);
+  
+  // Modal confirmation state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
   
   // Form data state
   const [formData, setFormData] = useState({
@@ -273,11 +276,12 @@ const AppointmentBooking = () => {
     }
   };
 
+  // Handle form submission - chỉ hiển thị modal xác nhận
   const handleSubmit = async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Validate form trước khi submit
+    // Validate form trước khi hiển thị modal
     if (!validateForm()) {
       toast({
         title: "Lỗi",
@@ -287,6 +291,12 @@ const AppointmentBooking = () => {
       return;
     }
 
+    // Hiển thị modal xác nhận
+    setShowConfirmModal(true);
+  };
+
+  // Handle confirm appointment - gọi API thực sự
+  const handleConfirmAppointment = async () => {
     try {
       setSubmitting(true);
 
@@ -306,6 +316,9 @@ const AppointmentBooking = () => {
 
       // Gọi API tạo lịch hẹn
       const result = await appointmentService.createAppointment(appointmentData);
+
+      // Đóng modal xác nhận
+      setShowConfirmModal(false);
 
       // Hiển thị toast thành công
       toast({
@@ -353,6 +366,34 @@ const AppointmentBooking = () => {
       });
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Format date for display
+  const formatDateForDisplay = (dateString: string) => {
+    try {
+      // Kiểm tra nếu date đã là format YYYY-MM-DD
+      if (dateString.includes('-')) {
+        return new Date(dateString).toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      } else {
+        // Nếu là format DD/MM/YYYY
+        const [day, month, year] = dateString.split('/');
+        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        return date.toLocaleDateString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+      }
+    } catch (error) {
+      console.error('Error formatting date:', dateString, error);
+      return 'Ngày không hợp lệ';
     }
   };
 
@@ -526,34 +567,7 @@ const AppointmentBooking = () => {
                     </p>
                     <p className="flex items-center">
                       <span className="font-medium w-20">Ngày khám:</span>
-                      <span className="ml-2">{
-                        (() => {
-                          try {
-                            // Kiểm tra nếu date đã là format YYYY-MM-DD
-                            if (formData.date.includes('-')) {
-                              return new Date(formData.date).toLocaleDateString('vi-VN', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              });
-                            } else {
-                              // Nếu là format DD/MM/YYYY
-                              const [day, month, year] = formData.date.split('/');
-                              const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-                              return date.toLocaleDateString('vi-VN', {
-                                weekday: 'long',
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                              });
-                            }
-                          } catch (error) {
-                            console.error('Error formatting date:', formData.date, error);
-                            return 'Ngày không hợp lệ';
-                          }
-                        })()
-                      }</span>
+                      <span className="ml-2">{formatDateForDisplay(formData.date)}</span>
                     </p>
                     <p className="flex items-center">
                       <span className="font-medium w-20">Giờ khám:</span>
@@ -615,10 +629,10 @@ const AppointmentBooking = () => {
             <Button 
               type="submit" 
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-8 py-3 text-lg shadow-lg hover:shadow-xl transition-all duration-200" 
-              disabled={submitting || !canSubmitForm()}
+              disabled={!canSubmitForm()}
             >
               <Calendar className="w-5 h-5 mr-2" />
-              {submitting ? "Đang đặt lịch..." : "Đặt Lịch Khám"}
+              Đặt Lịch Khám
             </Button>
           </div>
           
@@ -642,6 +656,135 @@ const AppointmentBooking = () => {
           <li>• Liên hệ hotline 0912345678 nếu cần thay đổi lịch hẹn</li>
         </ul>
       </Card>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                <CheckCircle className="w-6 h-6 text-blue-600 mr-2" />
+                Xác nhận thông tin đặt lịch
+              </h3>
+              <button
+                onClick={() => setShowConfirmModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={submitting}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <p className="text-blue-800 text-center font-medium">
+                  Vui lòng kiểm tra lại kỹ thông tin đặt lịch trước khi xác nhận
+                </p>
+              </div>
+
+              {/* Patient Information */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Thông tin bệnh nhân</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Họ tên:</span>
+                    <span className="ml-2 text-gray-900">{formData.name}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Email:</span>
+                    <span className="ml-2 text-gray-900">{formData.email}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Số điện thoại:</span>
+                    <span className="ml-2 text-gray-900">{formData.phone}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Ngày sinh:</span>
+                    <span className="ml-2 text-gray-900">{new Date(formData.birthdate).toLocaleDateString('vi-VN')}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Giới tính:</span>
+                    <span className="ml-2 text-gray-900">{formData.gender === 'male' ? 'Nam' : 'Nữ'}</span>
+                  </div>
+                  {formData.address && (
+                    <div>
+                      <span className="font-medium text-gray-600">Địa chỉ:</span>
+                      <span className="ml-2 text-gray-900">{formData.address}</span>
+                    </div>
+                  )}
+                </div>
+                {formData.symptoms && (
+                  <div className="mt-3">
+                    <span className="font-medium text-gray-600">Triệu chứng:</span>
+                    <p className="ml-2 text-gray-900 mt-1">{formData.symptoms}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Appointment Information */}
+              <div className="bg-green-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-3">Thông tin lịch khám</h4>
+                <div className="space-y-2 text-sm">
+                  <div>
+                    <span className="font-medium text-gray-600">Loại khám:</span>
+                    <span className="ml-2 text-gray-900">
+                      {bookingType === 'specific' ? 'Khám cùng bác sĩ chỉ định' : 'Khám thường'}
+                    </span>
+                  </div>
+                  {bookingType === 'specific' && selectedDoctor && (
+                    <div>
+                      <span className="font-medium text-gray-600">Bác sĩ:</span>
+                      <span className="ml-2 text-gray-900">{selectedDoctor.name}</span>
+                    </div>
+                  )}
+                  <div>
+                    <span className="font-medium text-gray-600">Ngày khám:</span>
+                    <span className="ml-2 text-gray-900">{formatDateForDisplay(formData.date)}</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-gray-600">Giờ khám:</span>
+                    <span className="ml-2 text-gray-900">
+                      {timeSlots.find(slot => slot.id === formData.timeSlotId)?.name || 'N/A'} 
+                      ({timeSlots.find(slot => slot.id === formData.timeSlotId)?.startTime?.slice(0, 5) || 'N/A'}-{timeSlots.find(slot => slot.id === formData.timeSlotId)?.endTime?.slice(0, 5) || 'N/A'})
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t">
+              <Button
+                onClick={() => setShowConfirmModal(false)}
+                variant="outline"
+                disabled={submitting}
+                className="px-6 py-2"
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleConfirmAppointment}
+                disabled={submitting}
+                className="bg-green-600 hover:bg-green-700 text-white px-6 py-2"
+              >
+                {submitting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Xác nhận đặt lịch
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

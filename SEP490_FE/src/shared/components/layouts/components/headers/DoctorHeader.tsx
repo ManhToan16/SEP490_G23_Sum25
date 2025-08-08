@@ -24,6 +24,10 @@ const DoctorHeader: React.FC = () => {
     navigate('/'); 
   };
 
+  const handleUserProfile = () => {
+    navigate('/doctor/user-profile');
+  };
+
   return (
     <div className="h-16 px-6 flex items-center justify-between bg-white border-b">
       {/* Logo and Brand */}
@@ -84,7 +88,7 @@ const DoctorHeader: React.FC = () => {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleUserProfile}>
               <User className="mr-2 h-4 w-4" />
               <span>Thông tin cá nhân</span>
             </DropdownMenuItem>

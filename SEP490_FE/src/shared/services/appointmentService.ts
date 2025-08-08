@@ -66,6 +66,24 @@ export interface ApiSingleResponse<T = any> {
   data: T;
 }
 
+// Interface cho ChangePasswordDTO
+export interface ChangePasswordDTO {
+  oldPassword: string;
+  password: string;
+  repassword: string;
+}
+
+// Interface cho UpdateUserDTO
+export interface UpdateUserDTO {
+  name: string;
+  phoneNumber: string;
+  email: string;
+  dateOfBirth: string; // ISO date string
+  gender: string;
+  address?: string;
+  role: string;
+}
+
 // Interface cho ExaminationRoom
 export interface ExaminationRoomResponseDTO {
   id: string;
@@ -1147,6 +1165,211 @@ export const appointmentService = {
       console.error("Error fetching active examination rooms:", error?.response?.data?.Message || error.message);
       throw error;
     }
+  },
+
+  // Lấy thông tin user theo ID
+  getUserById: async (userId: string): Promise<any> => {
+    try {
+      const url = `/User/${userId}`;
+      const response = await api.get(url);
+
+      console.log('Get user by ID response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error getting user by ID:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Cập nhật lịch hẹn theo ID
+  updateAppointmentReceptionist: async (id: string, appointmentData: any): Promise<any> => {
+    try {
+      const url = `/Appointment/${id}`;
+      const response = await api.put(url, appointmentData);
+
+      console.log('Update appointment response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error updating appointment:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy hồ sơ bệnh án theo patient profile ID
+  getMedicalRecordByPatientProfile: async (patientProfileId: string): Promise<any> => {
+    try {
+      const url = `/MedicalRecord/patient-profile/${patientProfileId}`;
+      const response = await api.get(url);
+
+      console.log('Get medical record by patient profile response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error getting medical record by patient profile:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Cập nhật hồ sơ bệnh án
+  updateMedicalRecord: async (medicalRecordId: string, medicalRecordData: any): Promise<any> => {
+    try {
+      const url = `/MedicalRecord/${medicalRecordId}`;
+      const response = await api.put(url, medicalRecordData);
+
+      console.log('Update medical record response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error updating medical record:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy kết quả khám theo medical record ID
+  getExaminationResultByMedicalRecord: async (medicalRecordId: string): Promise<any> => {
+    try {
+      const url = `/ExaminationResult/medical-record/${medicalRecordId}`;
+      const response = await api.get(url);
+
+      console.log('Get examination result by medical record response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error getting examination result by medical record:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy visit theo patient profile ID
+  getVisitByPatientProfile: async (patientProfileId: string): Promise<any> => {
+    try {
+      const url = `/Visit/patient-profile/${patientProfileId}`;
+      const response = await api.get(url);
+
+      console.log('Get visit by patient profile response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error getting visit by patient profile:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy visit theo ID
+  getVisitById: async (visitId: string): Promise<any> => {
+    try {
+      const url = `/Visit/${visitId}`;
+      const response = await api.get(url);
+
+      console.log('Get visit by ID response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error getting visit by ID:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy kết quả xét nghiệm theo examination result ID
+  getLaboratoryResultByExamResult: async (examinationResultId: string): Promise<any> => {
+    try {
+      const url = `/LaboratoryResult/examination-result/${examinationResultId}`;
+      const response = await api.get(url);
+
+      console.log('Get laboratory result by examination result ID response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error getting laboratory result by examination result ID:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Cập nhật thông tin người dùng
+  updateUser: async (userId: string, userData: any): Promise<any> => {
+    try {
+      const url = `/User/${userId}`;
+      const response = await api.put(url, userData);
+
+      console.log('Update user response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error updating user:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Đổi mật khẩu người dùng
+  changePassword: async (passwordData: ChangePasswordDTO): Promise<any> => {
+    try {
+      const url = `/Auth/change-password`;
+      const response = await api.put(url, passwordData);
+
+      console.log('Change password response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: null }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error changing password:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy thông tin chi tiết người dùng (alias cho getUserById)
+  getUserDetail: async (userId: string): Promise<any> => {
+    return appointmentService.getUserById(userId);
   }
 };
 
