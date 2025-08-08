@@ -10,6 +10,7 @@ import {
   Eye,
   Edit,
   X,
+  Trash2,
 } from "lucide-react";
 import {
   appointmentService,
@@ -37,6 +38,7 @@ const AppointmentDetail: React.FC = () => {
   const { toast } = useToast();
   const [appointment, setAppointment] = useState<Appointment | null>(null);
   const [loading, setLoading] = useState(true);
+  const [cancellingAppointment, setCancellingAppointment] = useState(false);
 
   // State cho tìm kiếm hồ sơ bệnh nhân
   const [searchingPatient, setSearchingPatient] = useState(false);
@@ -98,6 +100,25 @@ const AppointmentDetail: React.FC = () => {
   const [examinationRooms, setExaminationRooms] = useState<any[]>([]);
   const [selectedRoom, setSelectedRoom] = useState<any>(null);
   const [currentShift, setCurrentShift] = useState<string>("");
+
+  // State cho modal cập nhật lịch hẹn
+  const [showUpdateAppointmentModal, setShowUpdateAppointmentModal] = useState(false);
+  const [updatingAppointment, setUpdatingAppointment] = useState(false);
+
+  // State cho modal xác nhận thanh toán
+  const [showPaymentConfirmModal, setShowPaymentConfirmModal] = useState(false);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [updateAppointmentForm, setUpdateAppointmentForm] = useState({
+    name: "",
+    phoneNumber: "",
+    email: "",
+    dateOfBirth: "",
+    gender: "Nam",
+    address: "",
+    symptom: "",
+    requiredDoctorId: "",
+    timeSlotId: "",
+  });
   const [currentDate, setCurrentDate] = useState<string>("");
   const [isPriority, setIsPriority] = useState(false);
 
@@ -218,10 +239,16 @@ const AppointmentDetail: React.FC = () => {
     }
   };
 
-  const handleMarkAsPaid = async () => {
+  const handleMarkAsPaid = () => {
+    setShowPaymentConfirmModal(true);
+  };
+
+  const handleConfirmPayment = async () => {
     if (!appointment) return;
 
     try {
+      setProcessingPayment(true);
+      
       // Gọi API để đánh dấu appointment đã thanh toán
       await appointmentService.markAsPaid(appointment.id);
       
@@ -233,6 +260,9 @@ const AppointmentDetail: React.FC = () => {
       // Refresh appointment data
       const result = await appointmentService.getAppointmentById(appointment.id);
       setAppointment(result);
+      
+      // Đóng modal
+      setShowPaymentConfirmModal(false);
     } catch (error: any) {
       console.error("Error marking as paid:", error);
       toast({
@@ -240,6 +270,147 @@ const AppointmentDetail: React.FC = () => {
         description: "Không thể cập nhật trạng thái thanh toán",
         variant: "destructive",
       });
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  const handleClosePaymentConfirmModal = () => {
+    setShowPaymentConfirmModal(false);
+  };
+
+  const handleCancelAppointment = async () => {
+    if (!appointment) return;
+
+    // Hiển thị dialog xác nhận
+    const confirmed = window.confirm(
+      "Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác."
+    );
+    
+    if (!confirmed) return;
+
+    try {
+      setCancellingAppointment(true);
+      
+      // Gọi API để hủy appointment
+      await appointmentService.cancelAppointment(appointment.id);
+      
+      toast({
+        title: "Thành công",
+        description: "Đã hủy lịch hẹn thành công",
+      });
+      
+      // Refresh appointment data
+      const result = await appointmentService.getAppointmentById(appointment.id);
+      setAppointment(result);
+    } catch (error: any) {
+      console.error("Error cancelling appointment:", error);
+      
+      // Lấy thông báo lỗi cụ thể từ response
+      let errorMessage = "Không thể hủy lịch hẹn";
+      
+      if (error.response && error.response.data) {
+        if (error.response.data.Message) {
+          errorMessage = error.response.data.Message;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.Error) {
+          errorMessage = error.response.data.Error;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Lỗi",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setCancellingAppointment(false);
+    }
+  };
+
+    const handleOpenUpdateAppointmentModal = () => {
+    if (!appointment) return;
+
+    setUpdateAppointmentForm({
+      name: appointment.name,
+      phoneNumber: appointment.phoneNumber,
+      email: appointment.email,
+      dateOfBirth: appointment.dateOfBirth,
+      gender: appointment.gender,
+      address: appointment.address,
+      symptom: appointment.symptom,
+      requiredDoctorId: appointment.requiredDoctorId,
+      timeSlotId: appointment.timeSlotId,
+    });
+    setShowUpdateAppointmentModal(true);
+  };
+
+  const handleCloseUpdateAppointmentModal = () => {
+    setShowUpdateAppointmentModal(false);
+    setUpdateAppointmentForm({
+      name: "",
+      phoneNumber: "",
+      email: "",
+      dateOfBirth: "",
+      gender: "Nam",
+      address: "",
+      symptom: "",
+      requiredDoctorId: "",
+      timeSlotId: "",
+    });
+  };
+
+  const handleUpdateAppointment = async () => {
+    if (!appointment) return;
+
+    try {
+      setUpdatingAppointment(true);
+      
+      // Chỉ gửi các trường cần cập nhật, giữ nguyên các trường khác
+      const updateData = {
+        name: updateAppointmentForm.name,
+        phoneNumber: updateAppointmentForm.phoneNumber,
+        email: updateAppointmentForm.email,
+        dateOfBirth: updateAppointmentForm.dateOfBirth,
+        gender: updateAppointmentForm.gender,
+        address: updateAppointmentForm.address,
+        symptom: updateAppointmentForm.symptom,
+        // Giữ nguyên các trường này từ appointment gốc
+        requiredDoctorId: appointment.requiredDoctorId,
+        date: appointment.date,
+        timeSlotId: appointment.timeSlotId,
+      };
+      
+      // Gọi API để cập nhật lịch hẹn
+      await appointmentService.updateAppointmentReceptionist(appointment.id, updateData);
+      
+      toast({
+        title: "Thành công",
+        description: "Đã cập nhật lịch hẹn thành công",
+      });
+      
+      // Refresh appointment data
+      const result = await appointmentService.getAppointmentById(appointment.id);
+      setAppointment(result);
+      
+      // Đóng modal
+      handleCloseUpdateAppointmentModal();
+    } catch (error: any) {
+      console.error("Error updating appointment:", error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể cập nhật lịch hẹn",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingAppointment(false);
     }
   };
 
@@ -738,19 +909,14 @@ const AppointmentDetail: React.FC = () => {
       gender: "",
     };
 
-    // Validate tên
-    if (!patientForm.name.trim()) {
-      errors.name = "Tên bệnh nhân là bắt buộc";
-    } else if (patientForm.name.trim().length < 2) {
-      errors.name = "Tên phải có ít nhất 2 ký tự";
-    } else if (!/^[a-zA-ZÀ-ỹ\s]+$/.test(patientForm.name.trim())) {
-      errors.name = "Tên chỉ được chứa chữ cái và khoảng trắng";
-    }
+    // Validate tên (không cần validate vì đã disabled)
+    // if (!patientForm.name.trim()) {
+    //   errors.name = "Tên bệnh nhân là bắt buộc";
+    // }
 
-    // Validate CCCD
-    if (!patientForm.citizenId.trim()) {
-      errors.citizenId = "CCCD là bắt buộc";
-    } else if (!/^\d{12}$/.test(patientForm.citizenId.trim())) {
+    // Validate CCCD (không bắt buộc - bỏ validation)
+    // Chỉ validate format nếu có nhập
+    if (patientForm.citizenId.trim() && !/^\d{12}$/.test(patientForm.citizenId.trim())) {
       errors.citizenId = "CCCD phải có đúng 12 chữ số";
     }
 
@@ -771,27 +937,15 @@ const AppointmentDetail: React.FC = () => {
       }
     }
 
-    // Validate ngày sinh
-    if (!patientForm.dateOfBirth) {
-      errors.dateOfBirth = "Ngày sinh là bắt buộc";
-    } else {
-      const dobDate = new Date(patientForm.dateOfBirth);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time để chỉ so sánh ngày
+    // Validate ngày sinh (không cần validate vì đã disabled)
+    // if (!patientForm.dateOfBirth) {
+    //   errors.dateOfBirth = "Ngày sinh là bắt buộc";
+    // }
 
-      if (isNaN(dobDate.getTime())) {
-        errors.dateOfBirth = "Ngày sinh không hợp lệ";
-      } else if (dobDate > today) {
-        errors.dateOfBirth = "Ngày sinh không thể là ngày trong tương lai";
-      } else if (dobDate.getFullYear() < 1900) {
-        errors.dateOfBirth = "Ngày sinh không hợp lệ (trước năm 1900)";
-      }
-    }
-
-    // Validate giới tính
-    if (!patientForm.gender) {
-      errors.gender = "Giới tính là bắt buộc";
-    }
+    // Validate giới tính (không cần validate vì đã disabled)
+    // if (!patientForm.gender) {
+    //   errors.gender = "Giới tính là bắt buộc";
+    // }
 
     setFormErrors(errors);
     return !Object.values(errors).some((error) => error !== "");
@@ -1017,36 +1171,45 @@ const AppointmentDetail: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center space-x-4">
-        <Button
-          variant="outline"
-          onClick={() => navigate("/receptionist/appointments")}
-          className="flex items-center space-x-2"
-        >
-          <ArrowLeft size={16} />
-          <span>Quay lại</span>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
-            Chi tiết lịch hẹn
-          </h1>
-          <p className="text-gray-600">
-            Thông tin chi tiết về lịch hẹn khám bệnh
-          </p>
-        </div>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-end space-x-3">
-        {appointment.status === "WAITING_FOR_CHECK_IN" && (
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
           <Button
-            onClick={handleCheckInAppointment}
-            className="bg-green-600 hover:bg-green-700"
+            variant="outline"
+            onClick={() => navigate("/receptionist/appointments")}
+            className="flex items-center space-x-2"
           >
-            Check-in
+            <ArrowLeft size={16} />
+            <span>Quay lại</span>
+          </Button>
+          <div>
+            <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
+              Chi tiết lịch hẹn
+            </h1>
+            <p className="text-gray-600">
+              Thông tin chi tiết về lịch hẹn khám bệnh
+            </p>
+          </div>
+        </div>
+        
+        {/* Nút Hủy lịch hẹn - Hiển thị cho các trạng thái có thể hủy */}
+        {appointment && (
+          appointment.status === "WAITING_FOR_CHECK_IN" || 
+          appointment.status === "CHECKED_IN" || 
+          appointment.status === "PENDING"
+        ) && (
+          <Button
+            variant="destructive"
+            onClick={handleCancelAppointment}
+            disabled={cancellingAppointment}
+            className="flex items-center space-x-2"
+          >
+            <Trash2 size={16} />
+            <span>{cancellingAppointment ? "Đang hủy..." : "Hủy lịch hẹn"}</span>
           </Button>
         )}
       </div>
+
+
 
       {/* Content */}
       <div className="space-y-6">
@@ -1269,9 +1432,6 @@ const AppointmentDetail: React.FC = () => {
                       Họ tên
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-clinic-navy">
-                      Căn cước công dân
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-clinic-navy">
                       Liên hệ
                     </th>
                     <th className="text-left py-3 px-4 font-medium text-clinic-navy">
@@ -1298,11 +1458,6 @@ const AppointmentDetail: React.FC = () => {
                             {selectedPatient.name || "N/A"}
                           </h4>
                         </div>
-                      </td>
-                      <td className="py-4 px-4">
-                        <p className="text-sm text-gray-600">
-                          {selectedPatient.citizenId || "N/A"}
-                        </p>
                       </td>
                       <td className="py-4 px-4">
                         <div className="space-y-1">
@@ -1369,11 +1524,6 @@ const AppointmentDetail: React.FC = () => {
                               {patient.name || "N/A"}
                             </h4>
                           </div>
-                        </td>
-                        <td className="py-4 px-4">
-                          <p className="text-sm text-gray-600">
-                            {patient.citizenId || "N/A"}
-                          </p>
                         </td>
                         <td className="py-4 px-4">
                           <div className="space-y-1">
@@ -1466,30 +1616,15 @@ const AppointmentDetail: React.FC = () => {
                   <Input
                     id="name"
                     value={patientForm.name}
-                    onChange={(e) => {
-                      setPatientForm({ ...patientForm, name: e.target.value });
-                      if (formErrors.name) {
-                        setFormErrors({ ...formErrors, name: "" });
-                      }
-                    }}
+                    disabled={true}
                     placeholder="Nhập họ và tên"
-                    className={`mt-1 ${
-                      formErrors.name
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    }`}
+                    className="mt-1 bg-gray-100 cursor-not-allowed"
                   />
-                  {formErrors.name && (
-                    <p className="text-red-500 text-xs mt-1 flex items-center">
-                      <span className="mr-1">⚠</span>
-                      {formErrors.name}
-                    </p>
-                  )}
                 </div>
 
                 <div>
                   <Label htmlFor="citizenId" className="text-sm font-medium">
-                    CCCD *
+                    CCCD
                   </Label>
                   <Input
                     id="citizenId"
@@ -1503,7 +1638,7 @@ const AppointmentDetail: React.FC = () => {
                         setFormErrors({ ...formErrors, citizenId: "" });
                       }
                     }}
-                    placeholder="Nhập số CCCD (12 chữ số)"
+                    placeholder="Nhập số CCCD (12 chữ số) - Không bắt buộc"
                     className={`mt-1 ${
                       formErrors.citizenId
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -1586,28 +1721,9 @@ const AppointmentDetail: React.FC = () => {
                     id="dateOfBirth"
                     type="date"
                     value={patientForm.dateOfBirth}
-                    onChange={(e) => {
-                      setPatientForm({
-                        ...patientForm,
-                        dateOfBirth: e.target.value,
-                      });
-                      if (formErrors.dateOfBirth) {
-                        setFormErrors({ ...formErrors, dateOfBirth: "" });
-                      }
-                    }}
-                    max={new Date().toISOString().split("T")[0]} // Max date là ngày hôm nay
-                    className={`mt-1 ${
-                      formErrors.dateOfBirth
-                        ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                        : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                    }`}
+                    disabled={true}
+                    className="mt-1 bg-gray-100 cursor-not-allowed"
                   />
-                  {formErrors.dateOfBirth && (
-                    <p className="text-red-500 text-xs mt-1 flex items-center">
-                      <span className="mr-1">⚠</span>
-                      {formErrors.dateOfBirth}
-                    </p>
-                  )}
                 </div>
 
                 <div>
@@ -1616,20 +1732,9 @@ const AppointmentDetail: React.FC = () => {
                   </Label>
                   <Select
                     value={patientForm.gender}
-                    onValueChange={(value) => {
-                      setPatientForm({ ...patientForm, gender: value });
-                      if (formErrors.gender) {
-                        setFormErrors({ ...formErrors, gender: "" });
-                      }
-                    }}
+                    disabled={true}
                   >
-                    <SelectTrigger
-                      className={`mt-1 ${
-                        formErrors.gender
-                          ? "border-red-500 focus:border-red-500 focus:ring-red-500"
-                          : "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                      }`}
-                    >
+                    <SelectTrigger className="mt-1 bg-gray-100 cursor-not-allowed">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1637,12 +1742,6 @@ const AppointmentDetail: React.FC = () => {
                       <SelectItem value="Nữ">Nữ</SelectItem>
                     </SelectContent>
                   </Select>
-                  {formErrors.gender && (
-                    <p className="text-red-500 text-xs mt-1 flex items-center">
-                      <span className="mr-1">⚠</span>
-                      {formErrors.gender}
-                    </p>
-                  )}
                 </div>
 
                 <div>
@@ -2137,6 +2236,244 @@ const AppointmentDetail: React.FC = () => {
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   {updatingPatient ? "Đang cập nhật..." : "Lưu thông tin"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Cập nhật lịch hẹn */}
+        {showUpdateAppointmentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-clinic-navy">
+                  Cập nhật lịch hẹn
+                </h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCloseUpdateAppointmentModal}
+                  disabled={updatingAppointment}
+                >
+                  <X size={20} />
+                </Button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="update-name" className="text-sm font-medium">
+                      Tên bệnh nhân *
+                    </Label>
+                    <Input
+                      id="update-name"
+                      value={updateAppointmentForm.name}
+                      onChange={(e) =>
+                        setUpdateAppointmentForm({
+                          ...updateAppointmentForm,
+                          name: e.target.value,
+                        })
+                      }
+                      placeholder="Nhập tên bệnh nhân"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="update-phone" className="text-sm font-medium">
+                      Số điện thoại *
+                    </Label>
+                    <Input
+                      id="update-phone"
+                      value={updateAppointmentForm.phoneNumber}
+                      onChange={(e) =>
+                        setUpdateAppointmentForm({
+                          ...updateAppointmentForm,
+                          phoneNumber: e.target.value,
+                        })
+                      }
+                      placeholder="Nhập số điện thoại"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="update-email" className="text-sm font-medium">
+                      Email
+                    </Label>
+                    <Input
+                      id="update-email"
+                      type="email"
+                      value={updateAppointmentForm.email}
+                      onChange={(e) =>
+                        setUpdateAppointmentForm({
+                          ...updateAppointmentForm,
+                          email: e.target.value,
+                        })
+                      }
+                      placeholder="Nhập email"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="update-dob" className="text-sm font-medium">
+                      Ngày sinh *
+                    </Label>
+                    <Input
+                      id="update-dob"
+                      type="date"
+                      value={updateAppointmentForm.dateOfBirth}
+                      onChange={(e) =>
+                        setUpdateAppointmentForm({
+                          ...updateAppointmentForm,
+                          dateOfBirth: e.target.value,
+                        })
+                      }
+                      max={new Date().toISOString().split("T")[0]}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="update-gender" className="text-sm font-medium">
+                      Giới tính *
+                    </Label>
+                    <Select
+                      value={updateAppointmentForm.gender}
+                      onValueChange={(value) =>
+                        setUpdateAppointmentForm({
+                          ...updateAppointmentForm,
+                          gender: value,
+                        })
+                      }
+                    >
+                      <SelectTrigger className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Nam">Nam</SelectItem>
+                        <SelectItem value="Nữ">Nữ</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="update-address" className="text-sm font-medium">
+                      Địa chỉ
+                    </Label>
+                    <Input
+                      id="update-address"
+                      value={updateAppointmentForm.address}
+                      onChange={(e) =>
+                        setUpdateAppointmentForm({
+                          ...updateAppointmentForm,
+                          address: e.target.value,
+                        })
+                      }
+                      placeholder="Nhập địa chỉ"
+                      className="mt-1"
+                    />
+                  </div>
+
+
+                </div>
+
+                <div>
+                  <Label htmlFor="update-symptom-detail" className="text-sm font-medium">
+                    Mô tả triệu chứng chi tiết
+                  </Label>
+                  <textarea
+                    id="update-symptom-detail"
+                    value={updateAppointmentForm.symptom}
+                    onChange={(e) =>
+                      setUpdateAppointmentForm({
+                        ...updateAppointmentForm,
+                        symptom: e.target.value,
+                      })
+                    }
+                    placeholder="Mô tả chi tiết triệu chứng của bệnh nhân..."
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows={3}
+                  />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseUpdateAppointmentModal}
+                  disabled={updatingAppointment}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleUpdateAppointment}
+                  disabled={updatingAppointment}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {updatingAppointment ? "Đang cập nhật..." : "Cập nhật lịch hẹn"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal xác nhận thanh toán */}
+        {showPaymentConfirmModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-clinic-navy">
+                  Xác nhận thanh toán
+                </h3>
+                <button
+                  onClick={handleClosePaymentConfirmModal}
+                  disabled={processingPayment}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="mb-6">
+                <p className="text-gray-700 text-center">
+                  Bạn có chắc chắn rằng muốn thanh toán?
+                </p>
+                {appointment && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-2">
+                      <strong>Bệnh nhân:</strong> {appointment.name}
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      <strong>Tổng tiền:</strong> {appointment.totalPrice.toLocaleString("vi-VN")} VNĐ
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <strong>Ngày khám:</strong> {new Date(appointment.date).toLocaleDateString("vi-VN")}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={handleClosePaymentConfirmModal}
+                  disabled={processingPayment}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleConfirmPayment}
+                  disabled={processingPayment}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {processingPayment ? "Đang xử lý..." : "Xác nhận thanh toán"}
                 </Button>
               </div>
             </div>

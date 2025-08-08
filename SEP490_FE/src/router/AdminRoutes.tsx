@@ -23,6 +23,7 @@ const PatientListAdmin = React.lazy(
 );
 const PatientMedicalRecords = React.lazy(() => import("@/pages/admin/PatientMedicalRecords"));
 const PatientVisit = React.lazy(() => import("@/pages/admin/PatientVisit"));
+const UserProfile = React.lazy(() => import("@/pages/admin/UserProfile"));
 
 
 const AdminRoutes: React.FC = () => {
@@ -42,6 +43,7 @@ const AdminRoutes: React.FC = () => {
         <Route path="patients" element={<PatientListAdmin />} />
         <Route path="patient/:id/medical-records" element={<PatientMedicalRecords />} />
         <Route path="patient/:id/history" element={<PatientVisit />} />
+        <Route path="profile" element={<UserProfile />} />
       </Routes>
     </Suspense>
   );
