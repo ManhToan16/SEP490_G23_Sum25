@@ -6,7 +6,7 @@ namespace SEP490_BE.Services.TransactionServices
     public interface ITransactionService
     {
         Task<TransactionResponseDTO> CreateImportTransaction(ImportMaterialDTO importDto,string userId);
-        Task<TransactionResponseDTO> CreateProvideTransaction(ProvideMaterialDTO provideDto, string userId);
+        Task<List<TransactionResponseDTO>> CreateProvideTransaction(ProvideMaterialDTO provideDto, string userId);
         Task<TransactionResponseDTO> RequestReturnTransaction(NurseReturnDTO returnDto, string userId);
         Task<TransactionResponseDTO> ApproveReturnTransaction(string transactionId, string adminId);
         Task<TransactionResponseDTO> RejectReturnTransaction(string transactionId, string adminId);
