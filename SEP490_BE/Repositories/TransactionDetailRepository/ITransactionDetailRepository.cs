@@ -11,6 +11,7 @@ namespace SEP490_BE.Repositories.TransactionDetailRepository
         Task DeleteAsync(Guid id);
         // ITransactionDetailRepository.cs
         Task<int> GetTotalProvidedQuantityAsync(string parentTransactionId);
+            Task<List<TransactionDetail>> GetByTransactionIdAsync(string transactionId);
 
     }
 

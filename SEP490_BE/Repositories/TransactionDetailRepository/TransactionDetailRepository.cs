@@ -53,6 +53,13 @@ namespace SEP490_BE.Repositories.TransactionDetailRepository
                 _context.TransactionDetails.Remove(detail);
             }
         }
+        public async Task<List<TransactionDetail>> GetByTransactionIdAsync(string transactionId)
+        {
+            return await _context.TransactionDetails
+                .Include(td => td.ParentTransaction) // load ParentTransaction nếu cần
+                .Where(td => td.TransactionId == transactionId)
+                .ToListAsync();
+        }
     }
 
 }
