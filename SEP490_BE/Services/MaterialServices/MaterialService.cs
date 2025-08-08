@@ -189,25 +189,31 @@ namespace SEP490_BE.Services.MaterialServices
 
         public async Task<List<MaterialImportSummaryDTO>> GetImportSummaryAsync()
         {
+            // Lấy tất cả vật tư
+            var materials = await _context.Materials.ToListAsync();
+
+            // Lấy tất cả giao dịch nhập
             var importTransactions = await _context.Transactions
                 .Where(t => t.TransactionType == "IMPORT")
-                .Include(t => t.Material)
                 .ToListAsync();
 
-            var summary = importTransactions
-                .GroupBy(t => new { t.MaterialId, t.Material.Name, t.Material.Unit })
-                .Select(g =>
+            var summary = materials
+                .Select(m =>
                 {
-                    var totalQuantity = g.Sum(x => x.Quantity);
-                    var totalDefective = g.Sum(x => x.DefectiveQuantity ?? 0);
-                    var weightedTotalPrice = g.Sum(x => x.Quantity * (x.Price ?? 0));
+                    var relatedImports = importTransactions
+                        .Where(t => t.MaterialId == m.Id)
+                        .ToList();
+
+                    var totalQuantity = relatedImports.Sum(x => x.Quantity);
+                    var totalDefective = relatedImports.Sum(x => x.DefectiveQuantity ?? 0);
+                    var weightedTotalPrice = relatedImports.Sum(x => x.Quantity * (x.Price ?? 0));
                     var averagePrice = totalQuantity > 0 ? weightedTotalPrice / totalQuantity : 0;
 
                     return new MaterialImportSummaryDTO
                     {
-                        MaterialId = g.Key.MaterialId,
-                        MaterialName = g.Key.Name,
-                        Unit = g.Key.Unit,
+                        MaterialId = m.Id,
+                        MaterialName = m.Name,
+                        Unit = m.Unit,
                         Quantity = totalQuantity,
                         AvailableQuantity = totalQuantity - totalDefective,
                         TotalPrice = Math.Round(averagePrice * totalQuantity, 2)
@@ -217,6 +223,7 @@ namespace SEP490_BE.Services.MaterialServices
 
             return summary;
         }
+
 
 
         private MaterialResponseDTO MapToResponseDTO(Material material)
