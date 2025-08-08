@@ -39,10 +39,13 @@ namespace SEP490_BE.Services.PatientProfileServices
 
         public async Task<PatientProfileResponseDTO> Create(PatientProfileRequestDTO request)
         {
-            var exists = await _patientProfileRepository.FindByCitizenId(request.CitizenId);
-            if (exists != null)
+            if (!string.IsNullOrWhiteSpace(request.CitizenId))
             {
-                throw new ConflictDataException(MessageConstants.PATIENT_PROTILE_EXISTS);
+                var exists = await _patientProfileRepository.FindByCitizenId(request.CitizenId);
+                if (exists != null)
+                {
+                    throw new ConflictDataException(MessageConstants.PATIENT_PROTILE_EXISTS);
+                }
             }
 
             var patientProfileId = Guid.NewGuid().ToString();
@@ -135,11 +138,15 @@ namespace SEP490_BE.Services.PatientProfileServices
             {
                 throw new ResourceNotFoundException(MessageConstants.PATIENT_PROTILE_NOT_FOUND);
             }
-            var entityCitizen = await _patientProfileRepository.FindByCitizenId(request.CitizenId);
-            if (entityCitizen != null && entity.CitizenId != request.CitizenId) {
-                throw new ConflictDataException(MessageConstants.PATIENT_PROTILE_EXISTS);
-            }
 
+            if (!string.IsNullOrWhiteSpace(request.CitizenId))
+            {
+                var entityCitizen = await _patientProfileRepository.FindByCitizenId(request.CitizenId);
+                if (entityCitizen != null && entity.CitizenId != request.CitizenId) {
+                    throw new ConflictDataException(MessageConstants.PATIENT_PROTILE_EXISTS);
+                }
+            }
+            
             var sessionUser = await _authService.GetAuthenticatedUser();
             var oldData = MapToResponse(entity);
 
