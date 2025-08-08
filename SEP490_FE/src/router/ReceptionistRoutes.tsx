@@ -22,6 +22,7 @@ const AppointmentPendingConfirm = React.lazy(
 const AppointmentDetail = React.lazy(
   () => import("@/pages/receptionist/AppointmentDetail")
 );
+const UserProfile = React.lazy(() => import("@/pages/receptionist/UserProfile"));
 
 const ReceptionistRoutes: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const ReceptionistRoutes: React.FC = () => {
         <Route path="create-patient" element={<CreatePatient />} />
         <Route path="create-appointment" element={<CreateAppointment />} />
         <Route path="appointments-pending-confirm" element={<AppointmentPendingConfirm />} />
+        <Route path="profile" element={<UserProfile />} />
       </Routes>
     </Suspense>
   );

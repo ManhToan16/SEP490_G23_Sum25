@@ -35,6 +35,13 @@ const CreateExaminationForm: React.FC = () => {
   const [patientData, setPatientData] = useState<any>(null);
   const [loadingPatient, setLoadingPatient] = useState(false);
   
+  // Medical record modal states
+  const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
+  const [medicalRecordData, setMedicalRecordData] = useState<any>(null);
+  const [examinationHistory, setExaminationHistory] = useState<any[]>([]);
+  const [loadingMedicalRecord, setLoadingMedicalRecord] = useState(false);
+  const [loadingExaminationHistory, setLoadingExaminationHistory] = useState(false);
+  
   // API data states
   const [laboratoryRooms, setLaboratoryRooms] = useState<any[]>([]);
   const [availableServices, setAvailableServices] = useState<ServiceResponseDTO[]>([]);
@@ -172,7 +179,7 @@ const CreateExaminationForm: React.FC = () => {
     } finally {
       setLoadingMedicines(false);
     }
-  }, []);
+  }, [toast]);
 
   // Fetch examination result để load lại dữ liệu đã lưu
   const fetchExaminationResult = useCallback(async () => {
@@ -296,21 +303,29 @@ const CreateExaminationForm: React.FC = () => {
     fetchAssignments(); // Fetch assignments khi component mount
     fetchMedicines(); // Fetch medicines khi component mount
     fetchExaminationResult(); // Fetch examination result để load lại dữ liệu đã lưu
-  }, [fetchAssignments, fetchMedicines, fetchExaminationResult]);
+  }, [fetchAssignments, fetchMedicines, fetchExaminationResult, toast]);
 
-  // Filter medicines based on search text
+  // Filter medicines based on search text and exclude medicines already in prescription
   useEffect(() => {
+    // Get IDs of medicines already added to prescription
+    const addedMedicineIds = prescriptionItems.map(item => item.medicineId);
+    
+    // Filter out medicines that are already in the prescription
+    const availableMedicines = medicines.filter(medicine => 
+      !addedMedicineIds.includes(medicine.id)
+    );
+    
     if (!searchText.trim()) {
-      setFilteredMedicines(medicines);
+      setFilteredMedicines(availableMedicines);
     } else {
-      const filtered = medicines.filter(medicine =>
+      const filtered = availableMedicines.filter(medicine =>
         medicine.name.toLowerCase().includes(searchText.toLowerCase()) ||
         (medicine.description && medicine.description.toLowerCase().includes(searchText.toLowerCase())) ||
         (medicine.activeIngredients && medicine.activeIngredients.toLowerCase().includes(searchText.toLowerCase()))
       );
       setFilteredMedicines(filtered);
     }
-  }, [searchText, medicines]);
+  }, [searchText, medicines, prescriptionItems]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -328,7 +343,7 @@ const CreateExaminationForm: React.FC = () => {
   }, []);
 
   // Fetch services khi chọn phòng
-  const fetchServicesForRoom = async (roomId: string) => {
+  const fetchServicesForRoom = useCallback(async (roomId: string) => {
     if (!roomId) {
       setAvailableServices([]);
       return;
@@ -356,7 +371,7 @@ const CreateExaminationForm: React.FC = () => {
     } finally {
       setLoadingServices(false);
     }
-  };
+  }, [toast]);
 
   // Reset dịch vụ và fetch services khi thay đổi phòng
   useEffect(() => {
@@ -366,7 +381,7 @@ const CreateExaminationForm: React.FC = () => {
     } else {
       setAvailableServices([]);
     }
-  }, [selectedRoomId]);
+  }, [selectedRoomId, fetchServicesForRoom]);
 
   const handleServiceChange = (serviceId: string) => {
     setSelectedServices(prev => 
@@ -840,6 +855,76 @@ const CreateExaminationForm: React.FC = () => {
     }
   };
 
+  const handleViewMedicalRecord = async () => {
+    if (!visitData?.patientProfileId) {
+      toast({
+        title: "Lỗi!",
+        description: 'Không tìm thấy thông tin bệnh nhân.',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setShowMedicalRecordModal(true);
+    setLoadingMedicalRecord(true);
+    setLoadingExaminationHistory(true);
+
+    try {
+      // Fetch medical record
+      console.log('Fetching medical record for patient:', visitData.patientProfileId);
+      const medicalRecordResponse = await appointmentService.getMedicalRecordByPatientProfile(visitData.patientProfileId);
+      
+      if (medicalRecordResponse && medicalRecordResponse.data && Array.isArray(medicalRecordResponse.data) && medicalRecordResponse.data.length > 0) {
+        const record = medicalRecordResponse.data[0];
+        setMedicalRecordData(record);
+        console.log('Medical record received:', record);
+
+        // Fetch examination history using medical record ID
+        if (record.medicalRecordId) {
+          try {
+            console.log('Fetching examination history for medical record:', record.medicalRecordId);
+            const historyResponse = await appointmentService.getExaminationResultByMedicalRecord(record.medicalRecordId);
+            
+            if (historyResponse && historyResponse.success && historyResponse.data) {
+              setExaminationHistory(Array.isArray(historyResponse.data) ? historyResponse.data : []);
+              console.log('Examination history received:', historyResponse.data);
+            } else {
+              setExaminationHistory([]);
+            }
+          } catch (historyError) {
+            console.error('Error fetching examination history:', historyError);
+            setExaminationHistory([]);
+            toast({
+              title: "Cảnh báo!",
+              description: 'Không thể tải lịch sử khám bệnh.',
+              variant: "destructive",
+            });
+          }
+        }
+      } else {
+        setMedicalRecordData(null);
+        setExaminationHistory([]);
+        toast({
+          title: "Thông báo!",
+          description: 'Không tìm thấy hồ sơ bệnh án cho bệnh nhân này.',
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching medical record:', error);
+      setMedicalRecordData(null);
+      setExaminationHistory([]);
+      toast({
+        title: "Lỗi!",
+        description: 'Không thể tải hồ sơ bệnh án. Vui lòng thử lại sau.',
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingMedicalRecord(false);
+      setLoadingExaminationHistory(false);
+    }
+  };
+
   const handleViewAssignmentDetail = async (assignment: any) => {
     // Chỉ cho phép xem chi tiết khi trạng thái là COMPLETED
     if (assignment.status !== 'COMPLETED') {
@@ -917,7 +1002,7 @@ const CreateExaminationForm: React.FC = () => {
       case "PENDING":
         return "Đang chờ thanh toán";
       case "WAITING":
-        return "Đang chờ";
+        return "Đang xét nghiệm";
       case "ASSIGNED":
         return "Đã chỉ định";
       case "IN_PROGRESS":
@@ -929,6 +1014,18 @@ const CreateExaminationForm: React.FC = () => {
       default:
         return status;
     }
+  };
+
+  // Format date function
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -2207,7 +2304,13 @@ const CreateExaminationForm: React.FC = () => {
             )}
 
             {/* Footer */}
-            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200">
+            <div className="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={handleViewMedicalRecord}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium"
+              >
+                Hồ sơ bệnh án
+              </button>
               <button
                 onClick={() => setShowPatientModal(false)}
                 className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
@@ -2415,6 +2518,185 @@ const CreateExaminationForm: React.FC = () => {
                   setShowResultModal(false);
                   setSelectedAssignment(null);
                   setLaboratoryResult(null);
+                }}
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal hồ sơ bệnh án */}
+      {showMedicalRecordModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Hồ sơ bệnh án
+              </h3>
+              <button
+                onClick={() => {
+                  setShowMedicalRecordModal(false);
+                  setMedicalRecordData(null);
+                  setExaminationHistory([]);
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Loading State */}
+            {loadingMedicalRecord && (
+              <div className="flex items-center justify-center py-8">
+                <div className="flex items-center space-x-2">
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>Đang tải hồ sơ bệnh án...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Content */}
+            {!loadingMedicalRecord && (
+              <div className="space-y-6">
+                {/* Thông tin hồ sơ bệnh án */}
+                {medicalRecordData && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <div className="flex items-center mb-4">
+                      <FileText size={20} className="text-blue-600 mr-2" />
+                      <h4 className="text-lg font-semibold text-gray-900">Thông tin hồ sơ bệnh án</h4>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Mã hồ sơ
+                        </label>
+                        <p className="text-gray-900 font-mono text-sm">
+                          {medicalRecordData.medicalRecordId || 'Chưa có thông tin'}
+                        </p>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-600 mb-1">
+                          Mã bệnh nhân
+                        </label>
+                        <p className="text-gray-900">
+                          {medicalRecordData.patientProfileId || visitData?.patientProfileId || 'Chưa có thông tin'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Bảng lịch sử khám bệnh */}
+                <div className="bg-white rounded-lg border border-gray-200">
+                  <div className="px-6 py-4 border-b border-gray-200">
+                    <h4 className="text-lg font-semibold text-gray-900">Lịch sử khám bệnh</h4>
+                  </div>
+                  
+                  {loadingExaminationHistory ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="flex items-center space-x-2">
+                        <svg
+                          className="animate-spin h-5 w-5"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        <span>Đang tải lịch sử khám bệnh...</span>
+                      </div>
+                    </div>
+                  ) : examinationHistory.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Ngày khám
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Bác sĩ khám
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Mã truy cập
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {examinationHistory.map((result, index) => (
+                            <tr key={result.id || index} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {result.createdAt ? formatDate(result.createdAt) : 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {result.doctorName || 'N/A'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                {result.accessCode ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {result.accessCode}
+                                  </span>
+                                ) : (
+                                  'N/A'
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText size={48} className="mx-auto text-gray-400 mb-4" />
+                      <p className="text-gray-500">Chưa có lịch sử khám bệnh nào cho hồ sơ này.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Footer */}
+            <div className="flex justify-end mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowMedicalRecordModal(false);
+                  setMedicalRecordData(null);
+                  setExaminationHistory([]);
                 }}
                 className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
               >
