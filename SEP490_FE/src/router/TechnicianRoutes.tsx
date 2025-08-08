@@ -6,6 +6,7 @@ import Loading from "@/shared/components/common/LoadingSpinner";
 const Dashboard = React.lazy(() => import("@/pages/technician/Dashboard"));
 const TestSchedule = React.lazy(() => import("@/pages/technician/TestSchedule"));
 const TestDetail = React.lazy(() => import("@/pages/technician/TestDetail"));
+const UserProfile = React.lazy(() => import("@/pages/technician/UserProfile"));
 
 const TechnicianRoutes: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ const TechnicianRoutes: React.FC = () => {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="test-schedule" element={<TestSchedule />} />
         <Route path="test-detail/:testId" element={<TestDetail />} />
+        <Route path="profile" element={<UserProfile />} />
       </Routes>
     </Suspense>
   );

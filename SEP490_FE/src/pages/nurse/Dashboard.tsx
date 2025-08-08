@@ -1,12 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Users, Package } from 'lucide-react';
-import NurseLayout from '@/shared/components/layouts/NurseLayout';
 
 const NurseDashboard: React.FC = () => {
   return (
-    <NurseLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Bảng điều khiển Y tá</h1>
         <p className="text-gray-600 mt-2">Quản lý hàng chờ bệnh nhân và vật tư phòng khám</p>
@@ -98,8 +96,7 @@ const NurseDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      </div>
-    </NurseLayout>
+    </div>
   );
 };
 
