@@ -411,5 +411,22 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [HttpGet("provide-histories")]
+        [SwaggerOperation(
+  Summary = "Lịch sử giao dịch phân phát",
+  Description = "Lấy lịch sử phân phát"
+)]
+        public async Task<IActionResult> GetProvideHistories()
+        {
+            var histories = await _transactionService.GetProvideHistoryAsync();
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = histories
+            });
+        }
+
     }
 }

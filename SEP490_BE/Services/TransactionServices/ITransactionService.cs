@@ -23,5 +23,6 @@ namespace SEP490_BE.Services.TransactionServices
         Task<List<TransactionResponseDTO>> GetDefectiveBatches();
         Task<List<TransactionHistoryDTO>> GetTransactionHistories(string? transactionId = null);
         Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms();
+        Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync();
     }
 }

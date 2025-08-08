@@ -974,5 +974,57 @@ namespace SEP490_BE.Services.TransactionServices
 
             return histories;
         }
+        public async Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync()
+        {
+            var histories = await _context.Transactions
+                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
+                .Include(t => t.Material)
+                .Include(t => t.User)
+                .Include(t => t.TransactionDetailTransactions)
+                .ToListAsync();
+
+            var result = histories
+                .GroupBy(t => t.MaterialId) // gom theo MaterialId
+                .Select(group => new ProvideHistoryDTO
+                {
+                    MaterialId = group.Key,
+                    MaterialName = group.First().Material.Name,
+                    CreatedBy = group.First().User.Name,
+                    CreatedAt = group.Min(t => t.CreatedAt ?? DateTime.MinValue), // hoặc Max nếu muốn
+                    RoomDetails = group
+                        .SelectMany(t => t.TransactionDetailTransactions)
+                        .GroupBy(td => new { td.Transaction.RoomId, td.Transaction.RoomType })
+                        .Select(roomGroup => new RoomDetailDTO
+                        {
+                            RoomId = roomGroup.Key.RoomId ?? string.Empty,
+                            RoomName = string.Empty, // map sau
+                            RoomType = roomGroup.Key.RoomType ?? string.Empty,
+                            BatchInfo = roomGroup
+                                .Select(td => new BatchInfoDTO
+                                {
+                                    TransactionId = td.TransactionId,
+                                    Quantity = td.QuantityProvided ?? 0
+                                })
+                                .ToList()
+                        })
+                        .ToList()
+                })
+                .ToList();
+
+            // Map RoomName
+            foreach (var history in result)
+            {
+                foreach (var room in history.RoomDetails)
+                {
+                    room.RoomName = await GetRoomNameAsync(room.RoomId, room.RoomType);
+                }
+            }
+
+            return result;
+        }
+
+
+
+
     }
 }
