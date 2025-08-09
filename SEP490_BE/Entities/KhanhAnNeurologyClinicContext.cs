@@ -15,7 +15,7 @@ namespace SEP490_BE.Entities
             : base(options)
         {
         }
-
+    
         public virtual DbSet<Appointment> Appointments { get; set; } = null!;
         public virtual DbSet<Assignment> Assignments { get; set; } = null!;
         public virtual DbSet<AssignmentService> AssignmentServices { get; set; } = null!;
@@ -23,10 +23,10 @@ namespace SEP490_BE.Entities
         public virtual DbSet<Category> Categories { get; set; } = null!;
         public virtual DbSet<DoctorProfile> DoctorProfiles { get; set; } = null!;
         public virtual DbSet<ExaminationResult> ExaminationResults { get; set; } = null!;
-        public virtual DbSet<ExaminationRoom> ExaminationRooms { get; set; } = null!;    
+        public virtual DbSet<ExaminationRoom> ExaminationRooms { get; set; } = null!;
         public virtual DbSet<LaboratoryFile> LaboratoryFiles { get; set; } = null!;
         public virtual DbSet<LaboratoryResult> LaboratoryResults { get; set; } = null!;
-        public virtual DbSet<LaboratoryRoom> LaboratoryRooms { get; set; } = null!;     
+        public virtual DbSet<LaboratoryRoom> LaboratoryRooms { get; set; } = null!;
         public virtual DbSet<Material> Materials { get; set; } = null!;
         public virtual DbSet<MedicalRecord> MedicalRecords { get; set; } = null!;
         public virtual DbSet<Medicine> Medicines { get; set; } = null!;
@@ -37,8 +37,8 @@ namespace SEP490_BE.Entities
         public virtual DbSet<Role> Roles { get; set; } = null!;
         public virtual DbSet<RolePermission> RolePermissions { get; set; } = null!;
         public virtual DbSet<Schedule> Schedules { get; set; } = null!;
-        public virtual DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; set; } = null!;    
-        public virtual DbSet<Service> Services { get; set; } = null!;    
+        public virtual DbSet<ScheduleChangeRequest> ScheduleChangeRequests { get; set; } = null!;
+        public virtual DbSet<Service> Services { get; set; } = null!;
         public virtual DbSet<Supplier> Suppliers { get; set; } = null!;
         public virtual DbSet<TimeSlot> TimeSlots { get; set; } = null!;
         public virtual DbSet<Transaction> Transactions { get; set; } = null!;
@@ -53,9 +53,9 @@ namespace SEP490_BE.Entities
             if (!optionsBuilder.IsConfigured)
             {
                 var config = new ConfigurationBuilder()
-                .SetBasePath(AppContext.BaseDirectory)
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .Build();
+                              .SetBasePath(AppContext.BaseDirectory)
+                              .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                              .Build();
 
                 var connectionString = config.GetConnectionString("MyDB");
                 optionsBuilder.UseSqlServer(connectionString);
@@ -64,8 +64,8 @@ namespace SEP490_BE.Entities
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-          
+        {        
+
             modelBuilder.Entity<Appointment>(entity =>
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -197,7 +197,6 @@ namespace SEP490_BE.Entities
                     .HasDefaultValueSql("(getdate())");
             });
 
-          
 
             modelBuilder.Entity<DoctorProfile>(entity =>
             {
@@ -266,8 +265,7 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.Name).HasMaxLength(100);
             });
-
-    
+     
 
             modelBuilder.Entity<LaboratoryFile>(entity =>
             {
@@ -331,8 +329,6 @@ namespace SEP490_BE.Entities
 
                 entity.Property(e => e.Name).HasMaxLength(100);
             });
-
-         
 
             modelBuilder.Entity<Material>(entity =>
             {
@@ -405,9 +401,6 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<PatientProfile>(entity =>
             {
-                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0D2F0585B1")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasMaxLength(100);
 
                 entity.Property(e => e.Address).HasMaxLength(255);
@@ -583,8 +576,7 @@ namespace SEP490_BE.Entities
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__ScheduleC__Targe__5FB337D6");
             });
-
-          
+       
             modelBuilder.Entity<Service>(entity =>
             {
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -601,8 +593,7 @@ namespace SEP490_BE.Entities
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__Services__Labora__5441852A");
             });
-
-          
+     
 
             modelBuilder.Entity<Supplier>(entity =>
             {
