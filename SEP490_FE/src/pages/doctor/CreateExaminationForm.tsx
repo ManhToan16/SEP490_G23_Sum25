@@ -49,6 +49,7 @@ const CreateExaminationForm: React.FC = () => {
   const [loadingServices, setLoadingServices] = useState(false);
   const [assignmentData, setAssignmentData] = useState<any[]>([]);
   const [loadingAssignments, setLoadingAssignments] = useState(false);
+  const [timeSlots, setTimeSlots] = useState<any[]>([]);
   
   // Medicine states
   const [medicines, setMedicines] = useState<any[]>([]);
@@ -63,6 +64,22 @@ const CreateExaminationForm: React.FC = () => {
   
   // Modal states
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [isRescheduling, setIsRescheduling] = useState(false);
+  
+  // Reschedule form states
+  const [rescheduleFormData, setRescheduleFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    birthdate: '',
+    gender: '',
+    address: '',
+    symptoms: '',
+    date: '',
+    timeSlotId: '',
+    requiredDoctorId: ''
+  });
   
   // Kiểm tra nếu visit đã hoàn thành từ trước
   useEffect(() => {
@@ -303,6 +320,17 @@ const CreateExaminationForm: React.FC = () => {
     fetchAssignments(); // Fetch assignments khi component mount
     fetchMedicines(); // Fetch medicines khi component mount
     fetchExaminationResult(); // Fetch examination result để load lại dữ liệu đã lưu
+    
+    // Fetch time slots
+    const fetchTimeSlots = async () => {
+      try {
+        const response = await appointmentService.getTimeSlots();
+        setTimeSlots(response);
+      } catch (error) {
+        console.error('Error fetching time slots:', error);
+      }
+    };
+    fetchTimeSlots();
   }, [fetchAssignments, fetchMedicines, fetchExaminationResult, toast]);
 
   // Filter medicines based on search text and exclude medicines already in prescription
@@ -769,6 +797,213 @@ const CreateExaminationForm: React.FC = () => {
 
     // Hiển thị modal xác nhận thay vì alert
     setShowCompleteModal(true);
+  };
+
+  // Helper function để format date cho input
+  const formatDateForInput = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    try {
+      // Nếu dateString đã là format YYYY-MM-DD
+      if (dateString.includes('-') && dateString.split('-').length === 3) {
+        return dateString;
+      }
+      
+      // Nếu là format DD/MM/YYYY
+      if (dateString.includes('/')) {
+        const [day, month, year] = dateString.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Nếu là Date object hoặc ISO string
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString().split('T')[0];
+      }
+      
+      return '';
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+
+  const handleCompleteAndSchedule = async () => {
+    if (!visitData?.visitId) {
+      toast({
+        title: "Lỗi!",
+        description: 'Không tìm thấy thông tin visit để hoàn thành',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Kiểm tra xem đã lưu phiếu khám chưa
+    if (!diagnosis.trim() && !conclusion.trim()) {
+      toast({
+        title: "Lỗi!",
+        description: 'Vui lòng lưu phiếu khám trước khi hoàn thành',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Tự động điền thông tin bệnh nhân từ appointment data
+    if (appointmentData) {
+      console.log('Using existing appointmentData:', appointmentData);
+      console.log('Original dateOfBirth:', appointmentData.dateOfBirth);
+      console.log('Formatted birthdate:', formatDateForInput(appointmentData.dateOfBirth || ''));
+      
+      setRescheduleFormData({
+        name: appointmentData.name || '',
+        email: appointmentData.email || '',
+        phone: appointmentData.phoneNumber || '',
+        birthdate: formatDateForInput(appointmentData.dateOfBirth || ''),
+        gender: appointmentData.gender === 'Nam' ? 'male' : appointmentData.gender === 'Nữ' ? 'female' : '',
+        address: appointmentData.address || '',
+        symptoms: '', // Để trống để bác sĩ điền
+        date: '', // Để trống để bác sĩ chọn
+        timeSlotId: '', // Để trống để bác sĩ chọn
+        requiredDoctorId: appointmentData.requiredDoctorId || ''
+      });
+    } else if (visitData?.appointmentId) {
+      // Nếu chưa có appointment data nhưng có appointmentId, fetch data
+      try {
+        const appointment = await appointmentService.getAppointmentById(visitData.appointmentId);
+        setAppointmentData(appointment);
+        
+        setRescheduleFormData({
+          name: appointment.name || '',
+          email: appointment.email || '',
+          phone: appointment.phoneNumber || '',
+          birthdate: formatDateForInput(appointment.dateOfBirth || ''),
+          gender: appointment.gender === 'Nam' ? 'male' : appointment.gender === 'Nữ' ? 'female' : '',
+          address: appointment.address || '',
+          symptoms: '', // Để trống để bác sĩ điền
+          date: '', // Để trống để bác sĩ chọn
+          timeSlotId: '', // Để trống để bác sĩ chọn
+          requiredDoctorId: appointment.requiredDoctorId || ''
+        });
+      } catch (error) {
+        console.error('Error fetching appointment data:', error);
+        // Fallback: sử dụng thông tin từ visitData
+        setRescheduleFormData({
+          name: visitData.patientName || '',
+          email: '',
+          phone: '',
+          birthdate: '',
+          gender: '',
+          address: '',
+          symptoms: '',
+          date: '',
+          timeSlotId: '',
+          requiredDoctorId: ''
+        });
+      }
+    } else {
+      // Fallback: sử dụng thông tin từ visitData
+      setRescheduleFormData({
+        name: visitData.patientName || '',
+        email: '',
+        phone: '',
+        birthdate: '',
+        gender: '',
+        address: '',
+        symptoms: '',
+        date: '',
+        timeSlotId: '',
+        requiredDoctorId: ''
+      });
+    }
+
+    // Hiển thị modal đặt lịch tái khám
+    setShowRescheduleModal(true);
+  };
+
+  const handleRescheduleInputChange = (field: string, value: string) => {
+    setRescheduleFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Validation cho form đặt lịch tái khám
+  const validateRescheduleForm = (): boolean => {
+    const requiredFields = [
+      'name', 'email', 'phone', 'birthdate', 'gender', 'date', 'timeSlotId'
+    ];
+    
+    for (const field of requiredFields) {
+      if (!rescheduleFormData[field] || rescheduleFormData[field].trim() === '') {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const handleConfirmReschedule = async () => {
+    // Validation trước khi submit
+    if (!validateRescheduleForm()) {
+      toast({
+        title: "Lỗi!",
+        description: 'Vui lòng điền đầy đủ các trường bắt buộc',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsRescheduling(true);
+    try {
+      // Chuẩn bị data cho API tạo lịch hẹn
+      const appointmentData = {
+        name: rescheduleFormData.name,
+        phoneNumber: rescheduleFormData.phone,
+        email: rescheduleFormData.email,
+        dateOfBirth: rescheduleFormData.birthdate,
+        gender: rescheduleFormData.gender === 'male' ? 'Nam' : 'Nữ',
+        address: rescheduleFormData.address,
+        symptom: rescheduleFormData.symptoms,
+        requiredDoctorId: rescheduleFormData.requiredDoctorId || "",
+        date: rescheduleFormData.date,
+        timeSlotId: rescheduleFormData.timeSlotId
+      };
+
+      // Gọi song song 2 API
+      const [markCompletedResult, createAppointmentResult] = await Promise.all([
+        appointmentService.markAsCompleted(visitData.visitId),
+        appointmentService.createAppointment(appointmentData)
+      ]);
+      
+      console.log('Mark completed result:', markCompletedResult);
+      console.log('Create appointment result:', createAppointmentResult);
+      
+      toast({
+        title: "Thành công!",
+        description: 'Hoàn thành khám bệnh và đặt lịch tái khám thành công!',
+        variant: "success",
+      });
+      
+      // Set state để ẩn tất cả button
+      setIsVisitCompleted(true);
+      
+      // Đóng modal
+      setShowRescheduleModal(false);
+      
+    } catch (error) {
+      console.error('Error completing visit and scheduling:', error);
+      toast({
+        title: "Lỗi!",
+        description: 'Có lỗi xảy ra khi hoàn thành khám bệnh và đặt lịch tái khám. Vui lòng thử lại.',
+        variant: "destructive",
+      });
+    } finally {
+      setIsRescheduling(false);
+    }
+  };
+
+  const handleCancelReschedule = () => {
+    setShowRescheduleModal(false);
   };
 
   const handleConfirmComplete = async () => {
@@ -1851,6 +2086,39 @@ const CreateExaminationForm: React.FC = () => {
                 'Hoàn thành'
               )}
             </button>
+            <button
+              onClick={handleCompleteAndSchedule}
+              disabled={completingVisit}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {completingVisit ? (
+                <div className="flex items-center space-x-2">
+                  <svg
+                    className="animate-spin h-4 w-4"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <span>Đang hoàn thành...</span>
+                </div>
+              ) : (
+                'Hoàn thành và đặt lịch tái khám'
+              )}
+            </button>
           </div>
         )}
       </Card>
@@ -2701,6 +2969,211 @@ const CreateExaminationForm: React.FC = () => {
                 className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 font-medium"
               >
                 Đóng
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal đặt lịch tái khám */}
+      {showRescheduleModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                <Calendar className="w-6 h-6 text-blue-600 mr-2" />
+                Đặt Lịch Tái Khám
+              </h3>
+              <button
+                onClick={handleCancelReschedule}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={isRescheduling}
+              >
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-6">
+              {/* Patient Information */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-4">Thông tin bệnh nhân</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Tên bệnh nhân *
+                    </label>
+                    <input
+                      type="text"
+                      value={rescheduleFormData.name}
+                      onChange={(e) => handleRescheduleInputChange('name', e.target.value)}
+                      placeholder="Nhập họ và tên"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={rescheduleFormData.email}
+                      onChange={(e) => handleRescheduleInputChange('email', e.target.value)}
+                      placeholder="example@gmail.com"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Số điện thoại *
+                    </label>
+                    <input
+                      type="text"
+                      value={rescheduleFormData.phone}
+                      onChange={(e) => handleRescheduleInputChange('phone', e.target.value)}
+                      placeholder="0912345678"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ngày sinh *
+                    </label>
+                    <input
+                      type="date"
+                      value={rescheduleFormData.birthdate}
+                      onChange={(e) => handleRescheduleInputChange('birthdate', e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Giới tính *
+                    </label>
+                    <select
+                      value={rescheduleFormData.gender}
+                      onChange={(e) => handleRescheduleInputChange('gender', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Chọn giới tính</option>
+                      <option value="male">Nam</option>
+                      <option value="female">Nữ</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Địa chỉ
+                    </label>
+                    <input
+                      type="text"
+                      value={rescheduleFormData.address}
+                      onChange={(e) => handleRescheduleInputChange('address', e.target.value)}
+                      placeholder="Địa chỉ hiện tại"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Triệu chứng
+                  </label>
+                  <textarea
+                    value={rescheduleFormData.symptoms}
+                    onChange={(e) => handleRescheduleInputChange('symptoms', e.target.value)}
+                    placeholder="Mô tả triệu chứng hiện tại..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                  />
+                </div>
+              </div>
+
+              {/* Appointment Time */}
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-semibold text-gray-900 mb-4">Chọn Thời Gian</h4>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Ngày khám *
+                    </label>
+                    <input
+                      type="date"
+                      value={rescheduleFormData.date}
+                      onChange={(e) => handleRescheduleInputChange('date', e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Giờ khám *
+                    </label>
+                    <select
+                      value={rescheduleFormData.timeSlotId}
+                      onChange={(e) => handleRescheduleInputChange('timeSlotId', e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Chọn giờ</option>
+                      {timeSlots && timeSlots.length > 0 ? (
+                        timeSlots.map((slot) => (
+                          <option key={slot.id} value={slot.id}>
+                            {slot.name} ({slot.startTime.slice(0, 5)}-{slot.endTime.slice(0, 5)})
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>Đang tải...</option>
+                      )}
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-center pt-6">
+              <button
+                onClick={handleConfirmReschedule}
+                disabled={isRescheduling || !validateRescheduleForm()}
+                className="inline-flex items-center gap-3 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-8 py-3 text-base font-semibold text-white shadow-md ring-1 ring-blue-300/40 hover:from-indigo-600 hover:to-blue-700 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-95 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isRescheduling ? (
+                  <div className="flex items-center space-x-2">
+                    <svg
+                      className="animate-spin h-5 w-5"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    <span>Đang xử lý...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Calendar className="w-5 h-5" />
+                    Hoàn thành và đặt lịch tái khám
+                  </>
+                )}
               </button>
             </div>
           </div>
