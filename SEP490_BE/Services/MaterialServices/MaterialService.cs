@@ -190,7 +190,8 @@ namespace SEP490_BE.Services.MaterialServices
         public async Task<List<MaterialImportSummaryDTO>> GetImportSummaryAsync()
         {
             // Lấy tất cả vật tư
-            var materials = await _context.Materials.ToListAsync();
+            var materials = await _context.Materials.Include(m => m.Category)
+        .Include(m => m.Supplier).ToListAsync();
 
             // Lấy tất cả giao dịch nhập
             var importTransactions = await _context.Transactions
@@ -216,7 +217,9 @@ namespace SEP490_BE.Services.MaterialServices
                         Unit = m.Unit,
                         Quantity = totalQuantity,
                         AvailableQuantity = totalQuantity - totalDefective,
-                        TotalPrice = Math.Round(averagePrice * totalQuantity, 2)
+                        TotalPrice = Math.Round(averagePrice * totalQuantity, 2),
+                        CategoryName = m.Category?.Name ?? "",
+                        SupplierName = m.Supplier?.Name ?? ""
                     };
                 })
                 .ToList();
