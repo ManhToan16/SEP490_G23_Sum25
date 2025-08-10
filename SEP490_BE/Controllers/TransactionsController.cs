@@ -413,12 +413,12 @@ namespace SEP490_BE.Controllers
 
         [HttpGet("provide-histories")]
         [SwaggerOperation(
-  Summary = "Lịch sử giao dịch phân phát",
-  Description = "Lấy lịch sử phân phát"
-)]
-        public async Task<IActionResult> GetProvideHistories()
+          Summary = "Lịch sử giao dịch phân phát",
+          Description = "Lấy lịch sử phân phát, có thể lọc theo MaterialName và TransactionType"
+      )]
+        public async Task<IActionResult> GetProvideHistories([FromQuery] string? materialName, [FromQuery] string? transactionType)
         {
-            var histories = await _transactionService.GetProvideHistoryAsync();
+            var histories = await _transactionService.GetProvideHistoryAsync(materialName, transactionType);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -427,6 +427,7 @@ namespace SEP490_BE.Controllers
                 Data = histories
             });
         }
+
 
     }
 }

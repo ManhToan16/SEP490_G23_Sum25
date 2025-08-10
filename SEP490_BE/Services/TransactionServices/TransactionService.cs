@@ -59,16 +59,54 @@ namespace SEP490_BE.Services.TransactionServices
                 Status = "APPROVED",
                 SupplierId = material.SupplierId,
                 Price = importDto.Price,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = importDto.ImportDate,
                 UpdatedAt = DateTime.UtcNow
             };
 
+            Transaction? supplierReturnTransaction = null;
+            TransactionHistory? supplierReturnHistory = null;
 
+            if (importDto.DefectiveQuantity > 0)
+            {
+                supplierReturnTransaction = new Transaction
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    MaterialId = importDto.MaterialId,
+                    TransactionType = "SUPPLIER_RETURN",
+                    Quantity = importDto.DefectiveQuantity,
+                    RoomId = null,
+                    RoomType = null,
+                    UserId = userId,
+                    Reason = "Trả hàng lỗi khi nhập",
+                    Status = "PENDING",
+                    SupplierId = material.SupplierId,
+                    Price = importDto.Price,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                supplierReturnHistory = new TransactionHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TransactionId = supplierReturnTransaction.Id,
+                    OldQuantity = 0, // Chưa có trước đó
+                    NewQuantity = importDto.DefectiveQuantity,
+                    OldReason = "Không có",
+                    NewReason = "Trả hàng lỗi khi nhập",
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.UtcNow
+                };
+            }
             using var transactionScope = await _context.Database.BeginTransactionAsync();
             try
             {
                 await _transactionRepository.AddAsync(transaction);
-                material.QuantityInStock += effectiveQuantity; // Tăng số lượng tồn kho
+                if (supplierReturnTransaction != null)
+                {
+                    await _transactionRepository.AddAsync(supplierReturnTransaction);
+                    await _transactionRepository.AddTransactionHistoryAsync(supplierReturnHistory!);
+                }
+                material.QuantityInStock += importDto.Quantity; // Tăng số lượng tồn kho
                 await _materialRepository.UpdateAsync(material);
                 await _context.SaveChangesAsync();
                 await transactionScope.CommitAsync();
@@ -408,6 +446,12 @@ namespace SEP490_BE.Services.TransactionServices
         public async Task<List<TransactionResponseDTO>> GetAllTransactions(string? materialId, string? transactionType, string? status)
         {
             var (transactions, _) = await _transactionRepository.FindAll(materialId, transactionType, status, 1, int.MaxValue);
+       //     var filteredTransactions = transactions
+       //.Where(t => !string.Equals(t.Status, "APPROVED", StringComparison.OrdinalIgnoreCase))
+       //.Select(MapToResponseDTO)
+       //.ToList();
+
+       //     return filteredTransactions;
             return transactions.Select(MapToResponseDTO).ToList();
         }
 
@@ -430,8 +474,9 @@ namespace SEP490_BE.Services.TransactionServices
                 CreatedAt = transaction.CreatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
                 UpdatedAt = transaction.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
                 Price = transaction.Price,
-                SupplierId = transaction.SupplierId,
-                SupplierName = transaction.Supplier?.Name
+                SupplierId = transaction.Material?.SupplierId,
+                SupplierName = transaction.Material?.Supplier?.Name
+
             };
         }
         public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedByRoomType(string roomType)
@@ -839,6 +884,9 @@ namespace SEP490_BE.Services.TransactionServices
         public async Task<List<TransactionResponseDTO>> GetDefectiveBatches()
         {
             var defectiveTransactions = await _context.Transactions
+                .Include(x => x.Material)
+                    .ThenInclude(m => m.Supplier) // lấy supplier qua material
+                .Include(x => x.User)
                 .Where(t => t.TransactionType == "IMPORT" && t.DefectiveQuantity > 0)
                 .OrderBy(t => t.CreatedAt)
                 .ToListAsync();
@@ -850,6 +898,7 @@ namespace SEP490_BE.Services.TransactionServices
 
             return defectiveTransactions.Select(MapToResponseDTO).ToList();
         }
+
         public async Task<TransactionResponseDTO> ApproveAdminReturnTransaction(string transactionId, string adminId)
         {
 
@@ -974,30 +1023,50 @@ namespace SEP490_BE.Services.TransactionServices
 
             return histories;
         }
-        public async Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync()
+        public async Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync(string? materialName, string? transactionType)
         {
-            var histories = await _context.Transactions
-                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
+            var query = _context.Transactions
                 .Include(t => t.Material)
                 .Include(t => t.User)
                 .Include(t => t.TransactionDetailTransactions)
-                .ToListAsync();
+                .AsQueryable();
+
+            // Nếu không truyền transactionType thì giữ nguyên như cũ (PROVIDE)
+            if (!string.IsNullOrEmpty(transactionType))
+            {
+                query = query.Where(t => t.TransactionType == transactionType);
+            }
+            else
+            {
+                query = query.Where(t => t.TransactionType == "PROVIDE");
+            }
+
+            // Status APPROVED
+            query = query.Where(t => t.Status == "APPROVED");
+
+            // Nếu có nhập materialName thì lọc
+            if (!string.IsNullOrEmpty(materialName))
+            {
+                query = query.Where(t => t.Material.Name.Contains(materialName));
+            }
+
+            var histories = await query.ToListAsync();
 
             var result = histories
-                .GroupBy(t => t.MaterialId) // gom theo MaterialId
+                .GroupBy(t => t.MaterialId)
                 .Select(group => new ProvideHistoryDTO
                 {
                     MaterialId = group.Key,
                     MaterialName = group.First().Material.Name,
                     CreatedBy = group.First().User.Name,
-                    CreatedAt = group.Min(t => t.CreatedAt ?? DateTime.MinValue), // hoặc Max nếu muốn
+                    CreatedAt = group.Min(t => t.CreatedAt ?? DateTime.MinValue),
                     RoomDetails = group
                         .SelectMany(t => t.TransactionDetailTransactions)
                         .GroupBy(td => new { td.Transaction.RoomId, td.Transaction.RoomType })
                         .Select(roomGroup => new RoomDetailDTO
                         {
                             RoomId = roomGroup.Key.RoomId ?? string.Empty,
-                            RoomName = string.Empty, // map sau
+                            RoomName = string.Empty,
                             RoomType = roomGroup.Key.RoomType ?? string.Empty,
                             BatchInfo = roomGroup
                                 .Select(td => new BatchInfoDTO
@@ -1022,6 +1091,7 @@ namespace SEP490_BE.Services.TransactionServices
 
             return result;
         }
+
 
 
 
