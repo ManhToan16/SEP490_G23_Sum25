@@ -15,7 +15,7 @@ namespace SEP490_BE.Repositories.TransactionRepositories
         public async Task<Transaction> FindByIdAsync(string id)
         {
             return await _context.Transactions
-                .Include(t => t.Material)
+                .Include(t => t.Material).ThenInclude(x => x.Supplier)
                 .Include(t => t.User)
                 .Include(t => t.TransactionHistories)
                 .FirstOrDefaultAsync(t => t.Id == id);
@@ -47,7 +47,7 @@ namespace SEP490_BE.Repositories.TransactionRepositories
         public async Task<(List<Transaction> Transactions, int TotalItems)> FindAll(string? materialId, string? transactionType, string? status, int pageNumber, int pageSize)
         {
             var query = _context.Transactions
-                .Include(t => t.Material)
+                .Include(t => t.Material).ThenInclude(x=>x.Supplier)
                 .Include(t => t.User)
                 .Include(t => t.TransactionHistories)
                 .AsQueryable();

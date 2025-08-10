@@ -18,5 +18,6 @@ namespace SEP490_BE.DTO.TransactionDTO
         public int DefectiveQuantity { get; set; }
   
         public string? Reason { get; set; }
+        public DateTime ImportDate { get; set; }
     }
 }
