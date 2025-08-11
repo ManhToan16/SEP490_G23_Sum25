@@ -24,5 +24,6 @@ namespace SEP490_BE.Services.TransactionServices
         Task<List<TransactionHistoryDTO>> GetTransactionHistories(string? transactionId = null);
         Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms();
         Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync(string? materialName, string? transactionType);
+        Task<TransactionResponseDTO> UpdateDefectiveQuantityAsync(string transactionId, int newDefectiveQuantity, string updatedBy);
     }
 }

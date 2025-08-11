@@ -428,6 +428,35 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("update-defective/{transactionId}")]
+        
+        [SwaggerOperation(
+    Summary = "Cập nhật số lượng hàng lỗi",
+    Description = "Chỉ áp dụng cho giao dịch nhập hàng (IMPORT). Nếu tăng số lượng lỗi thì sẽ giảm số lượng có thể sử dụng và cập nhật tồn kho."
+)]
+        public async Task<IActionResult> UpdateDefectiveQuantity(string transactionId, [FromBody] UpdateDefectiveQuantityDTO request)
+        {
+            if (request.NewDefectiveQuantity < 0)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Số lượng lỗi không hợp lệ."
+                });
+            }
+            var updatedBy = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var result = await _transactionService.UpdateDefectiveQuantityAsync(transactionId, request.NewDefectiveQuantity, updatedBy);
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = result
+            });
+        }
 
     }
 }

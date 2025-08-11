@@ -1091,6 +1091,77 @@ namespace SEP490_BE.Services.TransactionServices
 
             return result;
         }
+        public async Task<TransactionResponseDTO> UpdateDefectiveQuantityAsync(string transactionId, int newDefectiveQuantity, string updatedBy)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Material)
+                    .ThenInclude(m => m.Supplier)
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == transactionId);
+
+            if (transaction == null)
+                throw new ResourceNotFoundException("Giao dịch không tồn tại.");
+
+            if (transaction.TransactionType != "IMPORT")
+                throw new InvalidOperationException("Chỉ chỉnh sửa số lượng lỗi cho giao dịch nhập hàng.");
+
+            if (newDefectiveQuantity < 0)
+                throw new Exceptions.ArgumentException("Số lượng lỗi không hợp lệ.");
+
+            // Kiểm tra hết hàng ở Transaction hoặc trong kho
+            if (transaction.Quantity == 0)
+                throw new Exceptions.ArgumentException("Đơn hàng này đã hết hàng dùng được, không thể chỉnh sửa.");
+
+            if (transaction.Material.QuantityInStock == 0)
+                throw new Exceptions.ArgumentException("Vật tư này đã hết hàng trong kho, không thể chỉnh sửa.");
+
+            var totalOriginal = transaction.Quantity + (transaction.DefectiveQuantity ?? 0);
+            if (newDefectiveQuantity > totalOriginal)
+                throw new Exceptions.ArgumentException("Số lượng lỗi không được vượt quá tổng số lượng nhập.");
+
+            var oldDefective = transaction.DefectiveQuantity ?? 0;
+            var oldQuantity = transaction.Quantity;
+
+            // Tính chênh lệch và cập nhật
+            var delta = newDefectiveQuantity - oldDefective;
+            transaction.DefectiveQuantity = newDefectiveQuantity;
+            transaction.Quantity = oldQuantity - delta;
+            transaction.UpdatedAt = DateTime.UtcNow;
+
+            // Cập nhật tồn kho vật tư (QuantityInStock)
+            transaction.Material.QuantityInStock -= delta;
+
+            // Ghi lịch sử
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transaction.Id,
+                OldQuantity = oldQuantity,
+                NewQuantity = transaction.Quantity,
+                OldReason = $"Defective: {oldDefective}",
+                NewReason = $"Defective: {newDefectiveQuantity}",
+                ChangedBy = updatedBy,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            using var transactionScope = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Transactions.Update(transaction);
+                _context.Materials.Update(transaction.Material);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
+                await _context.SaveChangesAsync();
+                await transactionScope.CommitAsync();
+            }
+            catch
+            {
+                await transactionScope.RollbackAsync();
+                throw;
+            }
+
+            return MapToResponseDTO(transaction);
+        }
+
 
 
 
