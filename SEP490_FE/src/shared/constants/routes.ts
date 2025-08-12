@@ -57,6 +57,7 @@ export const ROUTES = {
     PATIENT_LIST: '/admin/patients', // Thêm dòng này
     SUPPLIER_MANAGEMENT: '/admin/suppliers',
     MEDICINES_MANAGEMENT: '/admin/medicines',
+    DISTRIBUTION_MATERIAL_MANAGEMENT: '/admin/distribution-material',
   },
 
   // Nurse routes
@@ -125,6 +126,8 @@ export const NAVIGATION_ITEMS = {
         { path: ROUTES.ADMIN.MATERIAL_MANAGEMENT, label: 'Quản lý vật tư', icon: 'Box' },
         { path: ROUTES.ADMIN.MATERIAL_TYPE_MANAGEMENT, label: 'Quản lý loại vật tư', icon: 'Layers' },
         { path: ROUTES.ADMIN.SUPPLIER_MANAGEMENT, label: 'Quản lý nhà cung cấp', icon: 'Truck' },
+        { path: ROUTES.ADMIN.DISTRIBUTION_MATERIAL_MANAGEMENT, label: 'Quản lý phân phối vật tư', icon: 'Share2' },
+
       ]
     },
     { path: ROUTES.ADMIN.MEDICINES_MANAGEMENT, label: 'Quản lý thuốc', icon: 'Pill' },

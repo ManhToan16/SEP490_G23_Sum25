@@ -5,6 +5,8 @@ import ScheduleManagement from "@/pages/admin/ScheduleManagement";
 import MaterialTypeManagement from "@/pages/admin/MaterialTypeManagement";
 import SupplierManagement from "@/pages/admin/SupplierManagement";
 import MedicineManagement from "@/pages/admin/MedicineManagement";
+import MaterialManagement from "@/pages/admin/MaterialManagement";
+import DistributionMaterialManagement from "@/pages/admin/DistributionMaterialManagement";
 
 // Lazy load admin pages
 const Dashboard = React.lazy(() => import("@/pages/admin/Dashboard"));
@@ -34,7 +36,8 @@ const AdminRoutes: React.FC = () => {
         <Route path="clinic" element={<ClinicManagement />} />
         <Route path="doctor-feedback" element={<DoctorFeedbackList />} />
         <Route path="schedule-manage" element={<ScheduleManagement/>}/>
-        {/* <Route path="materials" element={<MaterialManagement/>}/> */}
+        <Route path="materials" element={<MaterialManagement/>}/>
+        <Route path="distribution-material" element={<DistributionMaterialManagement/>}/>
         <Route path="material-types" element={<MaterialTypeManagement/>}/>
         <Route path="suppliers" element={<SupplierManagement/>}/>
         <Route path="medicines" element={<MedicineManagement />} />
