@@ -22,7 +22,10 @@ namespace SEP490_BE.Services.TransactionServices
         Task<TransactionResponseDTO> RejectProvideTransaction(string transactionId, string adminId);
         Task<List<TransactionResponseDTO>> GetDefectiveBatches();
         Task<List<TransactionHistoryDTO>> GetTransactionHistories(string? transactionId = null);
-        Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms();
-        Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync(string? materialName, string? transactionType);
+        Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms(string? materialName = null);
+        Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync(string? materialName, string? roomName);
+        Task<TransactionResponseDTO> UpdateDefectiveQuantityAsync(string transactionId, int newDefectiveQuantity, string updatedBy);
+        Task<List<TransactionResponseDTO>> GetImportHistoryByMaterialIdAsync(string materialId);
+        Task<List<TransactionResponseDTO>> GetImporToProvide(string materialId);
     }
 }

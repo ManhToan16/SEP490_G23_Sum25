@@ -470,7 +470,7 @@ namespace SEP490_BE.Services.TransactionServices
                 UserId = transaction.UserId,
                 UserName = transaction.User?.Name,
                 Reason = transaction.Reason,
-                Status = transaction.Status ?? "PENDING",
+                Status = transaction.Status ,
                 CreatedAt = transaction.CreatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
                 UpdatedAt = transaction.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
                 Price = transaction.Price,
@@ -594,26 +594,31 @@ namespace SEP490_BE.Services.TransactionServices
             return summaries;
         }
 
-        public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms()
+        public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms(string? materialName = null)
         {
-            var data = await _context.Transactions
-          .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
-          .Join(_context.TransactionDetails,
-              provide => provide.Id,
-              detail => detail.TransactionId,
-              (provide, detail) => new { provide, detail })
-          .Join(_context.Transactions,
-              pd => pd.detail.ParentTransactionId,
-              import => import.Id,
-              (pd, import) => new
-              {
-                  MaterialName = import.Material.Name,
-                  pd.provide.RoomId,
-                  pd.provide.RoomType,
-                  BatchId = import.Id,
-                  Quantity = pd.provide.Quantity
-              })
-          .ToListAsync();
+            var query = _context.Transactions
+                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED")
+                .Join(_context.TransactionDetails,
+                    provide => provide.Id,
+                    detail => detail.TransactionId,
+                    (provide, detail) => new { provide, detail })
+                .Join(_context.Transactions,
+                    pd => pd.detail.ParentTransactionId,
+                    import => import.Id,
+                    (pd, import) => new
+                    {
+                        MaterialName = import.Material.Name,
+                        pd.provide.RoomId,
+                        pd.provide.RoomType,
+                        BatchId = import.Id,
+                        Quantity = pd.provide.Quantity
+                    });
+            if (!string.IsNullOrWhiteSpace(materialName))
+            {
+                query = query.Where(x => x.MaterialName.Contains(materialName));
+            }
+
+            var data = await query.ToListAsync();
 
             if (!data.Any())
             {
@@ -629,11 +634,11 @@ namespace SEP490_BE.Services.TransactionServices
                     RoomType = g.Key.RoomType,
                     RoomName = "", // sẽ set sau
                     BatchInfo = g.GroupBy(b => b.BatchId)
-                               .Select(bg => new BatchInfoDTO
-                               {
-                                   TransactionId = bg.Key,
-                                   Quantity = bg.Sum(x => x.Quantity)
-                               }).ToList()
+                                 .Select(bg => new BatchInfoDTO
+                                 {
+                                     TransactionId = bg.Key,
+                                     Quantity = bg.Sum(x => x.Quantity)
+                                 }).ToList()
                 })
                 .ToList();
 
@@ -885,9 +890,9 @@ namespace SEP490_BE.Services.TransactionServices
         {
             var defectiveTransactions = await _context.Transactions
                 .Include(x => x.Material)
-                    .ThenInclude(m => m.Supplier) // lấy supplier qua material
+                    .ThenInclude(m => m.Supplier) 
                 .Include(x => x.User)
-                .Where(t => t.TransactionType == "IMPORT" && t.DefectiveQuantity > 0)
+                .Where(t => t.TransactionType == "SUPPLIER_RETURN" && t.Quantity > 0)
                 .OrderBy(t => t.CreatedAt)
                 .ToListAsync();
 
@@ -1023,7 +1028,7 @@ namespace SEP490_BE.Services.TransactionServices
 
             return histories;
         }
-        public async Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync(string? materialName, string? transactionType)
+        public async Task<List<ProvideHistoryDTO>> GetProvideHistoryAsync(string? materialName, string? roomName)
         {
             var query = _context.Transactions
                 .Include(t => t.Material)
@@ -1031,23 +1036,30 @@ namespace SEP490_BE.Services.TransactionServices
                 .Include(t => t.TransactionDetailTransactions)
                 .AsQueryable();
 
-            // Nếu không truyền transactionType thì giữ nguyên như cũ (PROVIDE)
-            if (!string.IsNullOrEmpty(transactionType))
-            {
-                query = query.Where(t => t.TransactionType == transactionType);
-            }
-            else
-            {
-                query = query.Where(t => t.TransactionType == "PROVIDE");
-            }
+            // Chỉ lấy PROVIDE + APPROVED
+            query = query.Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED");
 
-            // Status APPROVED
-            query = query.Where(t => t.Status == "APPROVED");
-
-            // Nếu có nhập materialName thì lọc
-            if (!string.IsNullOrEmpty(materialName))
+            // Lọc vật tư
+            if (!string.IsNullOrWhiteSpace(materialName))
             {
                 query = query.Where(t => t.Material.Name.Contains(materialName));
+            }
+
+            // Lọc phòng theo tên
+            if (!string.IsNullOrWhiteSpace(roomName))
+            {
+                var examRoomIds = await _context.ExaminationRooms
+                    .Where(r => r.Name.Contains(roomName))
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                var labRoomIds = await _context.LaboratoryRooms
+                    .Where(r => r.Name.Contains(roomName))
+                    .Select(r => r.Id)
+                    .ToListAsync();
+
+                var allRoomIds = examRoomIds.Concat(labRoomIds).ToList();
+                query = query.Where(t => allRoomIds.Contains(t.RoomId ?? ""));
             }
 
             var histories = await query.ToListAsync();
@@ -1066,8 +1078,8 @@ namespace SEP490_BE.Services.TransactionServices
                         .Select(roomGroup => new RoomDetailDTO
                         {
                             RoomId = roomGroup.Key.RoomId ?? string.Empty,
-                            RoomName = string.Empty,
                             RoomType = roomGroup.Key.RoomType ?? string.Empty,
+                            RoomName = string.Empty, // sẽ set sau
                             BatchInfo = roomGroup
                                 .Select(td => new BatchInfoDTO
                                 {
@@ -1080,7 +1092,7 @@ namespace SEP490_BE.Services.TransactionServices
                 })
                 .ToList();
 
-            // Map RoomName
+            // Gọi GetRoomNameAsync để gán RoomName
             foreach (var history in result)
             {
                 foreach (var room in history.RoomDetails)
@@ -1092,6 +1104,106 @@ namespace SEP490_BE.Services.TransactionServices
             return result;
         }
 
+        public async Task<TransactionResponseDTO> UpdateDefectiveQuantityAsync(string transactionId, int newDefectiveQuantity, string updatedBy)
+        {
+            var transaction = await _context.Transactions
+                .Include(t => t.Material)
+                    .ThenInclude(m => m.Supplier)
+                .Include(t => t.User)
+                .FirstOrDefaultAsync(t => t.Id == transactionId);
+
+            if (transaction == null)
+                throw new ResourceNotFoundException("Giao dịch không tồn tại.");
+
+            if (transaction.TransactionType != "IMPORT")
+                throw new InvalidOperationException("Chỉ chỉnh sửa số lượng lỗi cho giao dịch nhập hàng.");
+
+            if (newDefectiveQuantity < 0)
+                throw new Exceptions.ArgumentException("Số lượng lỗi không hợp lệ.");
+
+            // Kiểm tra hết hàng ở Transaction hoặc trong kho
+            if (transaction.Quantity == 0)
+                throw new Exceptions.ArgumentException("Đơn hàng này đã hết hàng dùng được, không thể chỉnh sửa.");
+
+            if (transaction.Material.QuantityInStock == 0)
+                throw new Exceptions.ArgumentException("Vật tư này đã hết hàng trong kho, không thể chỉnh sửa.");
+
+            var totalOriginal = transaction.Quantity + (transaction.DefectiveQuantity ?? 0);
+            if (newDefectiveQuantity > totalOriginal)
+                throw new Exceptions.ArgumentException("Số lượng lỗi không được vượt quá tổng số lượng nhập.");
+
+            var oldDefective = transaction.DefectiveQuantity ?? 0;
+            var oldQuantity = transaction.Quantity;
+
+            // Tính chênh lệch và cập nhật
+            var delta = newDefectiveQuantity - oldDefective;
+            transaction.DefectiveQuantity = newDefectiveQuantity;
+            transaction.Quantity = oldQuantity - delta;
+            transaction.UpdatedAt = DateTime.UtcNow;
+
+            // Cập nhật tồn kho vật tư (QuantityInStock)
+            transaction.Material.QuantityInStock -= delta;
+
+            // Ghi lịch sử
+            var history = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transaction.Id,
+                OldQuantity = oldQuantity,
+                NewQuantity = transaction.Quantity,
+                OldReason = $"Defective: {oldDefective}",
+                NewReason = $"Defective: {newDefectiveQuantity}",
+                ChangedBy = updatedBy,
+                ChangedAt = DateTime.UtcNow
+            };
+
+            using var transactionScope = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _context.Transactions.Update(transaction);
+                _context.Materials.Update(transaction.Material);
+                await _transactionRepository.AddTransactionHistoryAsync(history);
+                await _context.SaveChangesAsync();
+                await transactionScope.CommitAsync();
+            }
+            catch
+            {
+                await transactionScope.RollbackAsync();
+                throw;
+            }
+
+            return MapToResponseDTO(transaction);
+        }
+
+        public async Task<List<TransactionResponseDTO>> GetImportHistoryByMaterialIdAsync(string materialId)
+        {
+            var transactions = await _context.Transactions
+                .Where(t => t.MaterialId == materialId && t.TransactionType == "IMPORT")
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            if (!transactions.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy lịch sử nhập hàng cho vật tư này.");
+            }
+
+            return transactions.Select(MapToResponseDTO).ToList();
+        }
+
+        public async Task<List<TransactionResponseDTO>> GetImporToProvide(string materialId)
+        {
+            var transactions = await _context.Transactions
+                .Where(t => t.MaterialId == materialId && t.TransactionType == "IMPORT" && t.Quantity >0)
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            if (!transactions.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy lịch sử nhập hàng cho vật tư này.");
+            }
+
+            return transactions.Select(MapToResponseDTO).ToList();
+        }
 
 
 

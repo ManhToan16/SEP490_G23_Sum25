@@ -291,10 +291,10 @@ namespace SEP490_BE.Controllers
     Summary = "Tổng cấp phát tất cả các phòng",
     Description = "Thống kê tổng số vật tư đã cấp phát cho tất cả các phòng"
 )]
-        public async Task<IActionResult> GetTotalProvidedAllRooms()
+        public async Task<IActionResult> GetTotalProvidedAllRooms([FromQuery] string? materialName = null)
         {
 
-            var summary = await _transactionService.GetTotalProvidedForAllRooms();
+            var summary = await _transactionService.GetTotalProvidedForAllRooms(materialName);
             foreach (var item in summary.Where(s => s.IsLowStock == true))
             {
                 await _notificationHubService.SendLowStockAlert(item);
@@ -416,9 +416,9 @@ namespace SEP490_BE.Controllers
           Summary = "Lịch sử giao dịch phân phát",
           Description = "Lấy lịch sử phân phát, có thể lọc theo MaterialName và TransactionType"
       )]
-        public async Task<IActionResult> GetProvideHistories([FromQuery] string? materialName, [FromQuery] string? transactionType)
+        public async Task<IActionResult> GetProvideHistories([FromQuery] string? materialName, [FromQuery] string? roomName)
         {
-            var histories = await _transactionService.GetProvideHistoryAsync(materialName, transactionType);
+            var histories = await _transactionService.GetProvideHistoryAsync(materialName, roomName);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -428,6 +428,68 @@ namespace SEP490_BE.Controllers
             });
         }
 
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("update-defective/{transactionId}")]
+        
+        [SwaggerOperation(
+    Summary = "Cập nhật số lượng hàng lỗi",
+    Description = "Chỉ áp dụng cho giao dịch nhập hàng (IMPORT). Nếu tăng số lượng lỗi thì sẽ giảm số lượng có thể sử dụng và cập nhật tồn kho."
+)]
+        public async Task<IActionResult> UpdateDefectiveQuantity(string transactionId, [FromBody] UpdateDefectiveQuantityDTO request)
+        {
+            if (request.NewDefectiveQuantity < 0)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Số lượng lỗi không hợp lệ."
+                });
+            }
+            var updatedBy = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var result = await _transactionService.UpdateDefectiveQuantityAsync(transactionId, request.NewDefectiveQuantity, updatedBy);
 
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = result
+            });
+        }
+        [HttpGet("import-history/{materialId}")]
+        [SwaggerOperation(
+    Summary = "Lấy lịch sử nhập hàng của một vật tư",
+    Description = "Hiển thị tất cả các transaction có TransactionType = 'IMPORT' cho Material ID cụ thể"
+)]
+        public async Task<IActionResult> GetImportHistory(string materialId)
+        {
+            var transactions = await _transactionService.GetImportHistoryByMaterialIdAsync(materialId);
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = transactions
+            });
+        }
+        [HttpGet("import-to-provide/{materialId}")]
+        [SwaggerOperation(
+Summary = "Lấy lịch sử nhập hàng của một vật tư để phân phát",
+Description = "Hiển thị tất cả các transaction có TransactionType = 'IMPORT' cho Material ID cụ thể để phân phát"
+)]
+        public async Task<IActionResult> GetImportToProvide(string materialId)
+        {
+            var transactions = await _transactionService.GetImporToProvide(materialId);
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = transactions
+            });
+        }
     }
 }
