@@ -457,6 +457,35 @@ namespace SEP490_BE.Controllers
                 Data = result
             });
         }
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("update-import/{transactionId}")]
+
+        [SwaggerOperation(
+    Summary = "Cập nhật đơn nhập kho",
+    Description = "Chỉ áp dụng cho giao dịch nhập hàng (IMPORT). Cho phép cập nhật số lượng, số lượng lỗi, giá, lý do và ngày nhập."
+)]
+        public async Task<IActionResult> UpdateImportTransactionAsync(string transactionId, [FromBody] ImportMaterialDTO request)
+        {
+            if (request.DefectiveQuantity < 0 && request.Quantity < 0)
+            {
+                return BadRequest(new ApiResponse
+                {
+                    StatusCode = StatusCodes.Status400BadRequest,
+                    Success = false,
+                    Message = "Số lượng lỗi không hợp lệ."
+                });
+            }
+            var updatedBy = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            var result = await _transactionService.UpdateImportTransactionAsync(transactionId, request, updatedBy);
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.POST_SUCCESS,
+                Data = result
+            });
+        }
         [HttpGet("import-history/{materialId}")]
         [SwaggerOperation(
     Summary = "Lấy lịch sử nhập hàng của một vật tư",
@@ -491,5 +520,24 @@ Description = "Hiển thị tất cả các transaction có TransactionType = 'I
                 Data = transactions
             });
         }
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpDelete("delete-import/{transactionId}")]
+        [SwaggerOperation(
+    Summary = "Xóa đơn nhập kho",
+    Description = "Chỉ áp dụng cho giao dịch nhập hàng (IMPORT) có Quantity = 0 và DefectiveQuantity = 0, chưa từng được phân phát."
+)]
+        public async Task<IActionResult> DeleteImportTransactionAsync(string transactionId)
+        {
+            var deletedBy = User.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value;
+            await _transactionService.DeleteImportTransactionAsync(transactionId, deletedBy);
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.DELETE_SUCCESS,
+            });
+        }
+
     }
 }

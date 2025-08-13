@@ -19,5 +19,6 @@
         public decimal? Price { get; set; }
         public string? SupplierId { get; set; }
         public string? SupplierName { get; set; }
+        public bool IsEdit { get; set; }
     }
 }
