@@ -4,5 +4,6 @@
     {
         public string TransactionId { get; set; } = null!;
         public int Quantity { get; set; }
+        public string? Status { get; set; }
     }
 }
