@@ -27,5 +27,7 @@ namespace SEP490_BE.Services.TransactionServices
         Task<TransactionResponseDTO> UpdateDefectiveQuantityAsync(string transactionId, int newDefectiveQuantity, string updatedBy);
         Task<List<TransactionResponseDTO>> GetImportHistoryByMaterialIdAsync(string materialId);
         Task<List<TransactionResponseDTO>> GetImporToProvide(string materialId);
+        Task<TransactionResponseDTO> UpdateImportTransactionAsync(string transactionId, ImportMaterialDTO updateDto, string userId);
+        Task DeleteImportTransactionAsync(string transactionId, string userId);
     }
 }

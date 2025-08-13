@@ -52,7 +52,7 @@ namespace SEP490_BE.Services.TransactionServices
                 Id = Guid.NewGuid().ToString(),
                 MaterialId = importDto.MaterialId,
                 TransactionType = "IMPORT",
-                Quantity = effectiveQuantity,
+                Quantity = effectiveQuantity ,
                 DefectiveQuantity= importDto.DefectiveQuantity,   
                 UserId = userId,
                 Reason = importDto.Reason,
@@ -922,8 +922,21 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new ResourceNotFoundException("Vật tư không tồn tại.");
             }
+            var importTransaction = await _context.Transactions
+    .Where(t => t.TransactionType == "IMPORT"
+                && t.MaterialId == transaction.MaterialId
+                && t.SupplierId == transaction.SupplierId
+                && t.DefectiveQuantity == transaction.Quantity
+                && t.CreatedAt <= transaction.CreatedAt)
+    .OrderByDescending(t => t.CreatedAt) // lấy gần nhất
+    .FirstOrDefaultAsync();
 
-
+            if (importTransaction == null)
+            {
+                throw new ResourceNotFoundException("Không tìm thấy giao dịch nhập hàng liên quan.");
+            }
+            importTransaction.Quantity += transaction.Quantity;
+            importTransaction.DefectiveQuantity -= transaction.Quantity;
             transaction.Status = "APPROVED";
             transaction.UpdatedAt = DateTime.UtcNow;
 
@@ -943,6 +956,7 @@ namespace SEP490_BE.Services.TransactionServices
             try
             {
                 await _transactionRepository.UpdateAsync(transaction);
+                await _transactionRepository.UpdateAsync(importTransaction);
                 await _materialRepository.UpdateAsync(material);
                 await _transactionRepository.AddTransactionHistoryAsync(history);
                 await _context.SaveChangesAsync();
@@ -1186,8 +1200,19 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy lịch sử nhập hàng cho vật tư này.");
             }
-
-            return transactions.Select(MapToResponseDTO).ToList();
+            var providedTransactionIds = await _context.TransactionDetails
+       .Where(td => transactions.Select(t => t.Id).Contains(td.ParentTransactionId) &&
+                    td.Transaction != null &&
+                    td.Transaction.TransactionType == "PROVIDE")
+       .Select(td => td.ParentTransactionId)
+       .Distinct()
+       .ToListAsync();
+            return transactions.Select(t =>
+            {
+                var dto = MapToResponseDTO(t);
+                dto.IsEdit = !providedTransactionIds.Contains(t.Id); 
+                return dto;
+            }).ToList();
         }
 
         public async Task<List<TransactionResponseDTO>> GetImporToProvide(string materialId)
@@ -1206,6 +1231,184 @@ namespace SEP490_BE.Services.TransactionServices
         }
 
 
+        public async Task<TransactionResponseDTO> UpdateImportTransactionAsync(string transactionId, ImportMaterialDTO updateDto, string userId)
+        {
+            // BEGIN DB TRANSACTION
+            using var dbTrans = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var transaction = await _context.Transactions
+                    .Include(t => t.TransactionDetailTransactions)
+                    .FirstOrDefaultAsync(t => t.Id == transactionId && t.TransactionType == "IMPORT");
+
+                if (transaction == null)
+                    throw new ResourceNotFoundException("Giao dịch nhập không tồn tại.");
+
+                // Check quyền Admin
+                var user = await _context.Users
+                    .Include(u => u.UserRoles)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null || !user.UserRoles.Any(ur => ur.RoleName == "ADMIN"))
+                    throw new UnauthorizedAccessException("Chỉ admin mới có quyền chỉnh sửa giao dịch nhập.");
+
+                // Kiểm tra vật tư tồn tại
+                var material = await _materialRepository.FindByIdAsync(updateDto.MaterialId);
+                if (material == null)
+                    throw new ResourceNotFoundException("Vật tư không tồn tại.");
+
+                // Validate số lượng lỗi
+                if (updateDto.DefectiveQuantity >= updateDto.Quantity)
+                    throw new Exceptions.ArgumentException("Số lượng lỗi không được vượt quá số lượng nhập.");
+
+                // Tính các giá trị cũ và mới
+                var oldTotalQty = (transaction.Quantity) + (transaction.DefectiveQuantity ?? 0); 
+                var newTotalQty = updateDto.Quantity + (updateDto.DefectiveQuantity); 
+                var oldDefective = transaction.DefectiveQuantity ?? 0;
+                var newDefective = updateDto.DefectiveQuantity;
+
+                var oldAvailable = transaction.Quantity; // khả dụng trước
+                var newAvailable = newTotalQty - newDefective; // khả dụng sau
+
+                // Kiểm tra xem lô đã được phân phát chưa
+                bool hasBeenProvided = await _context.TransactionDetails
+                    .AnyAsync(td => td.ParentTransactionId == transactionId &&
+                                    td.Transaction != null &&
+                                    td.Transaction.TransactionType == "PROVIDE");
+
+                if (hasBeenProvided)
+                {
+                    // Nếu đã phân phát thì KHÔNG được thay đổi tổng nhập
+                    if (newTotalQty != oldTotalQty)
+                    {
+                        throw new InvalidOperationException("Lô hàng này đã được phân phát, không thể thay đổi tổng số lượng nhập.");
+                    }
+
+                  
+                }
+                else
+                {
+                    // Chưa phân phát: cập nhật tồn kho theo chênh lệch tổng nhập
+                    var diff = newTotalQty - oldTotalQty; // có thể âm hoặc dương
+                    material.QuantityInStock = (material.QuantityInStock) + diff;
+
+                    if (material.QuantityInStock < 0)
+                    {
+                        throw new InvalidOperationException("Cập nhật làm tồn kho âm, hành động bị hủy.");
+                    }
+
+                    await _materialRepository.UpdateAsync(material);
+                }
+
+                // Lưu thông tin cũ để history
+                var history = new TransactionHistory
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    TransactionId = transaction.Id,
+                    OldQuantity = oldTotalQty,
+                    NewQuantity = newTotalQty,
+                    OldReason = transaction.Reason,
+                    NewReason = updateDto.Reason,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.UtcNow
+                };
+
+                _context.TransactionHistories.Add(history);
+
+                // Cập nhật transaction (lưu ý: transaction.Quantity là "available")
+                transaction.MaterialId = updateDto.MaterialId;
+                transaction.Price = updateDto.Price;
+                transaction.DefectiveQuantity = newDefective;
+                transaction.Quantity = newAvailable; // available = total - defective
+                transaction.Reason = updateDto.Reason;
+                transaction.CreatedAt = updateDto.ImportDate;
+                transaction.UpdatedAt = DateTime.UtcNow;
+                
+
+                await _context.SaveChangesAsync();
+                await dbTrans.CommitAsync();
+
+                // Trả về DTO
+                return new TransactionResponseDTO
+                {
+                    Id = transaction.Id,
+                    MaterialId = transaction.MaterialId,
+                    Quantity = transaction.Quantity,
+                    DefectiveQuantity = transaction.DefectiveQuantity,
+                    Price = transaction.Price,
+                    Reason = transaction.Reason,
+                    Status = transaction.Status,
+                    CreatedAt = transaction.CreatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                    UpdatedAt = transaction.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                    IsEdit = true
+                };
+            }
+            catch
+            {
+                await dbTrans.RollbackAsync();
+                throw;
+            }
+        }
+        public async Task DeleteImportTransactionAsync(string transactionId, string userId)
+        {
+            using var dbTrans = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var transaction = await _context.Transactions
+                    .FirstOrDefaultAsync(t => t.Id == transactionId && t.TransactionType == "IMPORT");
+
+                if (transaction == null)
+                    throw new ResourceNotFoundException("Giao dịch nhập không tồn tại.");
+
+                var user = await _context.Users
+                    .Include(u => u.UserRoles)
+                    .FirstOrDefaultAsync(u => u.Id == userId);
+
+                if (user == null || !user.UserRoles.Any(ur => ur.RoleName == "ADMIN"))
+                    throw new UnauthorizedAccessException("Chỉ admin mới có quyền xóa giao dịch nhập.");
+
+             
+
+                bool hasBeenProvided = await _context.TransactionDetails
+                    .AnyAsync(td => td.ParentTransactionId == transactionId &&
+                                    td.Transaction != null &&
+                                    td.Transaction.TransactionType == "PROVIDE");
+
+                if (hasBeenProvided)
+                {
+                    throw new InvalidOperationException("Không thể xóa vì lô hàng đã được phân phát.");
+                }
+
+                // Xóa transaction detail liên quan
+                var relatedDetails = await _context.TransactionDetails
+                    .Where(td => td.ParentTransactionId == transactionId)
+                    .ToListAsync();
+                if (relatedDetails.Any())
+                {
+                    _context.TransactionDetails.RemoveRange(relatedDetails);
+                }
+
+                // Xóa transaction history
+                var histories = await _context.TransactionHistories
+                    .Where(h => h.TransactionId == transactionId)
+                    .ToListAsync();
+                if (histories.Any())
+                {
+                    _context.TransactionHistories.RemoveRange(histories);
+                }
+
+                // Xóa transaction
+                _context.Transactions.Remove(transaction);
+
+                await _context.SaveChangesAsync();
+                await dbTrans.CommitAsync();
+            }
+            catch
+            {
+                await dbTrans.RollbackAsync();
+                throw;
+            }
+        }
 
 
     }
