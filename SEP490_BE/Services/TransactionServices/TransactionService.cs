@@ -1054,7 +1054,10 @@ namespace SEP490_BE.Services.TransactionServices
                 .AsQueryable();
 
             // Chỉ lấy PROVIDE + APPROVED
-            query = query.Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED");
+            // Chỉ lấy PROVIDE + APPROVED + PENDING
+            var allowedStatuses = new[] { "APPROVED", "PENDING" };
+            query = query.Where(t => t.TransactionType == "PROVIDE" && allowedStatuses.Contains(t.Status));
+
 
             // Lọc vật tư
             if (!string.IsNullOrWhiteSpace(materialName))
@@ -1089,6 +1092,7 @@ namespace SEP490_BE.Services.TransactionServices
                     MaterialName = group.First().Material.Name,
                     CreatedBy = group.First().User.Name,
                     CreatedAt = group.Min(t => t.CreatedAt ?? DateTime.MinValue),
+
                     RoomDetails = group
                         .SelectMany(t => t.TransactionDetailTransactions)
                         .GroupBy(td => new { td.Transaction.RoomId, td.Transaction.RoomType })
@@ -1101,7 +1105,8 @@ namespace SEP490_BE.Services.TransactionServices
                                 .Select(td => new BatchInfoDTO
                                 {
                                     TransactionId = td.TransactionId,
-                                    Quantity = td.QuantityProvided ?? 0
+                                    Quantity = td.QuantityProvided ?? 0,
+                                    Status = td.Transaction.Status
                                 })
                                 .ToList()
                         })

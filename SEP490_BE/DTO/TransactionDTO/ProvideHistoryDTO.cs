@@ -8,6 +8,7 @@
         public DateTime? CreatedAt { get; set; }
         public int RoomCount { get; set; }
         public List<RoomDetailDTO> RoomDetails { get; set; } = new();
+
     }
 
     public class RoomDetailDTO
