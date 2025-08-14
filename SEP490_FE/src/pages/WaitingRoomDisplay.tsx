@@ -504,9 +504,6 @@ const WaitingRoomDisplay: React.FC = () => {
                           <div className="font-semibold text-lg text-gray-900">
                             {visit.patientName || 'N/A'}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {visit.patientProfileId?.slice(0, 8)}...
-                          </div>
                           <div className="text-sm text-gray-600">
                             BS: {visit.assignedDoctorName || 'N/A'}
                           </div>

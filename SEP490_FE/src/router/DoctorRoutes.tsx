@@ -16,6 +16,7 @@ const CreateExaminationForm = React.lazy(
   () => import("@/pages/doctor/CreateExaminationForm")
 );
 const TestNavigation = React.lazy(() => import("@/pages/doctor/TestNavigation"));
+const UserProfile = React.lazy(() => import("@/pages/doctor/UserProfile"));
 
 const DoctorRoutes: React.FC = () => {
   return (
@@ -23,6 +24,7 @@ const DoctorRoutes: React.FC = () => {
       <Routes>
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="profile" element={<MyInfo />} />
+        <Route path="user-profile" element={<UserProfile />} />
         <Route path="queue" element={<AppointmentQueue />} />
         <Route path="create-record" element={<CreateMedicalRecord />} />
         <Route path="create-examination" element={<CreateExaminationForm />} />

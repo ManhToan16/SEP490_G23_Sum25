@@ -16,10 +16,8 @@ namespace SEP490_BE.DTO.TransactionDTO
 
         [Range(0, int.MaxValue, ErrorMessage = "DefectiveQuantity phải lớn hơn hoặc bằng 0.")]
         public int DefectiveQuantity { get; set; }
-
-        [Required(ErrorMessage = "SupplierId không được để trống.")]
-        public string SupplierId { get; set; } = null!;
-
+  
         public string? Reason { get; set; }
+        public DateTime ImportDate { get; set; }
     }
 }
