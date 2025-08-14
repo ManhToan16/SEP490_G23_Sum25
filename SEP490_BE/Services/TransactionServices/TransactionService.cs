@@ -6,6 +6,7 @@ using SEP490_BE.Repositories.MaterialRepositories;
 using SEP490_BE.Repositories.TransactionRepositories;
 using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Repositories.TransactionDetailRepository;
+using SEP490_BE.Repositories.ScheduleRepositories;
 
 namespace SEP490_BE.Services.TransactionServices
 {
@@ -15,14 +16,16 @@ namespace SEP490_BE.Services.TransactionServices
         private readonly ITransactionRepository _transactionRepository;
         private readonly ITransactionDetailRepository _transactionDetailRepository ;
         private readonly IMaterialRepository _materialRepository;
+        private readonly IScheduleRepository _scheduleRepository;
 
-        public TransactionService(KhanhAnNeurologyClinicContext context, ITransactionRepository transactionRepository, IMaterialRepository materialRepository, ITransactionDetailRepository transactionDetailRepository)
+        public TransactionService(KhanhAnNeurologyClinicContext context, ITransactionRepository transactionRepository, IMaterialRepository materialRepository, ITransactionDetailRepository transactionDetailRepository, IScheduleRepository scheduleRepository)
 
         {
             _context = context;
             _transactionRepository = transactionRepository;
             _materialRepository = materialRepository;
             _transactionDetailRepository = transactionDetailRepository;
+            _scheduleRepository = scheduleRepository;
         }
 
         public async Task<TransactionResponseDTO> CreateImportTransaction(ImportMaterialDTO importDto, string userId)
@@ -1424,6 +1427,47 @@ namespace SEP490_BE.Services.TransactionServices
             }
         }
 
+        public async Task<List<TransactionResponseDTO>> GetPendingProvideTransactionsForNurseAsync(string nurseId)
+        {
+            // 1. Lấy các RoomId mà y tá có lịch làm việc
+            var today = DateTime.UtcNow.Date;
+            var schedules = await _scheduleRepository.GetSchedulesByUserAndDateRangeAsync(
+                nurseId,
+                today,
+                today // lấy từ hôm nay trở đi
+            );
+
+            var roomIds = schedules
+                .Where(s => s.Role != null && s.Role.Equals("NURSE", StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.RoomId)
+                .Distinct()
+                .ToList();
+
+            if (!roomIds.Any())
+            {
+                throw new ResourceNotFoundException("Không tìm thấy phòng nào trong lịch làm việc của y tá.");
+            }
+
+            // 2. Lấy các PROVIDE transaction PENDING cho các phòng này
+            var transactions = await _context.Transactions
+                .Include(t => t.Material)
+                .ThenInclude(m => m.Supplier)
+                .Include(t => t.User)
+                .Where(t => t.TransactionType == "PROVIDE"
+                    && t.Status == "PENDING"
+                    && t.RoomId != null
+                    && roomIds.Contains(t.RoomId))
+                .OrderByDescending(t => t.CreatedAt)
+                .ToListAsync();
+
+            if (!transactions.Any())
+            {
+                throw new ResourceNotFoundException("Không có lô hàng nào đang chờ duyệt cho các phòng trong lịch làm việc.");
+            }
+
+            // 3. Map sang DTO
+            return transactions.Select(MapToResponseDTO).ToList();
+        }
 
     }
 }

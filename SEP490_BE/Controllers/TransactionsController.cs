@@ -538,6 +538,23 @@ Description = "Hiển thị tất cả các transaction có TransactionType = 'I
                 Message = MessageConstants.DELETE_SUCCESS,
             });
         }
+        [HttpGet("schedule/{userId}")]
+        [SwaggerOperation(
+Summary = "Lấy danh sách nhận hàng theo lịch làm việc của y tá",
+Description = "Lấy danh sách nhận hàng theo lịch làm việc của y tá"
+)]
+        public async Task<IActionResult> GetSchedule(string userId)
+        {
+            var transactions = await _transactionService.GetPendingProvideTransactionsForNurseAsync(userId);
+
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = transactions
+            });
+        }
 
     }
 }
