@@ -278,16 +278,11 @@ export const adminService = {
       }
 
       const url = `/Schedules/role/${role}?fromDate=${fromDate}&toDate=${toDate}`;
-      console.log('📅 API Call:', url);
-
       const response = await api.get(url);
-      console.log('📅 API Response:', response.data?.length || 0, 'schedules');
 
       return response.data || [];
     } catch (error: any) {
       const message = error?.response?.data?.Message || error?.message || "Không thể tải lịch làm việc";
-      console.error("Error fetching schedules:", message);
-      console.error("Full error:", error);
       throw new Error(message);
     }
   },
@@ -564,8 +559,7 @@ export const adminService = {
   getLaboratoryRooms: async () => {
     try {
       const response = await api.get(`/LaboratoryRooms/active`);
-      console.log(response?.data[0]);
-      return response?.data[0]|| [];
+      return response?.data[0] || [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;
@@ -857,11 +851,7 @@ export const adminService = {
       const response = await api.get(`/Materials?pageNumber=${pageNumber}&pageSize=${pageSize}`);
       
       // Handle the nested array structure from the API
-      let materials = [];
-      
-      materials = response.data[0];
-      
-      console.log('Raw API response:', materials);
+      const materials = response.data.items;
       
       return {
         items: materials || [],
@@ -882,7 +872,6 @@ export const adminService = {
   getMaterialImportSummary: async () => {
     try {
       const response = await api.get('/Materials/import-summary');
-      console.log('Material Import Summary API Response:', response);
       
       // API trả về: { statusCode: 200, success: true, message: "...", data: [[...materials]] }
       const materials = response.data?.[0] || [];
@@ -951,18 +940,9 @@ export const adminService = {
         throw new Error("Không tìm thấy token xác thực. Vui lòng đăng nhập lại.");
       }
 
-      console.log("Token found:", token.substring(0, 20) + "...");
-      console.log("Request data:", materialData);
-
       const response = await api.post('/Materials', materialData);
-      console.log("Response:", response);
       return response?.data;
     } catch (error: any) {
-      console.error("Error creating material:", error);
-      console.error("Error response:", error?.response);
-      console.error("Error status:", error?.response?.status);
-      console.error("Error data:", error?.response?.data);
-      
       if (error?.response?.status === 401) {
         throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
       }
@@ -1134,12 +1114,28 @@ export const adminService = {
   
   /**
    * Lấy lịch sử phân phát vật tư
+   * @param materialName - Tên vật tư để lọc (tùy chọn)
+   * @param roomName - Tên phòng để lọc (tùy chọn)
    * @returns Danh sách lịch sử phân phát
    */
-  getProvideHistories: async () => {
+  getProvideHistories: async (materialName?: string, roomName?: string) => {
     try {
-      const response = await api.get('/Transactions/provide-histories');
-      console.log('Provide Histories API Response:', response);
+      let url = '/Transactions/provide-histories';
+      const params = new URLSearchParams();
+      
+      if (materialName) {
+        params.append('materialName', materialName);
+      }
+      
+      if (roomName) {
+        params.append('roomName', roomName);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await api.get(url);
       
       // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
       return response.data || [];
@@ -1156,7 +1152,6 @@ export const adminService = {
   getDefectiveBatches: async () => {
     try {
       const response = await api.get('/Transactions/defective-batches');
-      console.log('Defective Batches API Response:', response);
       
       // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
       return response.data || [];
@@ -1179,7 +1174,6 @@ export const adminService = {
   getMedicineList: async (pageNumber = 1, pageSize = 10) => {
     try {
       const response = await api.get(`/Medicines?pageNumber=${pageNumber}&pageSize=${pageSize}`);
-      console.log('Medicine API Response:', response);
       
       // Handle both array and object response formats
       let pageData;
@@ -1278,6 +1272,217 @@ export const adminService = {
       return response.data;
     } catch (error: any) {
       console.error("Error deleting medicine:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // ===============================================
+  // TRANSACTION IMPORT - Nhập lô hàng mới
+  // ===============================================
+  
+  /**
+   * Tạo phiếu nhập vật tư mới
+   * @param importData - Thông tin nhập hàng
+   * @param importData.materialId - ID vật tư
+   * @param importData.price - Giá nhập
+   * @param importData.quantity - Số lượng
+   * @param importData.defectiveQuantity - Số lượng lỗi (tùy chọn)
+   * @param importData.reason - Lý do nhập (tùy chọn)
+   * @param importData.importDate - Ngày nhập hàng
+   * @returns Kết quả tạo phiếu nhập
+   */
+  createImportTransaction: async (importData: {
+    materialId: string;
+    price: number;
+    quantity: number;
+    defectiveQuantity?: number;
+    reason?: string;
+    importDate: string;
+  }) => {
+    try {
+      const response = await api.post('/Transactions/import', importData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error creating import transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách transactions import cho một material
+   * @param materialId - ID của material
+   * @returns Danh sách transactions import
+   */
+  getImportTransactionsForMaterial: async (materialId: string) => {
+    try {
+      const response = await api.get(`/Transactions/import-to-provide/${materialId}`);
+      
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Error fetching import transactions for material:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phòng khám (examination rooms)
+   * @returns Danh sách phòng khám
+   */
+  getExaminationRoomsForDistribution: async () => {
+    try {
+      const response = await api.get('/ExaminationRooms/active');
+      return response.data[0] || [];
+    } catch (error: any) {
+      console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phòng xét nghiệm (laboratory rooms)
+   * @returns Danh sách phòng xét nghiệm
+   */
+  getLaboratoryRoomsForDistribution: async () => {
+    try {
+      const response = await api.get('/LaboratoryRooms/active');
+      return response.data[0] || [];
+    } catch (error: any) {
+      console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Phân phát vật tư cho các phòng
+   * @param provideData - Thông tin phân phát
+   * @param provideData.transactions - Danh sách transactions và phòng phân phát
+   * @param provideData.transactions[].transactionId - ID của transaction
+   * @param provideData.transactions[].rooms - Danh sách phòng và số lượng phân phát
+   * @param provideData.transactions[].rooms[].roomId - ID của phòng
+   * @param provideData.transactions[].rooms[].quantity - Số lượng phân phát cho phòng
+   * @returns Kết quả phân phát
+   */
+  createProvideTransaction: async (provideData: {
+    transactions: {
+      transactionId: string;
+      rooms: {
+        roomId: string;
+        quantity: number;
+      }[];
+    }[];
+  }) => {
+    try {
+      const response = await api.post('/Transactions/provide', provideData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error creating provide transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy lịch sử nhập hàng của một material
+   * @param materialId - ID của material
+   * @returns Danh sách lịch sử nhập hàng
+   */
+  getImportHistory: async (materialId: string) => {
+    try {
+      const response = await api.get(`/Transactions/import-history/${materialId}`);
+      
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Error fetching import history:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin import transaction
+   * @param transactionId - ID của transaction
+   * @param updateData - Dữ liệu cập nhật
+   * @returns Kết quả cập nhật
+   */
+  updateImportTransaction: async (transactionId: string, updateData: {
+    materialId: string;
+    price: number;
+    quantity: number;
+    defectiveQuantity: number;
+    reason: string;
+    importDate: string;
+  }) => {
+    try {
+      const response = await api.put(`/Transactions/update-import/${transactionId}`, updateData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error updating import transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa import transaction
+   * @param transactionId - ID của transaction
+   * @returns Kết quả xóa
+   */
+    /**
+   * Xóa import transaction
+   * @param transactionId - ID của transaction cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteImportTransaction: async (transactionId: string) => {
+    try {
+      const response = await api.delete(`/Transactions/delete-import/${transactionId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting import transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật số lượng lỗi của transaction
+   * @param transactionId - ID của transaction cần cập nhật
+   * @param newDefectiveQuantity - Số lượng lỗi mới
+   * @returns Kết quả cập nhật
+   */
+  updateDefectiveTransaction: async (transactionId: string, newDefectiveQuantity: number) => {
+    try {
+      const response = await api.put(`/Transactions/update-defective/${transactionId}`, {
+        newDefectiveQuantity
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Error updating defective transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Duyệt đơn đổi trả hàng lỗi từ nhà cung cấp
+   * @param transactionId - ID của transaction cần duyệt
+   * @returns Kết quả duyệt
+   */
+  approveSupplierReturn: async (transactionId: string) => {
+    try {
+      const response = await api.put(`/Transactions/return/approve-supplier-return/${transactionId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error approving supplier return:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Từ chối đơn đổi trả hàng lỗi từ nhà cung cấp
+   * @param transactionId - ID của transaction cần từ chối
+   * @returns Kết quả từ chối
+   */
+  rejectSupplierReturn: async (transactionId: string) => {
+    try {
+      const response = await api.put(`/Transactions/return/reject-supplier-return/${transactionId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error rejecting supplier return:", error?.response?.data?.Message || error.message);
       throw error;
     }
   },

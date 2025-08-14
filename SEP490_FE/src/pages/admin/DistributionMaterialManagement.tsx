@@ -14,8 +14,8 @@ import { adminService } from '@/shared/services/adminService';
 // Import components
 import MaterialsList from './components/MaterialsList';
 import DefectiveOrdersList from './components/DefectiveOrdersList';
-import DistributionOrdersList from './components/DistributionOrdersList';
 import DistributionHistory from './components/DistributionHistory';
+import DistributionModal from './components/DistributionModal';
 
 const mockRooms = ['Phòng 1', 'Phòng 2', 'Phòng 3', 'Phòng cấp cứu', 'Phòng xét nghiệm'];
 
@@ -51,10 +51,7 @@ interface DefectiveReturnOrder {
     materialId: string;
     materialName: string | null;
     transactionType: string;
-    quantity: number;
-    defectiveQuantity: number;
-    roomId: string | null;
-    roomType: string | null;
+    quantity: number; // Số lượng lỗi hiện tại
     userId: string;
     userName: string | null;
     reason: string;
@@ -64,20 +61,10 @@ interface DefectiveReturnOrder {
     price: number;
     supplierId: string | null;
     supplierName: string | null;
+    isEdit: boolean;
 }
 
-interface DistributionOrder {
-    id: string;
-    materialId: number;
-    materialName: string;
-    materialUnit: string;
-    distributions: Record<string, number>;
-    totalQuantity: number;
-    status: 'pending' | 'completed' | 'rejected';
-    createdDate: string;
-    createdBy: string;
-    note?: string;
-}
+
 
 const mockMaterials: Material[] = [
     {
@@ -169,17 +156,17 @@ const DistributionMaterialManagement = () => {
     const [defectiveOrders, setDefectiveOrders] = useState<DefectiveReturnOrder[]>([]);
 
     const [batchData, setBatchData] = useState({
-        batchNumber: '',
-        purchasePrice: '',
+        price: '',
         quantity: '',
         defectiveQuantity: '',
-        purchaseDate: '',
-        purchaseTime: '',
-        expiryDate: '',
-        supplier: ''
+        importDate: '',
+        importTime: '',
+        reason: ''
     });
 
     const [distributionData, setDistributionData] = useState<Record<string, number>>({});
+    
+
     
     const [defectiveFormData, setDefectiveFormData] = useState({
         quantity: '',
@@ -188,52 +175,14 @@ const DistributionMaterialManagement = () => {
         selectedBatchId: ''
     });
 
-    const [distributionOrders, setDistributionOrders] = useState<DistributionOrder[]>([
-        {
-            id: 'dist-001',
-            materialId: 1,
-            materialName: 'Găng tay y tế',
-            materialUnit: 'hộp',
-            distributions: {
-                'Phòng 1': 100,
-                'Phòng 2': 50,
-                'Phòng 3': 0,
-                'Phòng cấp cứu': 75,
-                'Phòng xét nghiệm': 25
-            },
-            totalQuantity: 250,
-            status: 'pending',
-            createdDate: '16/12/2024',
-            createdBy: 'Admin',
-            note: 'Phân phát cho 4 phòng'
-        },
-        {
-            id: 'dist-002',
-            materialId: 2,
-            materialName: 'Khẩu trang y tế',
-            materialUnit: 'cái',
-            distributions: {
-                'Phòng 1': 200,
-                'Phòng 2': 150,
-                'Phòng 3': 100,
-                'Phòng cấp cứu': 300,
-                'Phòng xét nghiệm': 50
-            },
-            totalQuantity: 800,
-            status: 'completed',
-            createdDate: '14/12/2024',
-            createdBy: 'Quản lý',
-            note: 'Phân phát khẩu trang cho tất cả phòng'
-        }
-    ]);
-
     // State for distribution history from API
     const [distributionHistory, setDistributionHistory] = useState([]);
 
+    // State for import history
+    const [importHistoryByMaterial, setImportHistoryByMaterial] = useState<Record<string, any[]>>({});
+
     const [showEditDefectiveModal, setShowEditDefectiveModal] = useState(false);
-    const [showEditDistributionModal, setShowEditDistributionModal] = useState(false);
     const [editingDefectiveOrder, setEditingDefectiveOrder] = useState<DefectiveReturnOrder | null>(null);
-    const [editingDistributionOrder, setEditingDistributionOrder] = useState<DistributionOrder | null>(null);
     
     // Lazy loading states for modals
     const [isModalContentLoaded, setIsModalContentLoaded] = useState(false);
@@ -263,9 +212,9 @@ const DistributionMaterialManagement = () => {
     }, [toast]);
 
     // Fetch distribution history from API
-    const fetchDistributionHistory = useCallback(async () => {
+    const fetchDistributionHistory = useCallback(async (materialName?: string, roomName?: string) => {
         try {
-            const historyData = await adminService.getProvideHistories();
+            const historyData = await adminService.getProvideHistories(materialName, roomName);
             console.log('Fetched distribution history:', historyData);
             setDistributionHistory(historyData);
         } catch (error: any) {
@@ -298,12 +247,149 @@ const DistributionMaterialManagement = () => {
         }
     }, [toast]);
 
+    // Handle history search
+    const handleHistorySearch = useCallback((materialName?: string, roomName?: string) => {
+        fetchDistributionHistory(materialName, roomName);
+    }, [fetchDistributionHistory]);
+
+    // Fetch import history for a material
+    const fetchImportHistory = useCallback(async (materialId: string) => {
+        try {
+            const history = await adminService.getImportHistory(materialId);
+            setImportHistoryByMaterial(prev => ({
+                ...prev,
+                [materialId]: history
+            }));
+        } catch (error: any) {
+            console.error('Error fetching import history:', error);
+            toast({
+                title: "Lỗi tải lịch sử",
+                description: error?.message || "Không thể tải lịch sử nhập hàng",
+                variant: "destructive",
+            });
+        }
+    }, [toast]);
+
+    // Update import transaction
+    const updateImportTransaction = useCallback(async (transactionId: string, data: any) => {
+        try {
+            await adminService.updateImportTransaction(transactionId, data);
+            
+            // Refresh import history for all materials that might be affected
+            const materialIds = Object.keys(importHistoryByMaterial);
+            for (const materialId of materialIds) {
+                await fetchImportHistory(materialId);
+            }
+            
+            // Also refresh materials data
+            await fetchMaterials();
+        } catch (error: any) {
+            console.error('Error updating import transaction:', error);
+            throw error;
+        }
+    }, [importHistoryByMaterial, fetchImportHistory, fetchMaterials]);
+
+    // Delete import transaction
+    const deleteImportTransaction = useCallback(async (transactionId: string) => {
+        try {
+            await adminService.deleteImportTransaction(transactionId);
+            
+            // Refresh import history for all materials that might be affected
+            const materialIds = Object.keys(importHistoryByMaterial);
+            for (const materialId of materialIds) {
+                await fetchImportHistory(materialId);
+            }
+            
+            // Also refresh materials data
+            await fetchMaterials();
+        } catch (error: any) {
+            console.error('Error deleting import transaction:', error);
+            throw error;
+        }
+    }, [importHistoryByMaterial, fetchImportHistory, fetchMaterials]);
+
+    // Update defective quantity
+    const updateDefectiveQuantity = useCallback(async (transactionId: string, newDefectiveQuantity: number) => {
+        try {
+            await adminService.updateDefectiveTransaction(transactionId, newDefectiveQuantity);
+            
+            // Refresh defective orders
+            await fetchDefectiveOrders();
+            
+            // Also refresh materials data
+            await fetchMaterials();
+            
+            toast({
+                title: "Thành công",
+                description: "Đã cập nhật số lượng lỗi",
+            });
+        } catch (error: any) {
+            console.error('Error updating defective quantity:', error);
+            toast({
+                title: "Lỗi",
+                description: error?.message || "Không thể cập nhật số lượng lỗi",
+                variant: "destructive",
+            });
+            throw error;
+        }
+    }, [fetchDefectiveOrders, fetchMaterials, toast]);
+
+    // Approve supplier return
+    const approveSupplierReturn = useCallback(async (transactionId: string) => {
+        try {
+            await adminService.approveSupplierReturn(transactionId);
+            
+            // Refresh defective orders
+            await fetchDefectiveOrders();
+            
+            toast({
+                title: "Thành công",
+                description: "Đã duyệt đơn đổi trả",
+            });
+        } catch (error: any) {
+            console.error('Error approving supplier return:', error);
+            toast({
+                title: "Lỗi",
+                description: error?.message || "Không thể duyệt đơn đổi trả",
+                variant: "destructive",
+            });
+            throw error;
+        }
+    }, [fetchDefectiveOrders, toast]);
+
+    // Reject supplier return
+    const rejectSupplierReturn = useCallback(async (transactionId: string) => {
+        try {
+            await adminService.rejectSupplierReturn(transactionId);
+            
+            // Refresh defective orders
+            await fetchDefectiveOrders();
+            
+            toast({
+                title: "Thành công",
+                description: "Đã từ chối đơn đổi trả",
+            });
+        } catch (error: any) {
+            console.error('Error rejecting supplier return:', error);
+            toast({
+                title: "Lỗi",
+                description: error?.message || "Không thể từ chối đơn đổi trả",
+                variant: "destructive",
+            });
+            throw error;
+        }
+    }, [fetchDefectiveOrders, toast]);
+
+
+
     // Load materials, distribution history and defective orders on component mount
     useEffect(() => {
         fetchMaterials();
         fetchDistributionHistory();
         fetchDefectiveOrders();
     }, [fetchMaterials, fetchDistributionHistory, fetchDefectiveOrders]);
+
+
 
     // Utility functions
     const formatCurrency = (amount: number) => {
@@ -332,6 +418,11 @@ const DistributionMaterialManagement = () => {
         return formattedValue.replace(/[^\d]/g, '');
     };
 
+    // Helper function to calculate available quantity
+    const calculateAvailableQuantityFromBatch = (quantity: number, defectiveQuantity: number) => {
+        return Math.max(0, quantity - defectiveQuantity);
+    };
+
     // Modal handlers
     const openDefectiveModal = useCallback((material: Material, batch?: Batch) => {
         // Immediate UI feedback - show modal shell first
@@ -340,10 +431,10 @@ const DistributionMaterialManagement = () => {
         // Defer heavy calculations to next frame
         requestAnimationFrame(() => {
             const availableBatches = material.batches.filter(b => {
-                const processedQuantity = defectiveOrders
-                    .filter(order => order.materialId === material.id.toString() && order.status === 'APPROVED')
-                    .reduce((sum, order) => sum + order.defectiveQuantity, 0);
-                return (b.defectiveQuantity - processedQuantity) > 0;
+                            const processedQuantity = defectiveOrders
+                .filter(order => order.materialId === material.id.toString() && order.status === 'APPROVED')
+                .reduce((sum, order) => sum + order.quantity, 0);
+            return (b.defectiveQuantity - processedQuantity) > 0;
             });
             
             const initialBatchId = batch?.id || (availableBatches.length === 1 ? availableBatches[0].id : '');
@@ -366,15 +457,8 @@ const DistributionMaterialManagement = () => {
     }, [defectiveOrders]);
 
     const openDistributeModal = useCallback((material: Material) => {
-        // Immediate modal display
+        setSelectedMaterial(material);
         setShowDistributeModal(true);
-        
-        // Defer state updates to next frame
-        requestAnimationFrame(() => {
-            setSelectedMaterial(material);
-            setDistributionData({});
-            setIsModalContentLoaded(true);
-        });
     }, []);
 
     const openBatchModal = useCallback((material: Material) => {
@@ -383,20 +467,17 @@ const DistributionMaterialManagement = () => {
         
         // Defer expensive operations to next frame
         requestAnimationFrame(() => {
-            const newBatchNumber = generateBatchNumber();
             const currentDate = new Date().toISOString().split('T')[0];
             const currentTime = new Date().toTimeString().slice(0, 5);
             
             setSelectedMaterial(material);
             setBatchData({
-                batchNumber: newBatchNumber,
-                purchasePrice: '',
+                price: '',
                 quantity: '',
                 defectiveQuantity: '',
-                purchaseDate: currentDate,
-                purchaseTime: currentTime,
-                expiryDate: '',
-                supplier: ''
+                importDate: currentDate,
+                importTime: currentTime,
+                reason: ''
             });
             
             setIsModalContentLoaded(true);
@@ -409,7 +490,7 @@ const DistributionMaterialManagement = () => {
         setEditingDefectiveOrder(order);
         setSelectedMaterial(material || null);
         setDefectiveFormData({
-            quantity: order.defectiveQuantity.toString(),
+            quantity: order.quantity.toString(),
             reason: order.reason,
             note: '',
             selectedBatchId: ''
@@ -417,87 +498,103 @@ const DistributionMaterialManagement = () => {
         setShowEditDefectiveModal(true);
     }, [materials]);
 
-    const openEditDistributionModal = useCallback((order: DistributionOrder) => {
-        const material = materials.find(m => m.id === order.materialId);
-        
-        setEditingDistributionOrder(order);
-        setDistributionData(order.distributions);
-        setSelectedMaterial(material || null);
-        setShowEditDistributionModal(true);
-    }, [materials]);
-
     // Action handlers
-    const handleAddBatch = (e: React.FormEvent) => {
+    const handleAddBatch = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedMaterial) return;
 
-        const newBatch: Batch = {
-            id: 'batch' + Date.now(),
-            batchNumber: batchData.batchNumber,
-            purchasePrice: parseFloat(batchData.purchasePrice),
-            quantity: parseInt(batchData.quantity),
-            defectiveQuantity: parseInt(batchData.defectiveQuantity) || 0,
-            expiryDate: batchData.expiryDate,
-            purchaseDate: batchData.purchaseDate,
-            purchaseTime: batchData.purchaseTime,
-            supplier: batchData.supplier
-        };
+        // Validate required fields
+        if (!batchData.price || !batchData.quantity || !batchData.importDate) {
+            toast({
+                title: "Thiếu thông tin",
+                description: "Vui lòng điền đầy đủ giá, số lượng và ngày nhập hàng",
+                variant: "destructive",
+            });
+            return;
+        }
 
-        const updatedMaterials = materials.map(material => {
-            if (material.id === selectedMaterial.id) {
-                const newBatches = [...material.batches, newBatch];
-                const newTotalQuantity = material.totalQuantity + newBatch.quantity;
-                const newAvailableQuantity = material.availableQuantity + newBatch.quantity - newBatch.defectiveQuantity;
-                const newTotalValue = newBatches.reduce((sum, batch) => sum + (batch.purchasePrice * batch.quantity), 0);
-                const newAveragePrice = newTotalValue / newTotalQuantity;
+        // Validate quantity values
+        const quantity = parseInt(batchData.quantity);
+        const defectiveQuantity = parseInt(batchData.defectiveQuantity) || 0;
+        
+        if (quantity <= 0) {
+            toast({
+                title: "Số lượng không hợp lệ",
+                description: "Số lượng nhập hàng phải lớn hơn 0",
+                variant: "destructive",
+            });
+            return;
+        }
+        
+        if (defectiveQuantity > quantity) {
+            toast({
+                title: "Số lượng không hợp lệ",
+                description: "Số lượng lỗi không thể lớn hơn số lượng nhập hàng",
+                variant: "destructive",
+            });
+            return;
+        }
 
-                return {
-                    ...material,
-                    totalQuantity: newTotalQuantity,
-                    availableQuantity: newAvailableQuantity,
-                    batches: newBatches,
-                    totalValue: newTotalValue,
-                    averagePrice: newAveragePrice
-                };
-            }
-            return material;
-        });
+        if (defectiveQuantity < 0) {
+            toast({
+                title: "Số lượng không hợp lệ",
+                description: "Số lượng lỗi không thể âm",
+                variant: "destructive",
+            });
+            return;
+        }
 
-        setMaterials(updatedMaterials);
-        setShowBatchModal(false);
+        try {
+            setLoading(true);
+            
+            // Combine date and time into ISO string
+            const importDateTime = batchData.importTime 
+                ? `${batchData.importDate}T${batchData.importTime}:00`
+                : `${batchData.importDate}T00:00:00`;
+            
+            const importData = {
+                materialId: selectedMaterial.id.toString(),
+                price: parseFloat(batchData.price),
+                quantity: parseInt(batchData.quantity),
+                defectiveQuantity: parseInt(batchData.defectiveQuantity) || 0,
+                reason: batchData.reason || 'Nhập hàng mới',
+                importDate: new Date(importDateTime).toISOString()
+            };
+
+            await adminService.createImportTransaction(importData);
+            
+            toast({
+                title: "Thành công",
+                description: "Đã tạo phiếu nhập hàng thành công",
+            });
+
+            // Refresh materials data
+            await fetchMaterials();
+            
+            setShowBatchModal(false);
+            setBatchData({
+                price: '',
+                quantity: '',
+                defectiveQuantity: '',
+                importDate: '',
+                importTime: '',
+                reason: ''
+            });
+        } catch (error: any) {
+            console.error('Error creating import transaction:', error);
+            toast({
+                title: "Lỗi",
+                description: error?.message || "Không thể tạo phiếu nhập hàng",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const handleDistribute = () => {
-        if (!selectedMaterial) return;
-
-        const totalDistributed = Object.values(distributionData).reduce((sum, qty) => sum + qty, 0);
-        
-        if (totalDistributed <= 0) {
-            alert('Vui lòng nhập số lượng phân phát!');
-            return;
-        }
-
-        if (totalDistributed > selectedMaterial.availableQuantity) {
-            alert('Số lượng phân phát vượt quá số lượng có sẵn!');
-            return;
-        }
-
-        const newDistributionOrder: DistributionOrder = {
-            id: 'dist-' + Date.now(),
-            materialId: selectedMaterial.id,
-            materialName: selectedMaterial.name,
-            materialUnit: selectedMaterial.unit,
-            distributions: { ...distributionData },
-            totalQuantity: totalDistributed,
-            status: 'pending',
-            createdDate: new Date().toLocaleDateString('vi-VN'),
-            createdBy: 'Admin',
-            note: `Phân phát cho ${Object.keys(distributionData).filter(room => distributionData[room] > 0).length} phòng`
-        };
-
-        setDistributionOrders(prev => [...prev, newDistributionOrder]);
-        setDistributionData({});
-        setShowDistributeModal(false);
+    const handleDistributionSuccess = () => {
+        // Refresh materials data after successful distribution
+        fetchMaterials();
     };
 
     const handleCreateDefectiveOrder = (e: React.FormEvent) => {
@@ -519,7 +616,7 @@ const DistributionMaterialManagement = () => {
                 order.materialId === selectedMaterial.id.toString() && 
                 order.status === 'APPROVED'
             )
-            .reduce((sum, order) => sum + order.defectiveQuantity, 0);
+            .reduce((sum, order) => sum + order.quantity, 0);
         
         const availableDefectiveQuantity = selectedBatchForOrder.defectiveQuantity - processedQuantity;
 
@@ -533,10 +630,7 @@ const DistributionMaterialManagement = () => {
             materialId: selectedMaterial.id.toString(),
             materialName: selectedMaterial.name,
             transactionType: 'IMPORT',
-            quantity: selectedBatchForOrder.quantity,
-            defectiveQuantity: quantity,
-            roomId: null,
-            roomType: null,
+            quantity: quantity,
             userId: 'current-user-id',
             userName: 'Current User',
             reason: defectiveFormData.reason,
@@ -545,7 +639,8 @@ const DistributionMaterialManagement = () => {
             updatedAt: new Date().toLocaleString('vi-VN'),
             price: selectedBatchForOrder.purchasePrice,
             supplierId: null,
-            supplierName: selectedBatchForOrder.supplier
+            supplierName: selectedBatchForOrder.supplier,
+            isEdit: true
         };
 
         setDefectiveOrders(prev => [...prev, newOrder]);
@@ -566,42 +661,15 @@ const DistributionMaterialManagement = () => {
         );
     };
 
-    const updateDistributionOrderStatus = (orderId: string, newStatus: DistributionOrder['status']) => {
-        setDistributionOrders(prev => 
-            prev.map(order => 
-                order.id === orderId ? { ...order, status: newStatus } : order
-            )
-        );
-    };
-
-    const generateBatchNumber = () => {
-        const currentYear = new Date().getFullYear();
-        const allBatches = materials.flatMap(material => material.batches);
-        
-        let maxSequence = 0;
-        allBatches.forEach(batch => {
-            const match = batch.batchNumber.match(/^LOT-(\d{4})-(\d{3})$/);
-            if (match && match[1] === currentYear.toString()) {
-                const sequence = parseInt(match[2]);
-                if (sequence > maxSequence) {
-                    maxSequence = sequence;
-                }
-            }
-        });
-        
-        const nextSequence = (maxSequence + 1).toString().padStart(3, '0');
-        return `LOT-${currentYear}-${nextSequence}`;
-    };
-
     // Cleanup modal content when modals are closed
     useEffect(() => {
-        if (!showDefectiveModal && !showDistributeModal && !showBatchModal && !showEditDefectiveModal && !showEditDistributionModal) {
+        if (!showDefectiveModal && !showDistributeModal && !showBatchModal && !showEditDefectiveModal) {
             const timer = setTimeout(() => {
                 setIsModalContentLoaded(false);
             }, 100);
             return () => clearTimeout(timer);
         }
-    }, [showDefectiveModal, showDistributeModal, showBatchModal, showEditDefectiveModal, showEditDistributionModal]);
+    }, [showDefectiveModal, showDistributeModal, showBatchModal, showEditDefectiveModal]);
 
     return (
         <div className="min-h-screen bg-gray-50 p-4">
@@ -632,7 +700,7 @@ const DistributionMaterialManagement = () => {
 
                 {/* Tabs Navigation */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="materials" className="flex items-center space-x-2">
                             <Package className="w-4 h-4" />
                             <span>Danh sách vật tư</span>
@@ -640,10 +708,6 @@ const DistributionMaterialManagement = () => {
                         <TabsTrigger value="defective" className="flex items-center space-x-2">
                             <AlertTriangle className="w-4 h-4" />
                             <span>Đơn đổi trả hàng lỗi</span>
-                        </TabsTrigger>
-                        <TabsTrigger value="distribution" className="flex items-center space-x-2">
-                            <Truck className="w-4 h-4" />
-                            <span>Đơn phân phát vật tư</span>
                         </TabsTrigger>
                         <TabsTrigger value="history" className="flex items-center space-x-2">
                             <History className="w-4 h-4" />
@@ -669,6 +733,10 @@ const DistributionMaterialManagement = () => {
                                 formatCurrency={formatCurrency}
                                 formatDate={formatDate}
                                 formatNumber={formatNumber}
+                                importHistoryByMaterial={importHistoryByMaterial}
+                                onFetchImportHistory={fetchImportHistory}
+                                onUpdateImportTransaction={updateImportTransaction}
+                                onDeleteImportTransaction={deleteImportTransaction}
                             />
                         )}
                     </TabsContent>
@@ -679,18 +747,11 @@ const DistributionMaterialManagement = () => {
                             defectiveOrders={defectiveOrders}
                             onUpdateOrderStatus={updateOrderStatus}
                             onOpenEditModal={openEditDefectiveModal}
+                            onUpdateDefectiveQuantity={updateDefectiveQuantity}
+                            onApproveSupplierReturn={approveSupplierReturn}
+                            onRejectSupplierReturn={rejectSupplierReturn}
+                            onRefreshData={fetchDefectiveOrders}
                             formatCurrency={formatCurrency}
-                            formatDate={formatDate}
-                        />
-                    </TabsContent>
-
-                    {/* Distribution Orders Tab */}
-                    <TabsContent value="distribution" className="space-y-4">
-                        <DistributionOrdersList
-                            distributionOrders={distributionOrders}
-                            onUpdateOrderStatus={updateDistributionOrderStatus}
-                            onOpenEditModal={openEditDistributionModal}
-                            formatNumber={formatNumber}
                             formatDate={formatDate}
                         />
                     </TabsContent>
@@ -701,50 +762,19 @@ const DistributionMaterialManagement = () => {
                             historyItems={distributionHistory}
                             formatNumber={formatNumber}
                             formatDate={formatDate}
+                            onSearch={handleHistorySearch}
                         />
                     </TabsContent>
                 </Tabs>
 
                 {/* Modals */}
                 {/* Distribution Modal */}
-                <Dialog open={showDistributeModal} onOpenChange={setShowDistributeModal}>
-                    <DialogContent className="max-w-3xl">
-                        <DialogHeader>
-                            <DialogTitle className="text-2xl">Phân phát vật tư: {selectedMaterial?.name}</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-6">
-                            <div className="text-base text-gray-600 bg-blue-50 p-4 rounded-lg">
-                                Có sẵn: <span className="font-bold text-blue-900">{selectedMaterial?.availableQuantity} {selectedMaterial?.unit}</span>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {mockRooms.map((room) => (
-                                    <div key={room} className="space-y-3">
-                                        <label className="text-base font-semibold text-gray-900">{room}</label>
-                                        <Input
-                                            type="text"
-                                            placeholder="VD: 1,000"
-                                            value={distributionData[room] ? formatNumber(distributionData[room].toString()) : ''}
-                                            onChange={(e) => {
-                                                const numericValue = parseNumber(e.target.value);
-                                                setDistributionData(prev => ({
-                                                    ...prev,
-                                                    [room]: parseInt(numericValue) || 0
-                                                }));
-                                            }}
-                                            className="h-12 text-base"
-                                        />
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="text-base bg-yellow-50 p-4 rounded-lg">
-                                Tổng phân phát: <span className="font-bold text-yellow-900">{Object.values(distributionData).reduce((sum, qty) => sum + qty, 0)} {selectedMaterial?.unit}</span>
-                            </div>
-                            <Button onClick={handleDistribute} className="w-full h-12 text-base bg-blue-600 hover:bg-blue-700">
-                                Xác nhận phân phát
-                            </Button>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                <DistributionModal
+                    isOpen={showDistributeModal}
+                    onClose={() => setShowDistributeModal(false)}
+                    material={selectedMaterial}
+                    onSuccess={handleDistributionSuccess}
+                />
 
                 {/* Batch Modal */}
                 <Dialog open={showBatchModal} onOpenChange={setShowBatchModal}>
@@ -754,35 +784,14 @@ const DistributionMaterialManagement = () => {
                         </DialogHeader>
                         <form onSubmit={handleAddBatch} className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-base font-semibold text-gray-900">Số lô</label>
-                                <div className="flex space-x-2">
-                                    <Input
-                                        placeholder="VD: LOT-2024-001"
-                                        value={batchData.batchNumber}
-                                        onChange={(e) => setBatchData(prev => ({ ...prev, batchNumber: e.target.value }))}
-                                        className="h-12 text-base flex-1"
-                                        required
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setBatchData(prev => ({ ...prev, batchNumber: generateBatchNumber() }))}
-                                        className="h-12 px-4"
-                                        title="Tạo số lô mới"
-                                    >
-                                        <RefreshCw className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-base font-semibold text-gray-900">Giá nhập (VND)</label>
+                                <label className="text-base font-semibold text-gray-900">Giá nhập (VND) *</label>
                                 <Input
                                     type="text"
                                     placeholder="VD: 1,500,000"
-                                    value={batchData.purchasePrice ? formatNumber(batchData.purchasePrice) : ''}
+                                    value={batchData.price ? formatNumber(batchData.price) : ''}
                                     onChange={(e) => {
                                         const numericValue = parseNumber(e.target.value);
-                                        setBatchData(prev => ({ ...prev, purchasePrice: numericValue }));
+                                        setBatchData(prev => ({ ...prev, price: numericValue }));
                                     }}
                                     className="h-12 text-base"
                                     required
@@ -790,7 +799,7 @@ const DistributionMaterialManagement = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-base font-semibold text-gray-900">Số lượng</label>
+                                    <label className="text-base font-semibold text-gray-900">Số lượng *</label>
                                     <Input
                                         type="text"
                                         placeholder="VD: 1,000"
@@ -811,19 +820,54 @@ const DistributionMaterialManagement = () => {
                                         value={batchData.defectiveQuantity ? formatNumber(batchData.defectiveQuantity) : ''}
                                         onChange={(e) => {
                                             const numericValue = parseNumber(e.target.value);
+                                            const quantity = parseInt(batchData.quantity) || 0;
+                                            const defectiveQuantity = parseInt(numericValue) || 0;
+                                            
+                                            if (defectiveQuantity > quantity && quantity > 0) {
+                                                toast({
+                                                    title: "Cảnh báo",
+                                                    description: "Số lượng lỗi không thể lớn hơn số lượng nhập hàng",
+                                                    variant: "destructive",
+                                                });
+                                                return;
+                                            }
+                                            
                                             setBatchData(prev => ({ ...prev, defectiveQuantity: numericValue }));
                                         }}
-                                        className="h-12 text-base"
+                                        className={`h-12 text-base ${
+                                            (parseInt(batchData.defectiveQuantity) || 0) > (parseInt(batchData.quantity) || 0) && batchData.quantity 
+                                                ? 'border-red-500 focus:border-red-500' 
+                                                : ''
+                                        }`}
                                     />
+                                    {(parseInt(batchData.defectiveQuantity) || 0) > (parseInt(batchData.quantity) || 0) && batchData.quantity && (
+                                        <p className="text-sm text-red-600 mt-1">
+                                            Số lượng lỗi không thể lớn hơn số lượng nhập hàng
+                                        </p>
+                                    )}
                                 </div>
                             </div>
-                            <div className="grid grid-cols-3 gap-6">
+                            
+                            {/* Hiển thị số lượng có sẵn */}
+                            {batchData.quantity && (
+                                <div className="bg-blue-50 p-4 rounded-lg">
+                                    <div className="text-sm text-blue-800">
+                                        <strong>Số lượng có sẵn:</strong> {
+                                            calculateAvailableQuantityFromBatch(
+                                                parseInt(batchData.quantity) || 0,
+                                                parseInt(batchData.defectiveQuantity) || 0
+                                            ).toLocaleString('vi-VN')
+                                        } {selectedMaterial?.unit}
+                                    </div>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <label className="text-base font-semibold text-gray-900">Ngày nhập hàng</label>
+                                    <label className="text-base font-semibold text-gray-900">Ngày nhập hàng *</label>
                                     <Input
                                         type="date"
-                                        value={batchData.purchaseDate}
-                                        onChange={(e) => setBatchData(prev => ({ ...prev, purchaseDate: e.target.value }))}
+                                        value={batchData.importDate}
+                                        onChange={(e) => setBatchData(prev => ({ ...prev, importDate: e.target.value }))}
                                         className="h-12 text-base"
                                         required
                                     />
@@ -832,36 +876,28 @@ const DistributionMaterialManagement = () => {
                                     <label className="text-base font-semibold text-gray-900">Giờ nhập hàng</label>
                                     <Input
                                         type="time"
-                                        value={batchData.purchaseTime}
-                                        onChange={(e) => setBatchData(prev => ({ ...prev, purchaseTime: e.target.value }))}
+                                        value={batchData.importTime}
+                                        onChange={(e) => setBatchData(prev => ({ ...prev, importTime: e.target.value }))}
                                         className="h-12 text-base"
-                                        required
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-base font-semibold text-gray-900">Hạn sử dụng</label>
-                                    <Input
-                                        type="date"
-                                        value={batchData.expiryDate}
-                                        onChange={(e) => setBatchData(prev => ({ ...prev, expiryDate: e.target.value }))}
-                                        className="h-12 text-base"
-                                        required
                                     />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-base font-semibold text-gray-900">Nhà cung cấp</label>
-                                <Input
-                                    placeholder="Tên nhà cung cấp"
-                                    value={batchData.supplier}
-                                    onChange={(e) => setBatchData(prev => ({ ...prev, supplier: e.target.value }))}
-                                    className="h-12 text-base"
-                                    required
+                                <label className="text-base font-semibold text-gray-900">Lý do nhập</label>
+                                <Textarea
+                                    placeholder="Mô tả lý do nhập hàng..."
+                                    value={batchData.reason}
+                                    onChange={(e) => setBatchData(prev => ({ ...prev, reason: e.target.value }))}
+                                    className="text-base min-h-[100px]"
                                 />
                             </div>
-                            <Button type="submit" className="w-full h-12 text-base">
+                            <Button 
+                                type="submit" 
+                                className="w-full h-12 text-base"
+                                disabled={loading}
+                            >
                                 <DollarSign className="w-5 h-5 mr-2" />
-                                Xác nhận nhập hàng
+                                {loading ? 'Đang tạo phiếu nhập...' : 'Xác nhận nhập hàng'}
                             </Button>
                         </form>
                     </DialogContent>
@@ -890,7 +926,7 @@ const DistributionMaterialManagement = () => {
                                             order.materialId === selectedMaterial?.id.toString() && 
                                             order.status === 'APPROVED'
                                         )
-                                        .reduce((sum, order) => sum + order.defectiveQuantity, 0);
+                                        .reduce((sum, order) => sum + order.quantity, 0);
                                     const availableDefective = batch.defectiveQuantity - processedQuantity;
                                     
                                     return (
@@ -938,7 +974,7 @@ const DistributionMaterialManagement = () => {
                                                         order.materialId === selectedMaterial?.id.toString() && 
                                                         order.status === 'APPROVED'
                                                     )
-                                                    .reduce((sum, order) => sum + order.defectiveQuantity, 0);
+                                                    .reduce((sum, order) => sum + order.quantity, 0);
                                                 return (batch.defectiveQuantity - processedQuantity) > 0;
                                             })
                                             .map(batch => {
@@ -947,7 +983,7 @@ const DistributionMaterialManagement = () => {
                                                         order.materialId === selectedMaterial?.id.toString() && 
                                                         order.status === 'APPROVED'
                                                     )
-                                                    .reduce((sum, order) => sum + order.defectiveQuantity, 0);
+                                                    .reduce((sum, order) => sum + order.quantity, 0);
                                                 const availableDefective = batch.defectiveQuantity - processedQuantity;
                                                 return (
                                                     <SelectItem key={batch.id} value={batch.id}>

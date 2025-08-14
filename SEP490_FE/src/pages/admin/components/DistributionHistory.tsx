@@ -1,13 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
-import { History, Calendar, Package, User, TrendingUp, TrendingDown } from 'lucide-react';
+import { History, User, TrendingUp } from 'lucide-react';
 
 interface BatchInfo {
     transactionId: string;
     quantity: number;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
 }
 
 interface RoomDetail {
@@ -30,44 +31,55 @@ interface DistributionHistoryProps {
     historyItems: DistributionHistoryItem[];
     formatNumber: (value: string) => string;
     formatDate: (dateString: string) => string;
+    onSearch: (materialName?: string, roomName?: string) => void;
 }
 
 const DistributionHistory: React.FC<DistributionHistoryProps> = ({
     historyItems,
     formatNumber,
-    formatDate
+    formatDate,
+    onSearch
 }) => {
-    const [dateFilter, setDateFilter] = useState('');
     const [materialFilter, setMaterialFilter] = useState('');
+    const [roomFilter, setRoomFilter] = useState('');
+    const [debouncedMaterialFilter, setDebouncedMaterialFilter] = useState('');
+    const [debouncedRoomFilter, setDebouncedRoomFilter] = useState('');
 
-    const filteredHistory = useMemo(() => 
-        historyItems.filter(item => {
-            // Date filter
-            if (dateFilter) {
-                const itemDate = new Date(item.createdAt);
-                const filterDate = new Date(dateFilter);
-                if (itemDate.toDateString() !== filterDate.toDateString()) return false;
-            }
-            
-            // Material filter
-            if (materialFilter && !item.materialName.toLowerCase().includes(materialFilter.toLowerCase())) return false;
-            
-            return true;
-        }), [historyItems, dateFilter, materialFilter]
-    );
+    // Debounce material filter
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedMaterialFilter(materialFilter);
+        }, 500);
 
-    const totalDistributed = useMemo(() => 
-        filteredHistory.reduce((sum, item) => {
-            const itemTotal = item.roomDetails.reduce((roomSum, room) => 
-                roomSum + room.batchInfo.reduce((batchSum, batch) => batchSum + batch.quantity, 0), 0
-            );
-            return sum + itemTotal;
-        }, 0), [filteredHistory]
-    );
+        return () => clearTimeout(timer);
+    }, [materialFilter]);
 
-    const totalRooms = useMemo(() => 
-        filteredHistory.reduce((sum, item) => sum + item.roomDetails.length, 0), [filteredHistory]
-    );
+    // Debounce room filter
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedRoomFilter(roomFilter);
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [roomFilter]);
+
+    // Trigger search when debounced values change
+    useEffect(() => {
+        onSearch(debouncedMaterialFilter || undefined, debouncedRoomFilter || undefined);
+    }, [debouncedMaterialFilter, debouncedRoomFilter, onSearch]);
+
+    const handleMaterialSearch = (value: string) => {
+        setMaterialFilter(value);
+    };
+
+    const handleRoomSearch = (value: string) => {
+        setRoomFilter(value);
+    };
+
+    const clearFilters = () => {
+        setMaterialFilter('');
+        setRoomFilter('');
+    };
 
     const formatDateTime = (dateString: string) => {
         const date = new Date(dateString);
@@ -89,28 +101,25 @@ const DistributionHistory: React.FC<DistributionHistoryProps> = ({
                 </h2>
                 <div className="flex items-center space-x-2">
                     <Input
-                        type="date"
-                        value={dateFilter}
-                        onChange={(e) => setDateFilter(e.target.value)}
-                        className="w-36"
-                        placeholder="Chọn ngày"
+                        type="text"
+                        placeholder="Tìm theo vật tư..."
+                        value={materialFilter}
+                        onChange={(e) => handleMaterialSearch(e.target.value)}
+                        className="w-48"
                     />
 
                     <Input
                         type="text"
-                        placeholder="Tìm theo vật tư..."
-                        value={materialFilter}
-                        onChange={(e) => setMaterialFilter(e.target.value)}
+                        placeholder="Tìm theo phòng..."
+                        value={roomFilter}
+                        onChange={(e) => handleRoomSearch(e.target.value)}
                         className="w-48"
                     />
-                    {(dateFilter || materialFilter) && (
+                    {(materialFilter || roomFilter) && (
                         <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => {
-                                setDateFilter('');
-                                setMaterialFilter('');
-                            }}
+                            onClick={clearFilters}
                             className="px-2 h-8"
                         >
                             ✕
@@ -119,47 +128,16 @@ const DistributionHistory: React.FC<DistributionHistoryProps> = ({
                 </div>
             </div>
 
-            {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card className="p-4">
-                    <div className="flex items-center">
-                        <Package className="w-8 h-8 text-blue-600 mr-3" />
-                        <div>
-                            <p className="text-sm text-gray-600">Tổng đơn phân phát</p>
-                            <p className="text-2xl font-bold text-gray-900">{filteredHistory.length}</p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className="p-4">
-                    <div className="flex items-center">
-                        <TrendingUp className="w-8 h-8 text-green-600 mr-3" />
-                        <div>
-                            <p className="text-sm text-gray-600">Tổng số lượng phân phát</p>
-                            <p className="text-2xl font-bold text-gray-900">{formatNumber(totalDistributed.toString())}</p>
-                        </div>
-                    </div>
-                </Card>
-                <Card className="p-4">
-                    <div className="flex items-center">
-                        <Calendar className="w-8 h-8 text-purple-600 mr-3" />
-                        <div>
-                            <p className="text-sm text-gray-600">Tổng phòng được phân phát</p>
-                            <p className="text-2xl font-bold text-gray-900">{totalRooms}</p>
-                        </div>
-                    </div>
-                </Card>
-            </div>
-            
-            {filteredHistory.length === 0 ? (
+            {historyItems.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
-                    {dateFilter || materialFilter ? 
+                    {materialFilter || roomFilter ? 
                         'Không có lịch sử phân phát nào phù hợp với bộ lọc' :
                         'Chưa có lịch sử phân phát nào'
                     }
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {filteredHistory.map((item) => {
+                    {historyItems.map((item) => {
                         const totalQuantity = item.roomDetails.reduce((sum, room) => 
                             sum + room.batchInfo.reduce((batchSum, batch) => batchSum + batch.quantity, 0), 0
                         );
@@ -215,6 +193,33 @@ const DistributionHistory: React.FC<DistributionHistoryProps> = ({
                                                                 <div className="text-xs text-gray-500">
                                                                     {room.batchInfo.length} lô hàng
                                                                 </div>
+                                                                <div className="flex items-center space-x-1 mt-1">
+                                                                    {(() => {
+                                                                        const approvedCount = room.batchInfo.filter(batch => batch.status === 'APPROVED').length;
+                                                                        const pendingCount = room.batchInfo.filter(batch => batch.status === 'PENDING').length;
+                                                                        const rejectedCount = room.batchInfo.filter(batch => batch.status === 'REJECTED').length;
+                                                                        
+                                                                        return (
+                                                                            <>
+                                                                                {approvedCount > 0 && (
+                                                                                    <Badge variant="default" className="text-xs px-1 py-0 h-4">
+                                                                                        ✓ {approvedCount}
+                                                                                    </Badge>
+                                                                                )}
+                                                                                {pendingCount > 0 && (
+                                                                                    <Badge variant="secondary" className="text-xs px-1 py-0 h-4">
+                                                                                        ⏳ {pendingCount}
+                                                                                    </Badge>
+                                                                                )}
+                                                                                {rejectedCount > 0 && (
+                                                                                    <Badge variant="destructive" className="text-xs px-1 py-0 h-4">
+                                                                                        ✗ {rejectedCount}
+                                                                                    </Badge>
+                                                                                )}
+                                                                            </>
+                                                                        );
+                                                                    })()}
+                                                                </div>
                                                             </div>
                                                         </div>
                                                         
@@ -223,7 +228,16 @@ const DistributionHistory: React.FC<DistributionHistoryProps> = ({
                                                             {room.batchInfo.map((batch, index) => (
                                                                 <div key={batch.transactionId} className="bg-gray-50 p-2 rounded">
                                                                     <div className="flex justify-between items-center text-xs">
-                                                                        <span className="text-gray-600">Lô {index + 1}:</span>
+                                                                        <div className="flex items-center space-x-2">
+                                                                            <span className="text-gray-600">Lô {index + 1}:</span>
+                                                                            <Badge 
+                                                                                variant={batch.status === 'APPROVED' ? 'default' : batch.status === 'REJECTED' ? 'destructive' : 'secondary'}
+                                                                                className="text-xs px-1 py-0 h-4"
+                                                                            >
+                                                                                {batch.status === 'APPROVED' ? '✓ Đã duyệt' : 
+                                                                                 batch.status === 'REJECTED' ? '✗ Từ chối' : '⏳ Chờ duyệt'}
+                                                                            </Badge>
+                                                                        </div>
                                                                         <span className="font-medium">{formatNumber(batch.quantity.toString())} đơn vị</span>
                                                                     </div>
                                                                     <div className="mt-1 text-xs text-gray-500">

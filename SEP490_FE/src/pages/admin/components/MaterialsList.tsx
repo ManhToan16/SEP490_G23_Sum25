@@ -3,7 +3,8 @@ import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Badge } from '@/shared/components/ui/badge';
-import { Package, AlertTriangle, Truck, ChevronDown, ChevronUp, Search } from 'lucide-react';
+import { Package, AlertTriangle, Truck, ChevronDown, ChevronUp, Search, History, Edit2, Trash2, Save, X, Calendar, DollarSign, CheckCircle } from 'lucide-react';
+import { useToast } from '@/shared/components/ui/use-toast';
 
 interface Batch {
     id: string;
@@ -40,6 +41,10 @@ interface MaterialsListProps {
     formatCurrency: (amount: number) => string;
     formatDate: (dateString: string) => string;
     formatNumber: (value: string) => string;
+    importHistoryByMaterial?: Record<string, any[]>;
+    onFetchImportHistory?: (materialId: string) => void;
+    onUpdateImportTransaction?: (transactionId: string, data: any) => Promise<void>;
+    onDeleteImportTransaction?: (transactionId: string) => Promise<void>;
 }
 
 // Memoized Search Dropdown Component
@@ -173,6 +178,433 @@ const RoomAllocation = memo(({
 
 RoomAllocation.displayName = 'RoomAllocation';
 
+// Import History Section Component
+const ImportHistorySection = memo(({
+    material,
+    importHistory,
+    onUpdateImportTransaction,
+    onDeleteImportTransaction,
+    formatCurrency,
+    formatDate
+}: {
+    material: Material;
+    importHistory?: any[];
+    onUpdateImportTransaction?: (transactionId: string, data: any) => Promise<void>;
+    onDeleteImportTransaction?: (transactionId: string) => Promise<void>;
+    formatCurrency: (amount: number) => string;
+    formatDate: (dateString: string) => string;
+}) => {
+    const { toast } = useToast();
+    const [editingTransaction, setEditingTransaction] = useState<string | null>(null);
+    const [editFormData, setEditFormData] = useState({
+        quantity: '',
+        defectiveQuantity: '',
+        price: '',
+        reason: '',
+        importDate: '',
+        importTime: ''
+    });
+
+    const formatNumber = (value: string) => {
+        const numericValue = value.replace(/[^\d]/g, '');
+        if (!numericValue) return '';
+        return new Intl.NumberFormat('vi-VN').format(parseInt(numericValue));
+    };
+
+    const parseNumber = (formattedValue: string) => {
+        return formattedValue.replace(/[^\d]/g, '');
+    };
+
+    const calculateAvailableQuantity = (quantity: number, defectiveQuantity: number | null) => {
+        return Math.max(0, quantity - (defectiveQuantity || 0));
+    };
+
+    const handleEditTransaction = (transaction: any) => {
+        setEditingTransaction(transaction.id);
+        
+        // Parse existing date to get date and time components
+        let importDate = '';
+        let importTime = '';
+        
+        if (transaction.createdAt) {
+            // Convert from DD/MM/YYYY HH:MM:SS to YYYY-MM-DD and HH:MM
+            const dateTimeStr = transaction.createdAt;
+            if (dateTimeStr.includes('/')) {
+                const [datePart, timePart] = dateTimeStr.split(' ');
+                const [day, month, year] = datePart.split('/');
+                importDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                if (timePart) {
+                    importTime = timePart.substring(0, 5); // Get HH:MM
+                }
+            }
+        }
+        
+        setEditFormData({
+            quantity: transaction.quantity.toString(),
+            defectiveQuantity: (transaction.defectiveQuantity || 0).toString(),
+            price: transaction.price.toString(),
+            reason: transaction.reason || '',
+            importDate: importDate,
+            importTime: importTime
+        });
+    };
+
+    const handleCancelEdit = () => {
+        setEditingTransaction(null);
+        setEditFormData({
+            quantity: '',
+            defectiveQuantity: '',
+            price: '',
+            reason: '',
+            importDate: '',
+            importTime: ''
+        });
+    };
+
+    const handleSaveEdit = async (transactionId: string) => {
+        if (!onUpdateImportTransaction) return;
+
+        try {
+            const quantity = parseInt(parseNumber(editFormData.quantity)) || 0;
+            const defectiveQuantity = parseInt(parseNumber(editFormData.defectiveQuantity)) || 0;
+            const price = parseFloat(parseNumber(editFormData.price)) || 0;
+
+            // Validation
+            if (quantity <= 0) {
+                toast({
+                    title: "Lỗi",
+                    description: "Số lượng phải lớn hơn 0",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            if (defectiveQuantity > quantity) {
+                toast({
+                    title: "Lỗi",
+                    description: "Số lượng lỗi không thể lớn hơn số lượng nhập hàng",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            if (price <= 0) {
+                toast({
+                    title: "Lỗi",
+                    description: "Giá phải lớn hơn 0",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            if (!editFormData.importDate) {
+                toast({
+                    title: "Lỗi",
+                    description: "Vui lòng chọn ngày nhập hàng",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // Combine date and time into ISO string
+            const importDateTime = editFormData.importTime 
+                ? `${editFormData.importDate}T${editFormData.importTime}:00`
+                : `${editFormData.importDate}T00:00:00`;
+
+            const updateData = {
+                materialId: material.id.toString(),
+                price,
+                quantity,
+                defectiveQuantity,
+                reason: editFormData.reason || '',
+                importDate: new Date(importDateTime).toISOString()
+            };
+
+            await onUpdateImportTransaction(transactionId, updateData);
+
+            toast({
+                title: "Thành công",
+                description: "Đã cập nhật thông tin lô hàng",
+            });
+
+            handleCancelEdit();
+        } catch (error: any) {
+            console.error('Error updating import transaction:', error);
+            toast({
+                title: "Lỗi",
+                description: error?.message || "Không thể cập nhật thông tin lô hàng",
+                variant: "destructive",
+            });
+        }
+    };
+
+    const handleDeleteTransaction = async (transactionId: string) => {
+        if (!onDeleteImportTransaction) return;
+        
+        if (!confirm('Bạn có chắc chắn muốn xóa lô hàng này?')) {
+            return;
+        }
+
+        try {
+            await onDeleteImportTransaction(transactionId);
+            toast({
+                title: "Thành công",
+                description: "Đã xóa lô hàng",
+            });
+        } catch (error: any) {
+            console.error('Error deleting import transaction:', error);
+            toast({
+                title: "Lỗi",
+                description: error?.message || "Không thể xóa lô hàng",
+                variant: "destructive",
+            });
+        }
+    };
+
+    if (!importHistory) {
+        return (
+            <div className="flex items-center justify-center py-8">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-3"></div>
+                    <p className="text-sm text-gray-600">Đang tải lịch sử nhập hàng...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-4">
+            {/* Compact Header & Summary */}
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                    <h4 className="text-base font-semibold text-gray-900 flex items-center">
+                        <History className="w-4 h-4 mr-1 text-blue-600" />
+                        Lịch sử nhập hàng ({importHistory.length})
+                    </h4>
+                </div>
+                <div className="flex items-center space-x-4 text-xs">
+                    <div className="flex items-center space-x-1">
+                        <Package className="w-3 h-3 text-blue-600" />
+                        <span className="font-medium text-blue-800">
+                            Tổng số lượng: {formatNumber(importHistory.reduce((sum, item) => sum + item.quantity, 0).toString())} {material.unit}
+                        </span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                        <AlertTriangle className="w-3 h-3 text-red-600" />
+                        <span className="font-medium text-red-600">
+                            Tổng lỗi: {formatNumber(importHistory.reduce((sum, item) => sum + (item.defectiveQuantity || 0), 0).toString())} {material.unit}
+                        </span>
+                    </div>
+                   
+                    <div className="flex items-center space-x-1">
+                        <span className="font-medium text-green-600">
+                            Tổng giá trị: {formatCurrency(importHistory.reduce((sum, item) => sum + (item.price * item.quantity), 0)).replace('$', '').trim()} VND
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Import History List - Grid Layout 4 per row */}
+            <div className="space-y-2">
+                {importHistory.length === 0 ? (
+                    <div className="text-center py-4 text-gray-500">
+                        <Package className="w-6 h-6 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">Chưa có lịch sử nhập hàng</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+                        {importHistory.map((transaction) => {
+                            const isEditing = editingTransaction === transaction.id;
+                            const availableQuantity = calculateAvailableQuantity(transaction.quantity, transaction.defectiveQuantity);
+
+                            return (
+                                <Card key={transaction.id} className="p-2 hover:shadow-md transition-shadow">
+                                    <div className="space-y-2">
+                                        {/* Compact Header */}
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-1">
+                                                <div className="text-xs font-medium text-gray-900">
+                                                    {transaction.id}
+                                                </div>
+                                                <Badge 
+                                                    variant={transaction.status === 'APPROVED' ? 'default' : 'secondary'}
+                                                    className="text-xs px-1 py-0 h-4"
+                                                >
+                                                    {transaction.status === 'APPROVED' ? '✓' : '⏳'}
+                                                </Badge>
+                                            </div>
+                                            <div className="flex items-center space-x-1">
+                                                {transaction.isEdit && !isEditing && (
+                                                    <>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleEditTransaction(transaction)}
+                                                            className="h-5 w-5 p-0"
+                                                            title="Chỉnh sửa"
+                                                        >
+                                                            <Edit2 className="w-2.5 h-2.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleDeleteTransaction(transaction.id)}
+                                                            className="h-5 w-5 p-0 text-red-600 border-red-300 hover:bg-red-50"
+                                                            title="Xóa"
+                                                        >
+                                                            <Trash2 className="w-2.5 h-2.5" />
+                                                        </Button>
+                                                    </>
+                                                )}
+                                                {isEditing && (
+                                                    <>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleSaveEdit(transaction.id)}
+                                                            className="h-5 w-5 p-0 text-green-600 border-green-300 hover:bg-green-50"
+                                                            title="Lưu"
+                                                        >
+                                                            <Save className="w-2.5 h-2.5" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={handleCancelEdit}
+                                                            className="h-5 w-5 p-0"
+                                                            title="Hủy"
+                                                        >
+                                                            <X className="w-2.5 h-2.5" />
+                                                        </Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+
+                                        {/* Compact Content */}
+                                        {isEditing ? (
+                                            /* Compact Edit Form */
+                                            <div className="space-y-2">
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-700 mb-1 block">Số lượng</label>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Số lượng"
+                                                        value={editFormData.quantity ? formatNumber(editFormData.quantity) : ''}
+                                                        onChange={(e) => {
+                                                            const numericValue = parseNumber(e.target.value);
+                                                            setEditFormData(prev => ({ ...prev, quantity: numericValue }));
+                                                        }}
+                                                        className="h-6 text-xs"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-700 mb-1 block">Số lượng lỗi</label>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Số lượng lỗi"
+                                                        value={editFormData.defectiveQuantity ? formatNumber(editFormData.defectiveQuantity) : ''}
+                                                        onChange={(e) => {
+                                                            const numericValue = parseNumber(e.target.value);
+                                                            setEditFormData(prev => ({ ...prev, defectiveQuantity: numericValue }));
+                                                        }}
+                                                        className="h-6 text-xs"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-700 mb-1 block">Giá (VND)</label>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Giá (VND)"
+                                                        value={editFormData.price ? formatNumber(editFormData.price) : ''}
+                                                        onChange={(e) => {
+                                                            const numericValue = parseNumber(e.target.value);
+                                                            setEditFormData(prev => ({ ...prev, price: numericValue }));
+                                                        }}
+                                                        className="h-6 text-xs"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-700 mb-1 block">Ngày và giờ nhập hàng</label>
+                                                    <div className="grid grid-cols-2 gap-1">
+                                                        <Input
+                                                            type="date"
+                                                            value={editFormData.importDate}
+                                                            onChange={(e) => setEditFormData(prev => ({ ...prev, importDate: e.target.value }))}
+                                                            className="h-6 text-xs"
+                                                        />
+                                                        <Input
+                                                            type="time"
+                                                            value={editFormData.importTime}
+                                                            onChange={(e) => setEditFormData(prev => ({ ...prev, importTime: e.target.value }))}
+                                                            className="h-6 text-xs"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="text-xs font-medium text-gray-700 mb-1 block">Lý do</label>
+                                                    <Input
+                                                        type="text"
+                                                        placeholder="Lý do"
+                                                        value={editFormData.reason}
+                                                        onChange={(e) => setEditFormData(prev => ({ ...prev, reason: e.target.value }))}
+                                                        className="h-6 text-xs"
+                                                    />
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            /* Compact Display Mode */
+                                            <div className="space-y-1">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center space-x-1">
+                                                        <Package className="w-3 h-3 text-blue-600" />
+                                                        <span className="text-xs font-medium">Số lượng nhập: {formatNumber(transaction.quantity.toString())}</span>
+                                                    </div>
+                                                    <div className="flex items-center space-x-1">
+                                                        <AlertTriangle className="w-3 h-3 text-red-600" />
+                                                        <span className="text-xs text-red-600">Lỗi: {formatNumber((transaction.defectiveQuantity || 0).toString())}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center justify-between">
+                                                    
+                                                    <div className="flex items-center space-x-1">
+                                                        <DollarSign className="w-3 h-3 text-green-600" />
+                                                        <span className="text-xs font-medium">Giá: {formatCurrency(transaction.price).replace('$', '').trim()} VND</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Compact Footer */}
+                                        <div className="pt-1 border-t border-gray-100">
+                                            <div className="flex items-center justify-between text-xs text-gray-500">
+                                                <div className="flex items-center space-x-1">
+                                                    <Calendar className="w-2.5 h-2.5" />
+                                                    <span className="truncate">{formatDate(transaction.createdAt)}</span>
+                                                </div>
+                                                <div className="text-xs font-medium text-green-600">
+                                                    {formatCurrency(transaction.price * transaction.quantity).replace('$', '').trim()} VND
+                                                </div>
+                                            </div>
+                                            {transaction.reason && (
+                                                <div className="text-xs text-gray-500 mt-1 truncate" title={transaction.reason}>
+                                                    <span className="font-medium">Lý do:</span> {transaction.reason}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </Card>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+});
+
+ImportHistorySection.displayName = 'ImportHistorySection';
+
 // Memoized Material Row Component
 const MaterialRow = memo(({ 
     material,
@@ -185,7 +617,11 @@ const MaterialRow = memo(({
     onToggleExpanded,
     onBatchFilterChange,
     formatCurrency,
-    formatDate
+    formatDate,
+    importHistory,
+    onFetchImportHistory,
+    onUpdateImportTransaction,
+    onDeleteImportTransaction
 }: {
     material: Material;
     expandedMaterial: number | null;
@@ -198,9 +634,20 @@ const MaterialRow = memo(({
     onBatchFilterChange: (materialId: number, filter: string) => void;
     formatCurrency: (amount: number) => string;
     formatDate: (dateString: string) => string;
+    importHistory?: any[];
+    onFetchImportHistory?: (materialId: string) => void;
+    onUpdateImportTransaction?: (transactionId: string, data: any) => Promise<void>;
+    onDeleteImportTransaction?: (transactionId: string) => Promise<void>;
 }) => {
     const isExpanded = expandedMaterial === material.id;
     const batchFilter = batchFilters[material.id] || '';
+    
+    // Load import history when expanded
+    React.useEffect(() => {
+        if (isExpanded && onFetchImportHistory) {
+            onFetchImportHistory(material.id.toString());
+        }
+    }, [isExpanded, material.id, onFetchImportHistory]);
     
     // Debouncing refs for button clicks to prevent multiple triggers
     const batchModalTimeoutRef = useRef<NodeJS.Timeout>();
@@ -268,6 +715,8 @@ const MaterialRow = memo(({
             defectiveModalTimeoutRef.current = undefined;
         }, 50);
     }, [onOpenDefectiveModal, material]);
+
+
 
     const handleToggleExpanded = useCallback(() => {
         onToggleExpanded(material.id);
@@ -349,18 +798,19 @@ const MaterialRow = memo(({
                                     >
                                         <Package className="w-3 h-3" />
                                     </Button>
-                                                                            <Button 
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={handleDefectiveModalClick}
-                                            className="h-7 px-2 text-xs transition-transform duration-75 hover:scale-105 active:scale-95"
-                                            disabled={!material.batches || !material.batches.some(batch => batch.defectiveQuantity > 0)}
-                                            title={(!material.batches || !material.batches.some(batch => batch.defectiveQuantity > 0)) ? 
-                                                "Không có hàng lỗi để đổi trả" : "Đổi trả"}
-                                            style={{ willChange: 'transform' }}
-                                        >
-                                            <AlertTriangle className="w-3 h-3" />
-                                        </Button>
+                                    {/* <Button 
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={handleDefectiveModalClick}
+                                        className="h-7 px-2 text-xs transition-transform duration-75 hover:scale-105 active:scale-95"
+                                        disabled={!material.batches || !material.batches.some(batch => batch.defectiveQuantity > 0)}
+                                        title={(!material.batches || !material.batches.some(batch => batch.defectiveQuantity > 0)) ? 
+                                            "Không có hàng lỗi để đổi trả" : "Đổi trả"}
+                                        style={{ willChange: 'transform' }}
+                                    >
+                                        <AlertTriangle className="w-3 h-3" />
+                                    </Button> */}
+
                                     <Button 
                                         size="sm"
                                         variant="outline"
@@ -382,67 +832,14 @@ const MaterialRow = memo(({
             {isExpanded && (
                 <tr>
                     <td colSpan={8} className="px-4 py-4 bg-gray-50">
-                        <div className="space-y-4">
-                            <div>
-                                <div className="flex justify-between items-center mb-3">
-                                    <h4 className="text-sm font-semibold text-gray-900">Thông tin lô hàng</h4>
-                                    <div className="flex items-center space-x-2">
-                                        <Search className="w-3 h-3 text-gray-500" />
-                                        <Input
-                                            type="text"
-                                            placeholder="Tìm theo số lô..."
-                                            value={batchFilter}
-                                            onChange={handleBatchFilterChange}
-                                            className="w-32 h-7 text-xs"
-                                        />
-                                        {batchFilter && (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={clearBatchFilter}
-                                                className="px-1 h-7 text-xs"
-                                            >
-                                                ✕
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                                    {filteredBatches.length > 0 ? (
-                                        filteredBatches.map((batch) => (
-                                            <BatchCard
-                                                key={batch.id}
-                                                batch={batch}
-                                                material={material}
-                                                formatCurrency={formatCurrency}
-                                                formatDate={formatDate}
-                                            />
-                                        ))
-                                    ) : (
-                                        <div className="col-span-full text-center py-4 text-gray-500">
-                                            {batchFilter ? 
-                                                `Không tìm thấy lô hàng nào với từ khóa "${batchFilter}"` :
-                                                'Chưa có thông tin lô hàng'
-                                            }
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-
-                            <div>
-                                <h4 className="text-sm font-semibold mb-2 text-gray-900">Phân bổ theo phòng</h4>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                                    {mockRooms.map((room) => (
-                                        <RoomAllocation
-                                            key={room}
-                                            room={room}
-                                            allocation={material.roomAllocations[room]}
-                                            unit={material.unit}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                        <ImportHistorySection
+                            material={material}
+                            importHistory={importHistory}
+                            onUpdateImportTransaction={onUpdateImportTransaction}
+                            onDeleteImportTransaction={onDeleteImportTransaction}
+                            formatCurrency={formatCurrency}
+                            formatDate={formatDate}
+                        />
                     </td>
                 </tr>
             )}
@@ -459,7 +856,11 @@ const MaterialsList: React.FC<MaterialsListProps> = ({
     onOpenDefectiveModal,
     formatCurrency,
     formatDate,
-    formatNumber
+    formatNumber,
+    importHistoryByMaterial,
+    onFetchImportHistory,
+    onUpdateImportTransaction,
+    onDeleteImportTransaction
 }) => {
     const [materialSearchFilter, setMaterialSearchFilter] = useState('');
     const [debouncedSearchFilter, setDebouncedSearchFilter] = useState('');
@@ -646,6 +1047,10 @@ const MaterialsList: React.FC<MaterialsListProps> = ({
                                         onBatchFilterChange={handleBatchFilterChange}
                                         formatCurrency={formatCurrency}
                                         formatDate={formatDate}
+                                        importHistory={importHistoryByMaterial?.[material.id.toString()]}
+                                        onFetchImportHistory={onFetchImportHistory}
+                                        onUpdateImportTransaction={onUpdateImportTransaction}
+                                        onDeleteImportTransaction={onDeleteImportTransaction}
                                     />
                                 ))}
                             </tbody>
