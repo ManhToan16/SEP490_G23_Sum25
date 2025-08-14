@@ -29,5 +29,6 @@ namespace SEP490_BE.Services.TransactionServices
         Task<List<TransactionResponseDTO>> GetImporToProvide(string materialId);
         Task<TransactionResponseDTO> UpdateImportTransactionAsync(string transactionId, ImportMaterialDTO updateDto, string userId);
         Task DeleteImportTransactionAsync(string transactionId, string userId);
+        Task<List<TransactionResponseDTO>> GetPendingProvideTransactionsForNurseAsync(string nurseId);
     }
 }
