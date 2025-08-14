@@ -63,6 +63,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.FileProviders;
 using SEP490_BE.Repositories.TransactionDetailRepository;
+using SEP490_BE.Services.StatisticServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -209,7 +210,7 @@ builder.Services.AddScoped<IExaminationResultService, ExaminationResultService>(
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();    
 builder.Services.AddScoped<ILaboratoryResultService, LaboratoryResultService>();
 builder.Services.AddScoped<IFileService, FileService>();
-
+builder.Services.AddScoped<IStatisticService, StatisticService>();
 
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();

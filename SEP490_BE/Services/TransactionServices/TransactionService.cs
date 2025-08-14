@@ -1085,34 +1085,40 @@ namespace SEP490_BE.Services.TransactionServices
             var histories = await query.ToListAsync();
 
             var result = histories
-                .GroupBy(t => t.MaterialId)
-                .Select(group => new ProvideHistoryDTO
+        .GroupBy(t => new
+        {
+            t.MaterialId,
+            CreatedAt = t.CreatedAt.HasValue
+                ? t.CreatedAt.Value.Date // gom theo ngày
+                : DateTime.MinValue
+        })
+        .Select(group => new ProvideHistoryDTO
+        {
+            MaterialId = group.Key.MaterialId,
+            MaterialName = group.First().Material.Name,
+            CreatedBy = group.First().User.Name,
+            CreatedAt = group.Key.CreatedAt,
+            RoomDetails = group
+                .SelectMany(t => t.TransactionDetailTransactions)
+                .GroupBy(td => new { td.Transaction.RoomId, td.Transaction.RoomType })
+                .Select(roomGroup => new RoomDetailDTO
                 {
-                    MaterialId = group.Key,
-                    MaterialName = group.First().Material.Name,
-                    CreatedBy = group.First().User.Name,
-                    CreatedAt = group.Min(t => t.CreatedAt ?? DateTime.MinValue),
-
-                    RoomDetails = group
-                        .SelectMany(t => t.TransactionDetailTransactions)
-                        .GroupBy(td => new { td.Transaction.RoomId, td.Transaction.RoomType })
-                        .Select(roomGroup => new RoomDetailDTO
+                    RoomId = roomGroup.Key.RoomId ?? string.Empty,
+                    RoomType = roomGroup.Key.RoomType ?? string.Empty,
+                    RoomName = string.Empty, // set sau
+                    BatchInfo = roomGroup
+                        .Select(td => new BatchInfoDTO
                         {
-                            RoomId = roomGroup.Key.RoomId ?? string.Empty,
-                            RoomType = roomGroup.Key.RoomType ?? string.Empty,
-                            RoomName = string.Empty, // sẽ set sau
-                            BatchInfo = roomGroup
-                                .Select(td => new BatchInfoDTO
-                                {
-                                    TransactionId = td.TransactionId,
-                                    Quantity = td.QuantityProvided ?? 0,
-                                    Status = td.Transaction.Status
-                                })
-                                .ToList()
+                            TransactionId = td.TransactionId,
+                            Quantity = td.QuantityProvided ?? 0,
+                            Status = td.Transaction.Status
                         })
                         .ToList()
                 })
-                .ToList();
+                .ToList()
+        })
+        .ToList();
+
 
             // Gọi GetRoomNameAsync để gán RoomName
             foreach (var history in result)
@@ -1137,7 +1143,7 @@ namespace SEP490_BE.Services.TransactionServices
             if (transaction == null)
                 throw new ResourceNotFoundException("Giao dịch không tồn tại.");
 
-            if (transaction.TransactionType != "IMPORT")
+            if (transaction.TransactionType != "SUPPLIER_RETURN")
                 throw new InvalidOperationException("Chỉ chỉnh sửa số lượng lỗi cho giao dịch nhập hàng.");
 
             if (newDefectiveQuantity < 0)
