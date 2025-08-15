@@ -58,13 +58,13 @@ const LoginModal = ({ onClose }) => {
           navigate('/doctor/dashboard');
           break;
         case 'NURSE':
-          navigate('/staff/schedule');
+          navigate('/nurse/dashboard');
           break;
         case 'RECEPTIONIST':
           navigate('/receptionist/dashboard');
           break;
         case 'TECHNICIAN':
-          navigate('/staff/schedule');
+          navigate('/technician/dashboard');
           break;
         default:
           navigate('/dashboard');

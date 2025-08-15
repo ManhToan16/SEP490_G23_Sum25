@@ -62,6 +62,7 @@ const DoctorSchedule: React.FC = () => {
   useEffect(() => {
     const fetchSchedule = async () => {
       if (!user?.UserId) return;
+      console.log('Fetching schedule for user:', user);
       setLoading(true);
       try {
         const { fromDate, toDate } = (() => {
@@ -74,7 +75,7 @@ const DoctorSchedule: React.FC = () => {
           };
         })();
 
-        const res = await workScheduleService.getSchedulesByRole(user.role, fromDate, toDate);
+        const res = await workScheduleService.getSchedulesById(user.UserId, fromDate, toDate);
         setScheduleData(res);
       } catch (error) {
         console.error('Lỗi khi lấy lịch làm việc:', error);
