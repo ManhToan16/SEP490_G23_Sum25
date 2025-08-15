@@ -368,14 +368,36 @@ namespace SEP490_BE.Controllers
     )]
         [ProducesResponseType(typeof(List<MaterialUsageHistoryDTO>), StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMaterialUsageHistory(
-        [FromQuery] string roomId,
-        [FromQuery] string materialId,
+        [FromQuery] string userId,
         [FromQuery] DateTime? fromDate,
         [FromQuery] DateTime? toDate)
         {
 
-            var summary = await _transactionService.GetMaterialUsageHistoryAsync(roomId,materialId,fromDate,toDate);
+            var summary = await _transactionService.GetMaterialUsageHistoryAsync(userId,fromDate,toDate);
            
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = summary
+            });
+
+        }
+        [HttpGet("historyApproveReject")]
+        [SwaggerOperation(
+      Summary = "Lấy lịch sử approve reject",
+      Description = "approve reject."
+  )]
+        [ProducesResponseType(typeof(List<MaterialUsageHistoryDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetHistoryU(
+      [FromQuery] string userId,
+      [FromQuery] DateTime? fromDate,
+      [FromQuery] DateTime? toDate)
+        {
+
+            var summary = await _transactionService.GetApproveRejectHistoryAsync(userId, fromDate, toDate);
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

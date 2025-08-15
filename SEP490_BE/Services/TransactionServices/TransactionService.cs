@@ -58,7 +58,7 @@ namespace SEP490_BE.Services.TransactionServices
                 Id = Guid.NewGuid().ToString(),
                 MaterialId = importDto.MaterialId,
                 TransactionType = "IMPORT",
-                Quantity = effectiveQuantity ,
+                Quantity = importDto.Quantity,
                 DefectiveQuantity= importDto.DefectiveQuantity,   
                 UserId = userId,
                 Reason = importDto.Reason,
@@ -68,7 +68,17 @@ namespace SEP490_BE.Services.TransactionServices
                 CreatedAt = importDto.ImportDate,
                 UpdatedAt = DateTime.UtcNow
             };
-
+            var importHistory = new TransactionHistory
+            {
+                Id = Guid.NewGuid().ToString(),
+                TransactionId = transaction.Id,
+                OldQuantity = 0,
+                NewQuantity = transaction.Quantity,
+                OldReason = "Không có",
+                NewReason = "Nhập hàng",
+                ChangedBy = userId,
+                ChangedAt = DateTime.UtcNow
+            };
             Transaction? supplierReturnTransaction = null;
             TransactionHistory? supplierReturnHistory = null;
 
@@ -1283,6 +1293,10 @@ namespace SEP490_BE.Services.TransactionServices
                 .Where(t => t.MaterialId == materialId && t.TransactionType == "IMPORT")
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
+            var importHistories = await _context.TransactionHistories
+        .Where(h => transactions.Select(t => t.Id).Contains(h.TransactionId)
+                    && h.NewReason == "Nhập hàng")
+        .ToListAsync();
 
             if (!transactions.Any())
             {
@@ -1298,7 +1312,12 @@ namespace SEP490_BE.Services.TransactionServices
             return transactions.Select(t =>
             {
                 var dto = MapToResponseDTO(t);
-                dto.IsEdit = !providedTransactionIds.Contains(t.Id); 
+                dto.IsEdit = !providedTransactionIds.Contains(t.Id);
+                var history = importHistories.FirstOrDefault(h => h.TransactionId == t.Id);
+                if (history != null)
+                {
+                    dto.Quantity = history.NewQuantity; // nếu NewQuantity nullable
+                }
                 return dto;
             }).ToList();
         }
@@ -1530,7 +1549,7 @@ namespace SEP490_BE.Services.TransactionServices
                     && roomIds.Contains(t.RoomId))
                 .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
-
+        
             if (!transactions.Any())
             {
                 throw new ResourceNotFoundException("Không có lô hàng nào đang chờ duyệt cho các phòng trong lịch làm việc.");
@@ -1540,16 +1559,32 @@ namespace SEP490_BE.Services.TransactionServices
             return transactions.Select(MapToResponseDTO).ToList();
         }
         public async Task<List<MaterialUsageHistoryDTO>> GetMaterialUsageHistoryAsync(
-      string roomId, string materialId, DateTime? fromDate, DateTime? toDate)
+     string nurseId, DateTime? fromDate, DateTime? toDate)
         {
+            var today = DateTime.UtcNow.Date;
+
+            // Lấy danh sách phòng mà y tá đang trực hôm nay
+            var schedules = await _scheduleRepository.GetSchedulesByUserAndDateRangeAsync(
+                nurseId,
+                today,
+                today
+            );
+
+            var roomIds = schedules
+                .Where(s => s.Role != null && s.Role.Equals("NURSE", StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.RoomId)
+                .Distinct()
+                .ToList();
+
+            // Truy vấn lịch sử sử dụng vật tư
             var query = _context.TransactionHistories
                 .Include(th => th.Transaction)
                     .ThenInclude(t => t.Material)
                         .ThenInclude(m => m.RoomMaterialStocks)
                 .Where(th =>
-                    th.Transaction.MaterialId == materialId &&
-                    th.Transaction.Material.RoomMaterialStocks.Any(rms => rms.RoomId == roomId) &&
-                    (th.NewReason == "Y tá sử dụng" || th.OldReason == "Y tá sử dụng"));
+                    th.Transaction.Material.RoomMaterialStocks.Any(rms => roomIds.Contains(rms.RoomId)) &&
+                    (th.NewReason == "Y tá sử dụng" || th.OldReason == "Y tá sử dụng")
+                );
 
             if (fromDate.HasValue)
                 query = query.Where(th => th.ChangedAt >= fromDate.Value);
@@ -1561,19 +1596,54 @@ namespace SEP490_BE.Services.TransactionServices
                 .Select(h => new MaterialUsageHistoryDTO
                 {
                     HistoryId = h.Id,
-                    RoomId = roomId,
-                    MaterialId = materialId,
+                    RoomId = h.Transaction.Material.RoomMaterialStocks
+                        .FirstOrDefault(rms => roomIds.Contains(rms.RoomId)).RoomId,
+                    MaterialId = h.Transaction.Material.Id,
                     MaterialName = h.Transaction.Material.Name,
                     OldQuantity = h.OldQuantity,
                     NewQuantity = h.NewQuantity,
                     QuantityUsed = h.OldQuantity - h.NewQuantity,
                     ChangedBy = h.ChangedBy,
-                   
                 })
                 .ToListAsync();
 
             return histories;
         }
+        public async Task<List<ApproveRejectHistoryDTO>> GetApproveRejectHistoryAsync(string userId, DateTime? fromDate, DateTime? toDate)
+        {
+            var query = _context.TransactionHistories
+                .Include(th => th.Transaction)
+                    .ThenInclude(t => t.Material)
+                .Where(th =>
+                    th.ChangedBy == userId &&
+                    (th.NewReason == "Được phê duyệt" || th.NewReason == "Bị từ chối")
+                );
+
+            if (fromDate.HasValue)
+                query = query.Where(th => th.ChangedAt >= fromDate.Value);
+
+            if (toDate.HasValue)
+                query = query.Where(th => th.ChangedAt <= toDate.Value);
+
+            var histories = await query
+                .OrderByDescending(h => h.ChangedAt)
+                .Select(h => new ApproveRejectHistoryDTO
+                {
+                    HistoryId = h.Id,
+                    TransactionId = h.TransactionId,
+                    MaterialId = h.Transaction.MaterialId,
+                    MaterialName = h.Transaction.Material.Name,
+                    Quantity = h.NewQuantity,
+                    Action = h.NewReason, // "Được phê duyệt" hoặc "Bị từ chối"
+                    ChangedBy = h.ChangedBy,
+                    ChangedAt = h.ChangedAt
+                })
+                .ToListAsync();
+
+            return histories;
+        }
+
+
 
 
 
