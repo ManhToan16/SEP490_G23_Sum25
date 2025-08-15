@@ -51,13 +51,16 @@ namespace SEP490_BE.Entities
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            var config = new ConfigurationBuilder()
-                          .SetBasePath(AppContext.BaseDirectory)
-                          .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                          .Build();
+            if (!optionsBuilder.IsConfigured) // Chỉ cấu hình nếu chưa có provider nào
+            {
+                var config = new ConfigurationBuilder()
+                    .SetBasePath(AppContext.BaseDirectory)
+                    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                    .Build();
 
-            var connectionString = config.GetConnectionString("MyDB");
-            optionsBuilder.UseSqlServer(connectionString);
+                var connectionString = config.GetConnectionString("MyDB");
+                optionsBuilder.UseSqlServer(connectionString);
+            }
 
         }
 
