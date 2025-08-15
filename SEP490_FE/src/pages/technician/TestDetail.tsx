@@ -698,474 +698,474 @@ const TestDetail: React.FC = () => {
   }
 
   return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleCancel}
-              className="flex items-center"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Quay lại
-            </Button>
-          </div>
-          <Badge 
-            variant={testData.status === 'COMPLETED' || testData.status === 'completed' ? 'default' : 'secondary'}
-            className={
-              testData.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800' :
-              testData.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800' :
-              testData.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800' :
-              testData.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800' :
-              testData.status === 'PENDING' ? 'bg-orange-100 text-orange-800' :
-              testData.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
-              testData.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800' :
-              testData.status === 'IN_LABORATORY' ? 'bg-purple-100 text-purple-800' :
-              testData.status === 'IN_LABORATORY_PROGRESS' ? 'bg-indigo-100 text-indigo-800' :
-              testData.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-              testData.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
-              testData.status === 'completed' ? 'bg-green-100 text-green-800' :
-              testData.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
-              testData.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
-              testData.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-              ''
-            }
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCancel}
+            className="flex items-center"
           >
-            {testData.status === 'WAITING' ? 'Đang chờ' :
-             testData.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
-             testData.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
-             testData.status === 'CHECKED_IN' ? 'Đã check-in' :
-             testData.status === 'PENDING' ? 'Đang chờ thanh toán' :
-             testData.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
-             testData.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
-             testData.status === 'IN_LABORATORY' ? 'Đang xét nghiệm' :
-             testData.status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
-             testData.status === 'COMPLETED' ? 'Hoàn thành' :
-             testData.status === 'CANCELLED' ? 'Đã hủy' :
-             testData.status === 'scheduled' ? 'Đã lên lịch' :
-             testData.status === 'in-progress' ? 'Đang thực hiện' :
-             testData.status === 'completed' ? 'Hoàn thành' :
-             testData.status === 'cancelled' ? 'Đã hủy' :
-             testData.status}
-          </Badge>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Quay lại
+          </Button>
         </div>
+        <Badge 
+          variant={testData.status === 'COMPLETED' || testData.status === 'completed' ? 'default' : 'secondary'}
+          className={
+            testData.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800' :
+            testData.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800' :
+            testData.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800' :
+            testData.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800' :
+            testData.status === 'PENDING' ? 'bg-orange-100 text-orange-800' :
+            testData.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800' :
+            testData.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800' :
+            testData.status === 'IN_LABORATORY' ? 'bg-purple-100 text-purple-800' :
+            testData.status === 'IN_LABORATORY_PROGRESS' ? 'bg-indigo-100 text-indigo-800' :
+            testData.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+            testData.status === 'CANCELLED' ? 'bg-red-100 text-red-800' :
+            testData.status === 'completed' ? 'bg-green-100 text-green-800' :
+            testData.status === 'scheduled' ? 'bg-blue-100 text-blue-800' :
+            testData.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800' :
+            testData.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+            ''
+          }
+        >
+          {testData.status === 'WAITING' ? 'Đang chờ' :
+           testData.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
+           testData.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
+           testData.status === 'CHECKED_IN' ? 'Đã check-in' :
+           testData.status === 'PENDING' ? 'Đang chờ thanh toán' :
+           testData.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
+           testData.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
+           testData.status === 'IN_LABORATORY' ? 'Đang xét nghiệm' :
+           testData.status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
+           testData.status === 'COMPLETED' ? 'Hoàn thành' :
+           testData.status === 'CANCELLED' ? 'Đã hủy' :
+           testData.status === 'scheduled' ? 'Đã lên lịch' :
+           testData.status === 'in-progress' ? 'Đang thực hiện' :
+           testData.status === 'completed' ? 'Hoàn thành' :
+           testData.status === 'cancelled' ? 'Đã hủy' :
+           testData.status}
+        </Badge>
+      </div>
 
-        {/* Chi tiết xét nghiệm */}
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Chỉ Định</h1>
-          <p className="text-gray-600 mt-1">
-            {testData.patientName} - {testData.testType}
-          </p>
-        </div>
+      {/* Chi tiết xét nghiệm */}
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900">Chỉ Định</h1>
+        <p className="text-gray-600 mt-1">
+          {testData.patientName} - {testData.testType}
+        </p>
+      </div>
 
-        {/* Thông tin bệnh nhân */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle>Thông tin bệnh nhân</CardTitle>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewPatientInfo}
-              className="flex items-center space-x-2"
-            >
-              <User size={16} />
-              <span>Thông tin bệnh nhân</span>
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Left Column */}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Tên bệnh nhân</label>
-                  <p className="text-lg font-semibold">{testData.patientName}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Mã bệnh nhân</label>
-                  <p className="text-lg">{testData.patientId}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Loại xét nghiệm</label>
-                  <p className="text-lg">{testData.testType}</p>
-                </div>
-              </div>
-
-              {/* Right Column - Visit Info */}
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Lượt khám</label>
-                  <p className="text-lg">#{visitData?.queueNumber || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Phòng khám</label>
-                  <p className="text-lg">{visitData?.examinationRoomName || 'N/A'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-500">Bác sĩ khám</label>
-                  <p className="text-lg">{visitData?.assignedDoctorName || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2">
-              <label className="text-sm font-medium text-gray-500">Độ ưu tiên</label>
-              <div className="mt-1">
-                <Badge variant={testData.priority === 'urgent' ? 'destructive' : 'outline'}>
-                  {testData.priority === 'urgent' ? 'Ưu tiên' : 'Bình thường'}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Dịch vụ chỉ định */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Dịch vụ chỉ định</CardTitle>
-          </CardHeader>
-          <CardContent>
+      {/* Thông tin bệnh nhân */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle>Thông tin bệnh nhân</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleViewPatientInfo}
+            className="flex items-center space-x-2"
+          >
+            <User size={16} />
+            <span>Thông tin bệnh nhân</span>
+          </Button>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Left Column */}
             <div className="space-y-4">
-              {/* Danh sách dịch vụ */}
-              {assignmentServices.length > 0 && (
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Danh sách dịch vụ xét nghiệm
-                  </label>
-                  <div className="space-y-2">
-                    {assignmentServices.map((service, index) => (
-                      <div key={service.serviceId || index} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-gray-900">
-                            {service.serviceName || 'Tên dịch vụ không xác định'}
-                          </h4>
-                          <p className="text-sm text-gray-600">
-                            Mã dịch vụ: {service.serviceId?.slice(0, 8)}...
-                          </p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-semibold text-lg text-blue-600">
-                            {service.price ? `${service.price.toLocaleString('vi-VN')} VNĐ` : 'Chưa có giá'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Tổng tiền */}
-                  <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
-                    <span className="font-semibold text-gray-800">Tổng tiền:</span>
-                    <span className="font-bold text-xl text-green-600">
-                      {assignmentServices.reduce((total, service) => total + (service.price || 0), 0).toLocaleString('vi-VN')} VNĐ
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Tải lên file kết quả */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Tải lên file kết quả</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Upload area */}
-            <div 
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors cursor-pointer"
-              onClick={() => document.getElementById('file-upload')?.click()}
-            >
-              <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <p className="text-lg font-medium text-gray-700 mb-2">Tải lên file kết quả</p>
-              <p className="text-sm text-gray-500">Hỗ trợ định dạng: JPG, PNG, PDF (tối đa 10MB)</p>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Tên bệnh nhân</label>
+                <p className="text-lg font-semibold">{testData.patientName}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Mã bệnh nhân</label>
+                <p className="text-lg">{testData.patientId}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Loại xét nghiệm</label>
+                <p className="text-lg">{testData.testType}</p>
+              </div>
             </div>
 
-            {/* File đã tải lên */}
-            {uploadedFiles.length > 0 && (
+            {/* Right Column - Visit Info */}
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium text-gray-500">Lượt khám</label>
+                <p className="text-lg">#{visitData?.queueNumber || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Phòng khám</label>
+                <p className="text-lg">{visitData?.examinationRoomName || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-500">Bác sĩ khám</label>
+                <p className="text-lg">{visitData?.assignedDoctorName || 'N/A'}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-2">
+            <label className="text-sm font-medium text-gray-500">Độ ưu tiên</label>
+            <div className="mt-1">
+              <Badge variant={testData.priority === 'urgent' ? 'destructive' : 'outline'}>
+                {testData.priority === 'urgent' ? 'Ưu tiên' : 'Bình thường'}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Dịch vụ chỉ định */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Dịch vụ chỉ định</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {/* Danh sách dịch vụ */}
+            {assignmentServices.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-sm font-medium text-gray-700">File đã tải lên</h4>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                  {uploadedFiles.map((file) => (
-                    <div key={file.id} className="relative group">
-                      {/* File preview container */}
-                      <div className="aspect-square bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden hover:border-blue-300 transition-colors">
-                        {file.type.startsWith('image/') ? (
-                          // Image preview
-                          <div className="w-full h-full relative">
-                            {file.url ? (
-                              <div className="w-full h-full relative cursor-pointer group-hover:scale-105 transition-transform duration-200">
-                                <img
-                                  src={file.url}
-                                  alt={file.name}
-                                  className="w-full h-full object-cover"
-                                  onLoad={() => {
-                                    console.log('✅ [IMAGE] Successfully loaded image:', file.name, file.url);
-                                  }}
-                                  onError={(e) => {
-                                    console.error('❌ [IMAGE] Failed to load image:', file.name, file.url);
-                                    // Fallback nếu không load được ảnh
-                                    const target = e.target as HTMLImageElement;
-                                    target.style.display = 'none';
-                                    const parent = target.parentElement;
-                                    if (parent) {
-                                      parent.innerHTML = `
-                                        <div class="w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-600">
-                                          <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                          </svg>
-                                          <span class="text-xs">Lỗi tải ảnh</span>
-                                        </div>
-                                      `;
-                                    }
-                                  }}
-                                />
-                                {/* Click overlay với icon */}
-                                <div 
-                                  className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center cursor-pointer"
-                                  onClick={() => {
-                                    console.log('🖱️ [IMAGE CLICK] Opening image in new tab:', file.name, file.url);
-                                    if (file.url) {
-                                      window.open(file.url, '_blank', 'noopener,noreferrer');
-                                    } else {
-                                      console.warn('⚠️ [IMAGE CLICK] No URL available for file:', file.name);
-                                    }
-                                  }}
-                                >
-                                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                    <div className="bg-white rounded-full p-3 shadow-lg">
-                                      <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                                      </svg>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              // Không có URL
-                              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-500">
-                                <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span className="text-xs">Không có URL</span>
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          // Non-image file preview
-                          <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
-                            {file.type.includes('pdf') ? (
-                              <svg className="w-12 h-12 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                              </svg>
-                            ) : (
-                              <svg className="w-12 h-12 text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                              </svg>
-                            )}
-                            <span className="text-xs text-gray-500 font-medium">
-                              {file.type.includes('pdf') ? 'PDF' : 'FILE'}
-                            </span>
-                            {/* Click overlay for non-images */}
-                            {file.url && file.isServerFile && (
-                              <a
-                                href={file.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200"
-                              />
-                            )}
-                          </div>
-                        )}
+                <label className="block text-sm font-medium text-gray-700">
+                  Danh sách dịch vụ xét nghiệm
+                </label>
+                <div className="space-y-2">
+                  {assignmentServices.map((service, index) => (
+                    <div key={service.serviceId || index} className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors">
+                      <div className="flex-1">
+                        <h4 className="font-medium text-gray-900">
+                          {service.serviceName || 'Tên dịch vụ không xác định'}
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          Mã dịch vụ: {service.serviceId?.slice(0, 8)}...
+                        </p>
                       </div>
-
-
-
-                      {/* Delete button */}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveFile(file.id)}
-                        className="absolute -top-2 -right-2 w-6 h-6 p-0 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
-                      >
-                        <X className="h-3 w-3" />
-                      </Button>
+                      <div className="text-right">
+                        <p className="font-semibold text-lg text-blue-600">
+                          {service.price ? `${service.price.toLocaleString('vi-VN')} VNĐ` : 'Chưa có giá'}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
+                
+                {/* Tổng tiền */}
+                <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg border border-green-200">
+                  <span className="font-semibold text-gray-800">Tổng tiền:</span>
+                  <span className="font-bold text-xl text-green-600">
+                    {assignmentServices.reduce((total, service) => total + (service.price || 0), 0).toLocaleString('vi-VN')} VNĐ
+                  </span>
+                </div>
               </div>
             )}
+          </div>
+        </CardContent>
+      </Card>
 
-            {/* Input file ẩn để upload */}
-            <input
-              type="file"
-              id="file-upload"
-              multiple
-              accept="image/*,.pdf"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Ghi chú */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Ghi chú</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Ghi chú thêm..."
-              className="w-full h-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-            />
-          </CardContent>
-        </Card>
-
-        {/* Action buttons */}
-        <div className="flex justify-end space-x-4">
-          <Button
-            variant="outline"
-            onClick={handleSave}
-            disabled={isSubmitting}
+      {/* Tải lên file kết quả */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tải lên file kết quả</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Upload area */}
+          <div 
+            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-purple-400 transition-colors cursor-pointer"
+            onClick={() => document.getElementById('file-upload')?.click()}
           >
-            <Save className="mr-2 h-4 w-4" />
-            Lưu
-          </Button>
-          <Button
-            onClick={handleCompleteTest}
-            disabled={isSubmitting}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {isSubmitting ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-            ) : (
-              <Save className="mr-2 h-4 w-4" />
-            )}
-            Hoàn Thành Xét Nghiệm
-          </Button>
-        </div>
+            <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <p className="text-lg font-medium text-gray-700 mb-2">Tải lên file kết quả</p>
+            <p className="text-sm text-gray-500">Hỗ trợ định dạng: JPG, PNG, PDF (tối đa 10MB)</p>
+          </div>
 
-        {/* Patient Info Modal */}
-        {showPatientModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b bg-gray-50">
-                <h2 className="text-xl font-semibold text-gray-900">Hồ sơ bệnh nhân</h2>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPatientModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X size={20} />
-                </Button>
-              </div>
-
-              {/* Modal Content */}
-              <div className="p-6">
-                {loadingPatient ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-600">Đang tải thông tin...</span>
-                  </div>
-                ) : patientDetails ? (
-                  <div className="space-y-8">
-                    {/* Basic Info - 2 columns */}
-                    <div className="grid grid-cols-2 gap-x-16 gap-y-6">
-                      {/* Left Column */}
-                      <div className="space-y-6">
-                        <div>
-                          <label className="text-sm text-gray-600 mb-1 block">Họ và tên</label>
-                          <p className="text-lg font-medium text-gray-900">{patientDetails.name}</p>
+          {/* File đã tải lên */}
+          {uploadedFiles.length > 0 && (
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-gray-700">File đã tải lên</h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {uploadedFiles.map((file) => (
+                  <div key={file.id} className="relative group">
+                    {/* File preview container */}
+                    <div className="aspect-square bg-gray-100 rounded-lg border-2 border-gray-200 overflow-hidden hover:border-blue-300 transition-colors">
+                      {file.type.startsWith('image/') ? (
+                        // Image preview
+                        <div className="w-full h-full relative">
+                          {file.url ? (
+                            <div className="w-full h-full relative cursor-pointer group-hover:scale-105 transition-transform duration-200">
+                              <img
+                                src={file.url}
+                                alt={file.name}
+                                className="w-full h-full object-cover"
+                                onLoad={() => {
+                                  console.log('✅ [IMAGE] Successfully loaded image:', file.name, file.url);
+                                }}
+                                onError={(e) => {
+                                  console.error('❌ [IMAGE] Failed to load image:', file.name, file.url);
+                                  // Fallback nếu không load được ảnh
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  const parent = target.parentElement;
+                                  if (parent) {
+                                    parent.innerHTML = `
+                                      <div class="w-full h-full flex flex-col items-center justify-center bg-red-50 text-red-600">
+                                        <svg class="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                        </svg>
+                                        <span class="text-xs">Lỗi tải ảnh</span>
+                                      </div>
+                                    `;
+                                  }
+                                }}
+                              />
+                              {/* Click overlay với icon */}
+                              <div 
+                                className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-200 flex items-center justify-center cursor-pointer"
+                                onClick={() => {
+                                  console.log('🖱️ [IMAGE CLICK] Opening image in new tab:', file.name, file.url);
+                                  if (file.url) {
+                                    window.open(file.url, '_blank', 'noopener,noreferrer');
+                                  } else {
+                                    console.warn('⚠️ [IMAGE CLICK] No URL available for file:', file.name);
+                                  }
+                                }}
+                              >
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                  <div className="bg-white rounded-full p-3 shadow-lg">
+                                    <svg className="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                                    </svg>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // Không có URL
+                            <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 text-gray-500">
+                              <svg className="w-8 h-8 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                              </svg>
+                              <span className="text-xs">Không có URL</span>
+                            </div>
+                          )}
                         </div>
-
-                        <div>
-                          <label className="text-sm text-gray-600 mb-1 block">Số điện thoại</label>
-                          <p className="text-lg text-gray-900">{patientDetails.phoneNumber || 'N/A'}</p>
+                      ) : (
+                        // Non-image file preview
+                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50">
+                          {file.type.includes('pdf') ? (
+                            <svg className="w-12 h-12 text-red-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                          ) : (
+                            <svg className="w-12 h-12 text-gray-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                          )}
+                          <span className="text-xs text-gray-500 font-medium">
+                            {file.type.includes('pdf') ? 'PDF' : 'FILE'}
+                          </span>
+                          {/* Click overlay for non-images */}
+                          {file.url && file.isServerFile && (
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-10 transition-all duration-200"
+                            />
+                          )}
                         </div>
-
-                        <div>
-                          <label className="text-sm text-gray-600 mb-1 block">Ngày sinh</label>
-                          <p className="text-lg text-gray-900">
-                            {patientDetails.dateOfBirth ? new Date(patientDetails.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Right Column */}
-                      <div className="space-y-6">
-                        <div>
-                          <label className="text-sm text-gray-600 mb-1 block">CCCD/CMND</label>
-                          <p className="text-lg text-gray-900">{patientDetails.citizenId || 'N/A'}</p>
-                        </div>
-
-                        <div>
-                          <label className="text-sm text-gray-600 mb-1 block">Email</label>
-                          <p className="text-lg text-gray-900">{patientDetails.email || 'N/A'}</p>
-                        </div>
-
-                        <div>
-                          <label className="text-sm text-gray-600 mb-1 block">Giới tính</label>
-                          <p className="text-lg text-gray-900">
-                            {patientDetails.gender === 'MALE' ? 'Nam' : 
-                             patientDetails.gender === 'FEMALE' ? 'Nữ' : 
-                             patientDetails.gender || 'N/A'}
-                          </p>
-                        </div>
-                      </div>
+                      )}
                     </div>
 
-                    {/* Contact Info Section */}
-                    <div className="border-t pt-6">
-                      <div className="flex items-center mb-4">
-                        <FileText className="text-blue-600 mr-2" size={20} />
-                        <h3 className="text-lg font-medium text-gray-900">Thông tin liên hệ</h3>
-                      </div>
-                      
-                      <div>
-                        <label className="text-sm text-gray-600 mb-2 block">Địa chỉ</label>
-                        <div className="bg-gray-50 rounded-lg p-4">
-                          <p className="text-gray-900">{patientDetails.address || 'Chưa có thông tin địa chỉ'}</p>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* System Info Section */}
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin hệ thống</h3>
-                      
-                      <div>
-                        <label className="text-sm text-gray-600 mb-2 block">ID hồ sơ</label>
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <p className="text-sm font-mono text-gray-700">{patientDetails.id}</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">Không thể tải thông tin bệnh nhân</p>
-                  </div>
-                )}
-              </div>
 
-              {/* Modal Footer */}
-              <div className="flex justify-end p-6 border-t bg-gray-50">
-                <Button
-                  onClick={() => setShowPatientModal(false)}
-                  className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2"
-                >
-                  Đóng
-                </Button>
+                    {/* Delete button */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveFile(file.id)}
+                      className="absolute -top-2 -right-2 w-6 h-6 p-0 bg-red-500 hover:bg-red-600 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-lg"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/* Input file ẩn để upload */}
+          <input
+            type="file"
+            id="file-upload"
+            multiple
+            accept="image/*,.pdf"
+            onChange={handleFileUpload}
+            className="hidden"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Ghi chú */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Ghi chú</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="Ghi chú thêm..."
+            className="w-full h-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+          />
+        </CardContent>
+      </Card>
+
+      {/* Action buttons */}
+      <div className="flex justify-end space-x-4">
+        <Button
+          variant="outline"
+          onClick={handleSave}
+          disabled={isSubmitting}
+        >
+          <Save className="mr-2 h-4 w-4" />
+          Lưu
+        </Button>
+        <Button
+          onClick={handleCompleteTest}
+          disabled={isSubmitting}
+          className="bg-green-600 hover:bg-green-700"
+        >
+          {isSubmitting ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+          ) : (
+            <Save className="mr-2 h-4 w-4" />
+          )}
+          Hoàn Thành Xét Nghiệm
+        </Button>
       </div>
+
+      {/* Patient Info Modal */}
+      {showPatientModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b bg-gray-50">
+              <h2 className="text-xl font-semibold text-gray-900">Hồ sơ bệnh nhân</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPatientModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </Button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="p-6">
+              {loadingPatient ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  <span className="ml-3 text-gray-600">Đang tải thông tin...</span>
+                </div>
+              ) : patientDetails ? (
+                <div className="space-y-8">
+                  {/* Basic Info - 2 columns */}
+                  <div className="grid grid-cols-2 gap-x-16 gap-y-6">
+                    {/* Left Column */}
+                    <div className="space-y-6">
+                      <div>
+                        <label className="text-sm text-gray-600 mb-1 block">Họ và tên</label>
+                        <p className="text-lg font-medium text-gray-900">{patientDetails.name}</p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-600 mb-1 block">Số điện thoại</label>
+                        <p className="text-lg text-gray-900">{patientDetails.phoneNumber || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-600 mb-1 block">Ngày sinh</label>
+                        <p className="text-lg text-gray-900">
+                          {patientDetails.dateOfBirth ? new Date(patientDetails.dateOfBirth).toLocaleDateString('vi-VN') : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Right Column */}
+                    <div className="space-y-6">
+                      <div>
+                        <label className="text-sm text-gray-600 mb-1 block">CCCD/CMND</label>
+                        <p className="text-lg text-gray-900">{patientDetails.citizenId || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-600 mb-1 block">Email</label>
+                        <p className="text-lg text-gray-900">{patientDetails.email || 'N/A'}</p>
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-600 mb-1 block">Giới tính</label>
+                        <p className="text-lg text-gray-900">
+                          {patientDetails.gender === 'MALE' ? 'Nam' : 
+                           patientDetails.gender === 'FEMALE' ? 'Nữ' : 
+                           patientDetails.gender || 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contact Info Section */}
+                  <div className="border-t pt-6">
+                    <div className="flex items-center mb-4">
+                      <FileText className="text-blue-600 mr-2" size={20} />
+                      <h3 className="text-lg font-medium text-gray-900">Thông tin liên hệ</h3>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm text-gray-600 mb-2 block">Địa chỉ</label>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-gray-900">{patientDetails.address || 'Chưa có thông tin địa chỉ'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* System Info Section */}
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-medium text-gray-900 mb-4">Thông tin hệ thống</h3>
+                    
+                    <div>
+                      <label className="text-sm text-gray-600 mb-2 block">ID hồ sơ</label>
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-sm font-mono text-gray-700">{patientDetails.id}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Không thể tải thông tin bệnh nhân</p>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end p-6 border-t bg-gray-50">
+              <Button
+                onClick={() => setShowPatientModal(false)}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-6 py-2"
+              >
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 

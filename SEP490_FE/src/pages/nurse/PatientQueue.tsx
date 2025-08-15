@@ -316,285 +316,282 @@ const PatientQueue: React.FC = () => {
   };
 
   return (
-      <div className="space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
-              Hàng chờ bệnh nhân phòng tổng quát
-            </h1>
-            <p className="text-gray-600">
-              Quản lý danh sách bệnh nhân chờ khám phòng tổng quát hôm nay
-            </p>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
+            Hàng chờ bệnh nhân phòng tổng quát
+          </h1>
+          <p className="text-gray-600">
+            Quản lý danh sách bệnh nhân chờ khám phòng tổng quát hôm nay
+          </p>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {/* Date Selector */}
+          <div className="clinic-card min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Chọn ngày khám
+            </label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+            />
           </div>
           
-          <div className="flex items-center space-x-4">
-            {/* Date Selector */}
-            <div className="clinic-card min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chọn ngày khám
-              </label>
-              <input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-              />
-            </div>
-            
-            {/* SignalR Status Debug */}
-            <div className="clinic-card min-w-[200px]">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                SignalR Status
-              </label>
-              <div className="text-sm">
-                <div className={`px-2 py-1 rounded ${signalRStatus === 'Connected' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                  {signalRStatus}
-                </div>
+          {/* SignalR Status Debug */}
+          <div className="clinic-card min-w-[200px]">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              SignalR Status
+            </label>
+            <div className="text-sm">
+              <div className={`px-2 py-1 rounded ${signalRStatus === 'Connected' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {signalRStatus}
               </div>
             </div>
-            
-            <Button 
-              onClick={handleOpenWaitingRoomDisplay}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Monitor className="h-4 w-4 mr-2" />
-              Màn hình chờ
-            </Button>
+          </div>
+          
+          <Button 
+            onClick={handleOpenWaitingRoomDisplay}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
+          >
+            <Monitor className="h-4 w-4 mr-2" />
+            Màn hình chờ
+          </Button>
+        </div>
+      </div>
+
+
+
+      {/* Waiting Queue */}
+      <div className="clinic-card">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy">
+            Danh sách bệnh nhân
+          </h2>
+          <div className="flex items-center space-x-2">
+            <span className="px-3 py-1 bg-clinic-blue/10 text-clinic-blue rounded-full text-sm font-medium">
+              {visits.length} bệnh nhân
+            </span>
+            {currentRoomInfo && (
+              <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                {currentRoomInfo.name}
+              </span>
+            )}
           </div>
         </div>
 
-
-
-        {/* Waiting Queue */}
-        <div className="clinic-card">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-poppins font-semibold text-clinic-navy">
-              Danh sách bệnh nhân
-            </h2>
-            <div className="flex items-center space-x-2">
-              <span className="px-3 py-1 bg-clinic-blue/10 text-clinic-blue rounded-full text-sm font-medium">
-                {visits.length} bệnh nhân
-              </span>
-              {currentRoomInfo && (
-                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
-                  {currentRoomInfo.name}
-                </span>
-              )}
-            </div>
+        {/* Loading State */}
+        {loading && (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-clinic-blue mx-auto mb-4"></div>
+            <p className="text-gray-500">Đang tải dữ liệu...</p>
           </div>
+        )}
 
-          {/* Loading State */}
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-clinic-blue mx-auto mb-4"></div>
-              <p className="text-gray-500">Đang tải dữ liệu...</p>
-            </div>
-          )}
+        {/* Error State */}
+        {error && !loading && (
+          <div className="text-center py-8">
+            <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
+            <p className="text-red-500 mb-4">{error}</p>
+            <button 
+              onClick={() => fetchNurseScheduleAndVisits(selectedDate)}
+              className="clinic-button-primary"
+            >
+              Thử lại
+            </button>
+          </div>
+        )}
 
-          {/* Error State */}
-          {error && !loading && (
-            <div className="text-center py-8">
-              <AlertCircle className="mx-auto text-red-500 mb-4" size={48} />
-              <p className="text-red-500 mb-4">{error}</p>
-              <button 
-                onClick={() => fetchNurseScheduleAndVisits(selectedDate)}
-                className="clinic-button-primary"
-              >
-                Thử lại
-              </button>
-            </div>
-          )}
+        {/* No Schedule Message */}
+        {noScheduleMessage && !loading && !error && (
+          <div className="text-center py-8">
+            <Clock className="mx-auto text-gray-400 mb-4" size={48} />
+            <p className="text-gray-500">{noScheduleMessage}</p>
+          </div>
+        )}
 
-          {/* No Schedule Message */}
-          {noScheduleMessage && !loading && !error && (
-            <div className="text-center py-8">
-              <Clock className="mx-auto text-gray-400 mb-4" size={48} />
-              <p className="text-gray-500">{noScheduleMessage}</p>
-            </div>
-          )}
-
-          {/* Visits Table */}
-          {!loading && !error && !noScheduleMessage && (
-            <div className="overflow-x-auto">
-              <div className="min-w-full">
-                {/* Table Header */}
-                <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 rounded-t-lg border-b">
-                  <div className="col-span-2 text-sm font-semibold text-clinic-navy">
-                    Số thứ tự
-                  </div>
-                  <div className="col-span-5 text-sm font-semibold text-clinic-navy">
-                    Thông tin bệnh nhân
-                  </div>
-                  <div className="col-span-2 text-sm font-semibold text-clinic-navy">
-                    Trạng thái
-                  </div>
-                  <div className="col-span-3 text-sm font-semibold text-clinic-navy text-center">
-                    Thao tác
-                  </div>
+        {/* Visits Table */}
+        {!loading && !error && !noScheduleMessage && (
+          <div className="overflow-x-auto">
+            <div className="min-w-full">
+              {/* Table Header */}
+              <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-gray-50 rounded-t-lg border-b">
+                <div className="col-span-2 text-sm font-semibold text-clinic-navy">
+                  Số thứ tự
                 </div>
+                <div className="col-span-5 text-sm font-semibold text-clinic-navy">
+                  Thông tin bệnh nhân
+                </div>
+                <div className="col-span-2 text-sm font-semibold text-clinic-navy">
+                  Trạng thái
+                </div>
+                <div className="col-span-3 text-sm font-semibold text-clinic-navy text-center">
+                  Thao tác
+                </div>
+              </div>
 
-                {/* Table Body */}
-                <div className="divide-y divide-gray-100">
-                  {currentVisits.map((visit, index) => (
-                    <div key={visit.visitId} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
-                      {/* Queue Number */}
-                      <div className="col-span-2 flex items-center">
-                        <div className="flex items-center space-x-3">
-                          <span className="inline-flex items-center justify-center w-10 h-10 bg-clinic-blue text-white rounded-full font-semibold text-lg">
-                            {visit.queueNumber}
-                          </span>
-                          {visit.isPrioritized && (
-                            <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                              Ưu tiên
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Patient Info */}
-                      <div className="col-span-5 flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-clinic-blue to-clinic-navy rounded-full flex items-center justify-center">
-                          <User className="text-white" size={20} />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-clinic-navy text-lg">
-                            {visit.patientName || 'N/A'}
-                          </h4>
-                          <p className="text-sm text-gray-500">
-                            ID: {visit.patientProfileId?.slice(0, 8)}...
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Status */}
-                      <div className="col-span-2 flex items-center">
-                        <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
-                          visit.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                          visit.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                          visit.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                          visit.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800 border border-green-200' :
-                          visit.status === 'PENDING' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
-                          visit.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                          visit.status === 'IN_EXAMINATION' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                          visit.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                          visit.status === 'IN_LABORATORY' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
-                          visit.status === 'IN_LABORATORY_PROGRESS' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
-                          visit.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
-                          visit.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
-                          visit.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
-                          visit.status === 'scheduled' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
-                          visit.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
-                          visit.status === 'cancelled' ? 'bg-red-100 text-red-800 border border-red-200' :
-                          'bg-gray-100 text-gray-800 border border-gray-200'
-                        }`}>
-                          {visit.status === 'WAITING' ? 'Đang chờ' :
-                           visit.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
-                           visit.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
-                           visit.status === 'CHECKED_IN' ? 'Đã check-in' :
-                           visit.status === 'PENDING' ? 'Đang chờ thanh toán' :
-                           visit.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
-                           visit.status === 'IN_EXAMINATION' ? 'Đang khám' :
-                           visit.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
-                           visit.status === 'IN_LABORATORY' ? 'Đang xét nghiệm' :
-                           visit.status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
-                           visit.status === 'COMPLETED' ? 'Hoàn thành' :
-                           visit.status === 'CANCELLED' ? 'Đã hủy' :
-                           visit.status === 'scheduled' ? 'Đã lên lịch' :
-                           visit.status === 'in-progress' ? 'Đang thực hiện' :
-                           visit.status === 'completed' ? 'Hoàn thành' :
-                           visit.status === 'cancelled' ? 'Đã hủy' :
-                           visit.status}
+              {/* Table Body */}
+              <div className="divide-y divide-gray-100">
+                {currentVisits.map((visit, index) => (
+                  <div key={visit.visitId} className="grid grid-cols-12 gap-4 px-6 py-4 hover:bg-gray-50 transition-colors">
+                    {/* Queue Number */}
+                    <div className="col-span-2 flex items-center">
+                      <div className="flex items-center space-x-3">
+                        <span className="inline-flex items-center justify-center w-10 h-10 bg-clinic-blue text-white rounded-full font-semibold text-lg">
+                          {visit.queueNumber}
                         </span>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="col-span-3 flex items-center justify-center">
-                        {visit.status === 'WAITING' && (
-                          <button 
-                            className="inline-flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md"
-                            onClick={() => handleCallPatient(visit)}
-                          >
-                            <PhoneCall size={16} />
-                            <span>Gọi bệnh nhân</span>
-                          </button>
+                        {visit.isPrioritized && (
+                          <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
+                            Ưu tiên
+                          </span>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {visits.length === 0 && (
-                <div className="text-center py-16">
-                  <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Clock className="text-gray-400" size={32} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    Chưa có bệnh nhân nào
-                  </h3>
-                  <p className="text-gray-500 max-w-sm mx-auto">
-                    Hiện tại chưa có bệnh nhân nào đang chờ khám trong ngày được chọn
-                  </p>
-                </div>
-              )}
-
-              {/* Pagination */}
-              {visits.length > 0 && totalPages > 1 && (
-                <div className="flex items-center justify-between mt-6 px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-lg border-t">
-                  <div className="text-sm text-gray-600">
-                    Hiển thị <span className="font-semibold text-clinic-navy">{startIndex + 1}</span> - <span className="font-semibold text-clinic-navy">{Math.min(endIndex, visits.length)}</span> trong tổng số <span className="font-semibold text-clinic-navy">{visits.length}</span> bệnh nhân
-                  </div>
-                  
-                  <div className="flex items-center space-x-1">
-                    <button
-                      onClick={goToPreviousPage}
-                      disabled={currentPage === 1}
-                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                        currentPage === 1
-                          ? 'text-gray-400 cursor-not-allowed bg-gray-200'
-                          : 'text-clinic-navy bg-white hover:bg-clinic-blue hover:text-white shadow-sm hover:shadow-md'
-                      }`}
-                    >
-                      <ChevronLeft size={16} className="mr-1" />
-                      Trước
-                    </button>
-
-                    <div className="flex space-x-1">
-                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <button
-                          key={page}
-                          onClick={() => goToPage(page)}
-                          className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                            currentPage === page
-                              ? 'bg-clinic-blue text-white shadow-md'
-                              : 'text-clinic-navy bg-white hover:bg-clinic-blue hover:text-white shadow-sm hover:shadow-md'
-                          }`}
-                        >
-                          {page}
-                        </button>
-                      ))}
+                    {/* Patient Info */}
+                    <div className="col-span-5 flex items-center space-x-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-clinic-blue to-clinic-navy rounded-full flex items-center justify-center">
+                        <User className="text-white" size={20} />
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-clinic-navy text-lg">
+                          {visit.patientName || 'N/A'}
+                        </h4>
+                      </div>
                     </div>
 
-                    <button
-                      onClick={goToNextPage}
-                      disabled={currentPage === totalPages}
-                      className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
-                        currentPage === totalPages
-                          ? 'text-gray-400 cursor-not-allowed bg-gray-200'
-                          : 'text-clinic-navy bg-white hover:bg-clinic-blue hover:text-white shadow-sm hover:shadow-md'
-                      }`}
-                    >
-                      Sau
-                      <ChevronRight size={16} className="ml-1" />
-                    </button>
+                    {/* Status */}
+                    <div className="col-span-2 flex items-center">
+                      <span className={`inline-flex items-center px-3 py-2 rounded-full text-sm font-medium ${
+                        visit.status === 'WAITING' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                        visit.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                        visit.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                        visit.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800 border border-green-200' :
+                        visit.status === 'PENDING' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                        visit.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                        visit.status === 'IN_EXAMINATION' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                        visit.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                        visit.status === 'IN_LABORATORY' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                        visit.status === 'IN_LABORATORY_PROGRESS' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                        visit.status === 'COMPLETED' ? 'bg-green-100 text-green-800 border border-green-200' :
+                        visit.status === 'CANCELLED' ? 'bg-red-100 text-red-800 border border-red-200' :
+                        visit.status === 'completed' ? 'bg-green-100 text-green-800 border border-green-200' :
+                        visit.status === 'scheduled' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
+                        visit.status === 'in-progress' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                        visit.status === 'cancelled' ? 'bg-red-100 text-red-800 border border-red-200' :
+                        'bg-gray-100 text-gray-800 border border-gray-200'
+                      }`}>
+                        {visit.status === 'WAITING' ? 'Đang chờ' :
+                         visit.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
+                         visit.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
+                         visit.status === 'CHECKED_IN' ? 'Đã check-in' :
+                         visit.status === 'PENDING' ? 'Đang chờ thanh toán' :
+                         visit.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
+                         visit.status === 'IN_EXAMINATION' ? 'Đang khám' :
+                         visit.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
+                         visit.status === 'IN_LABORATORY' ? 'Đang xét nghiệm' :
+                         visit.status === 'IN_LABORATORY_PROGRESS' ? 'Đang xét nghiệm' :
+                         visit.status === 'COMPLETED' ? 'Hoàn thành' :
+                         visit.status === 'CANCELLED' ? 'Đã hủy' :
+                         visit.status === 'scheduled' ? 'Đã lên lịch' :
+                         visit.status === 'in-progress' ? 'Đang thực hiện' :
+                         visit.status === 'completed' ? 'Hoàn thành' :
+                         visit.status === 'cancelled' ? 'Đã hủy' :
+                         visit.status}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-3 flex items-center justify-center">
+                      {visit.status === 'WAITING' && (
+                        <button 
+                          className="inline-flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-sm hover:shadow-md"
+                          onClick={() => handleCallPatient(visit)}
+                        >
+                          <PhoneCall size={16} />
+                          <span>Gọi bệnh nhân</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
-          )}
-        </div>
+
+            {visits.length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Clock className="text-gray-400" size={32} />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Chưa có bệnh nhân nào
+                </h3>
+                <p className="text-gray-500 max-w-sm mx-auto">
+                  Hiện tại chưa có bệnh nhân nào đang chờ khám trong ngày được chọn
+                </p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {visits.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-between mt-6 px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 rounded-b-lg border-t">
+                <div className="text-sm text-gray-600">
+                  Hiển thị <span className="font-semibold text-clinic-navy">{startIndex + 1}</span> - <span className="font-semibold text-clinic-navy">{Math.min(endIndex, visits.length)}</span> trong tổng số <span className="font-semibold text-clinic-navy">{visits.length}</span> bệnh nhân
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <button
+                    onClick={goToPreviousPage}
+                    disabled={currentPage === 1}
+                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      currentPage === 1
+                        ? 'text-gray-400 cursor-not-allowed bg-gray-200'
+                        : 'text-clinic-navy bg-white hover:bg-clinic-blue hover:text-white shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    <ChevronLeft size={16} className="mr-1" />
+                    Trước
+                  </button>
+
+                  <div className="flex space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => goToPage(page)}
+                        className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                          currentPage === page
+                            ? 'bg-clinic-blue text-white shadow-md'
+                            : 'text-clinic-navy bg-white hover:bg-clinic-blue hover:text-white shadow-sm hover:shadow-md'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                    className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      currentPage === totalPages
+                        ? 'text-gray-400 cursor-not-allowed bg-gray-200'
+                        : 'text-clinic-navy bg-white hover:bg-clinic-blue hover:text-white shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    Sau
+                    <ChevronRight size={16} className="ml-1" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+    </div>
   );
 };
 

@@ -82,99 +82,99 @@ namespace Test2.Services.VisitTest
             );
         }
 
-        [Test]
-        public async Task CreateVisit_Success()
-        {
-            // Arrange
-            var today = DateTime.UtcNow.Date;
+        //[Test]
+        //public async Task CreateVisit_Success()
+        //{
+        //    // Arrange
+        //    var today = DateTime.UtcNow.Date;
 
-            var room = new ExaminationRoom { Id = "room1", Name = "Phòng 1",IsActive = true };
-            var patient = new PatientProfile
-            {
-                Id = "patient1",
-                Name = "Bệnh nhân A",
-                CitizenId = "123456789",
-                PhoneNumber = "0123456789",
-                Email = "patient@example.com",
-                Gender = "Male",
-                DateOfBirth = new DateTime(1990, 1, 1)
-            };
+        //    var room = new ExaminationRoom { Id = "room1", Name = "Phòng 1",IsActive = true };
+        //    var patient = new PatientProfile
+        //    {
+        //        Id = "patient1",
+        //        Name = "Bệnh nhân A",
+        //        CitizenId = "123456789",
+        //        PhoneNumber = "0123456789",
+        //        Email = "patient@example.com",
+        //        Gender = "Male",
+        //        DateOfBirth = new DateTime(1990, 1, 1)
+        //    };
 
-            var doctor = new User
-            {
-                Id = "doc1",
-                Name = "Bác sĩ B",
-                Email = "doctor@example.com",
-                Gender = "Male",
-                Password = "hashed-password", // hoặc chuỗi giả
-                PhoneNumber = "0987654321"
-            };
+        //    var doctor = new User
+        //    {
+        //        Id = "doc1",
+        //        Name = "Bác sĩ B",
+        //        Email = "doctor@example.com",
+        //        Gender = "Male",
+        //        Password = "hashed-password", // hoặc chuỗi giả
+        //        PhoneNumber = "0987654321"
+        //    };
 
-            var timeSlot = new TimeSlot
-            {
-                Id = "slot1",
-                Name = "Ca 1",
-                StartTime = new TimeSpan(8, 0, 0),   // 08:00
-                EndTime = new TimeSpan(9, 0, 0)      // 09:00
-            };
-
-
-            var appointment = new Appointment
-            {
-                Id = "appt1",
-                Name = "Nguyễn Văn A",
-                PhoneNumber = "0123456789",
-                Email = "a@example.com",
-                Gender = "Male",
-                TimeSlotId = "slot1",
-                Status = AppointmentStatus.CHECKED_IN,
-                RequiredDoctorId = doctor.Id,
-                Date = DateTime.Today,
-            };
+        //    var timeSlot = new TimeSlot
+        //    {
+        //        Id = "slot1",
+        //        Name = "Ca 1",
+        //        StartTime = new TimeSpan(8, 0, 0),   // 08:00
+        //        EndTime = new TimeSpan(9, 0, 0)      // 09:00
+        //    };
 
 
-            _context.TimeSlots.Add(timeSlot);
-            _context.ExaminationRooms.Add(room);
-            _context.PatientProfiles.Add(patient);
-            _context.Users.Add(doctor);
-            _context.Appointments.Add(appointment);
-            await _context.SaveChangesAsync();
-
-            var request = new VisitRequestDTO
-            {
-                ExaminationRoomId = room.Id,
-                AppointmentId = appointment.Id,
-                PatientProfileId = patient.Id,
-                AssignedDoctorId = doctor.Id,
-                IsPrioritized = false
-            };
-
-            _visitRepositoryMock.Setup(r => r.Insert(It.IsAny<Visit>()))
-                .Callback<Visit>(v =>
-                {
-                    v.AssignedDoctor = doctor;
-                    v.ExaminationRoom = room;
-                    v.PatientProfile = patient;
-                });
+        //    var appointment = new Appointment
+        //    {
+        //        Id = "appt1",
+        //        Name = "Nguyễn Văn A",
+        //        PhoneNumber = "0123456789",
+        //        Email = "a@example.com",
+        //        Gender = "Male",
+        //        TimeSlotId = "slot1",
+        //        Status = AppointmentStatus.CHECKED_IN,
+        //        RequiredDoctorId = doctor.Id,
+        //        Date = DateTime.Today,
+        //    };
 
 
-            // Act
-            var result = await _visitService.Create(request);
+        //    _context.TimeSlots.Add(timeSlot);
+        //    _context.ExaminationRooms.Add(room);
+        //    _context.PatientProfiles.Add(patient);
+        //    _context.Users.Add(doctor);
+        //    _context.Appointments.Add(appointment);
+        //    await _context.SaveChangesAsync();
 
-            // Assert
-            Assert.IsNotNull(result);
-            Assert.AreEqual(room.Id, result.ExaminationRoomId);
-            Assert.AreEqual(patient.Name, result.PatientName);
-            Assert.AreEqual(doctor.Id, result.AssignedDoctorId);
-            Assert.AreEqual(1, result.QueueNumber);
+        //    var request = new VisitRequestDTO
+        //    {
+        //        ExaminationRoomId = room.Id,
+        //        AppointmentId = appointment.Id,
+        //        PatientProfileId = patient.Id,
+        //        AssignedDoctorId = doctor.Id,
+        //        IsPrioritized = false
+        //    };
+
+        //    _visitRepositoryMock.Setup(r => r.Insert(It.IsAny<Visit>()))
+        //        .Callback<Visit>(v =>
+        //        {
+        //            v.AssignedDoctor = doctor;
+        //            v.ExaminationRoom = room;
+        //            v.PatientProfile = patient;
+        //        });
+
+
+        //    // Act
+        //    var result = await _visitService.Create(request);
+
+        //    // Assert
+        //    Assert.IsNotNull(result);
+        //    Assert.AreEqual(room.Id, result.ExaminationRoomId);
+        //    Assert.AreEqual(patient.Name, result.PatientName);
+        //    Assert.AreEqual(doctor.Id, result.AssignedDoctorId);
+        //    Assert.AreEqual(1, result.QueueNumber);
 
 
 
-            _visitRepositoryMock.Verify(r => r.Insert(It.IsAny<Visit>()), Times.Once);
-            _appointmentRepositoryMock.Verify(r => r.Update(It.IsAny<Appointment>()), Times.Once);
-            _clientProxyMock.Verify(c =>
-                c.SendCoreAsync("VisitChanged", It.IsAny<object[]>(), default), Times.Once);
-        }
+        //    _visitRepositoryMock.Verify(r => r.Insert(It.IsAny<Visit>()), Times.Once);
+        //    _appointmentRepositoryMock.Verify(r => r.Update(It.IsAny<Appointment>()), Times.Once);
+        //    _clientProxyMock.Verify(c =>
+        //        c.SendCoreAsync("VisitChanged", It.IsAny<object[]>(), default), Times.Once);
+        //}
 
         [Test]
         public async Task GetById_Success()

@@ -7,7 +7,6 @@ import { Input } from '@/shared/components/ui/input';
 import { Label } from '@/shared/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
 import { Package, Plus, AlertTriangle, CheckCircle } from 'lucide-react';
-import NurseLayout from '@/shared/components/layouts/NurseLayout';
 
 interface Supply {
   id: string;
@@ -111,7 +110,7 @@ const SupplyManagement: React.FC = () => {
   const outSupplies = supplies.filter(s => s.status === 'out');
 
   return (
-      <div className="space-y-6">
+    <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Quản lý vật tư trong phòng</h1>
         <p className="text-gray-600 mt-2">Theo dõi và quản lý vật tư, thiết bị y tế trong phòng khám</p>
@@ -312,7 +311,7 @@ const SupplyManagement: React.FC = () => {
           </CardContent>
         </Card>
       )}
-      </div>
+    </div>
   );
 };
 

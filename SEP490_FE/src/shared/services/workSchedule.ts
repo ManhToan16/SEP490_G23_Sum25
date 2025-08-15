@@ -2,16 +2,14 @@
 import { api } from "./apiClient";
 
 export const workScheduleService = {
-  getStaffSchedule: async (userId: string) => {
+  getSchedulesById: async (id: string, fromDate: string, toDate: string) => {
     try {
+      // Validate inputs
+      if (!id || !fromDate || !toDate) {
+        throw new Error("Role, fromDate và toDate là bắt buộc");
+      }
 
-      return await api.get(`/Schedules/user/${userId}`);
-    } catch (error) {
-      throw error;
-    }
-  },
-  getStaffSchedule1: async (userId: string, fromDate: string, toDate: string) => {
-    try {
+      // Validate date format
       const fromDateObj = new Date(fromDate);
       const toDateObj = new Date(toDate);
 
@@ -23,7 +21,7 @@ export const workScheduleService = {
         throw new Error("Ngày bắt đầu không thể sau ngày kết thúc");
       }
 
-      const url = `/Schedules/user/${userId}?fromDate=${fromDate}&toDate=${toDate}`;
+      const url = `/Schedules/user/${id}?fromDate=${fromDate}&toDate=${toDate}`;
       console.log('📅 API Call:', url);
 
       const response = await api.get(url);
@@ -37,7 +35,7 @@ export const workScheduleService = {
       throw new Error(message);
     }
   },
-  
+
   getSchedulesByRole: async (role: string, fromDate: string, toDate: string) => {
     try {
       // Validate inputs

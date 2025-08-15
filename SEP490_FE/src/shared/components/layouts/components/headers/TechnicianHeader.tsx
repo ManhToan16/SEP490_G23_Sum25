@@ -14,6 +14,10 @@ const TechnicianHeader: React.FC = () => {
     navigate('/'); 
   };
 
+  const handleUserProfile = () => {
+    navigate('/technician/profile');
+  };
+
   return (
     <div className="h-16 px-6 flex items-center justify-between bg-white border-b">
       <div className="flex items-center space-x-4">
@@ -30,7 +34,11 @@ const TechnicianHeader: React.FC = () => {
           <Bell className="h-5 w-5" />
         </Button>
         
-        <Button variant="ghost" className="flex items-center space-x-2">
+        <Button 
+          variant="ghost" 
+          className="flex items-center space-x-2"
+          onClick={handleUserProfile}
+        >
           <User className="h-4 w-4" />
           <span>{user?.name}</span>
         </Button>

@@ -1,11 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
-import { Activity, Filter, Download, AlertTriangle, Info, CheckCircle, XCircle, Search, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Activity, Filter, Download, AlertTriangle, Info, CheckCircle, XCircle, Search, RefreshCw, User } from 'lucide-react';
 import { auditLogService } from '../../shared/services/auditLog';
+import appointmentService from '../../shared/services/appointmentService';
+import Modal from '../../shared/components/common/Modal';
 
 interface AuditLog {
   id: number;
   userId: string;
+  userName?: string;
   action: string;
   tableName: string;
   recordId: string;
@@ -22,10 +25,29 @@ interface AuditLogsResponse {
   pageSize: number;
 }
 
+interface UserInfo {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  isActive: boolean;
+  address?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  // Thêm các trường khác nếu cần
+}
+
 const SystemLogs: React.FC = () => {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedUserInfo, setSelectedUserInfo] = useState<UserInfo | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userError, setUserError] = useState<string | null>(null);
   
   // Filter states
   const [filters, setFilters] = useState({
@@ -44,14 +66,12 @@ const SystemLogs: React.FC = () => {
   });
 
   // Fetch audit logs
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     
     try {
-      console.log('🚀 Starting to fetch audit logs with filters:', filters);
       const response = await auditLogService.getAuditLogs(filters);
-      console.log('✅ Audit logs fetched successfully:', response);
       
       setLogs(response.items);
       setPagination({
@@ -60,14 +80,11 @@ const SystemLogs: React.FC = () => {
         pageSize: response.pageSize
       });
     } catch (err: any) {
-      console.error('❌ Error in fetchAuditLogs:', err);
-      
       // More detailed error handling
       let errorMessage = 'Không thể tải dữ liệu audit logs';
       
       if (err.response) {
         // Server responded with error status
-        console.error('Server error response:', err.response);
         if (err.response.status === 500) {
           errorMessage = 'Lỗi server (500) - Vui lòng thử lại sau';
         } else if (err.response.status === 404) {
@@ -79,7 +96,6 @@ const SystemLogs: React.FC = () => {
         }
       } else if (err.request) {
         // Network error
-        console.error('Network error:', err.request);
         errorMessage = 'Lỗi kết nối mạng - Vui lòng kiểm tra kết nối internet';
       } else {
         // Other error
@@ -90,12 +106,12 @@ const SystemLogs: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters]);
 
   // Load data on component mount and when filters change
   useEffect(() => {
     fetchAuditLogs();
-  }, [filters.pageNumber, filters.pageSize]);
+  }, [filters.pageNumber, filters.pageSize, fetchAuditLogs]);
 
   // Handle filter changes
   const handleFilterChange = (key: string, value: string) => {
@@ -159,15 +175,7 @@ const SystemLogs: React.FC = () => {
     });
   };
 
-  // Parse JSON data safely
-  const parseJsonData = (jsonString: string | null) => {
-    if (!jsonString) return null;
-    try {
-      return JSON.parse(jsonString);
-    } catch {
-      return null;
-    }
-  };
+
 
   // Calculate stats
   const stats = {
@@ -175,6 +183,60 @@ const SystemLogs: React.FC = () => {
     create: logs.filter(log => log.action.toUpperCase() === 'CREATE').length,
     update: logs.filter(log => log.action.toUpperCase() === 'UPDATE').length,
     delete: logs.filter(log => log.action.toUpperCase() === 'DELETE').length
+  };
+
+  // Fetch user info by ID
+  const fetchUserInfo = async (userId: string) => {
+    setUserLoading(true);
+    setUserError(null);
+    
+    try {
+      const response = await appointmentService.getUserById(userId);
+      
+      // API trả về data trong array, lấy phần tử đầu tiên
+      if (response && response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setSelectedUserInfo(response.data[0]);
+      } else if (response && response.data) {
+        // Nếu data không phải array
+        setSelectedUserInfo(response.data);
+      } else {
+        throw new Error('Invalid user data format');
+      }
+      
+      setShowUserModal(true);
+    } catch (err: any) {
+      let errorMessage = 'Không thể tải thông tin người dùng';
+      
+      if (err.response) {
+        if (err.response.status === 404) {
+          errorMessage = 'Không tìm thấy người dùng';
+        } else if (err.response.status === 401) {
+          errorMessage = 'Không có quyền truy cập thông tin người dùng';
+        } else {
+          errorMessage = `Lỗi server (${err.response.status}): ${err.response.data?.message || err.message}`;
+        }
+      } else if (err.request) {
+        errorMessage = 'Lỗi kết nối mạng';
+      } else {
+        errorMessage = err.message || 'Có lỗi xảy ra khi tải thông tin người dùng';
+      }
+      
+      setUserError(errorMessage);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  // Handle user info button click
+  const handleUserInfoClick = (userId: string) => {
+    fetchUserInfo(userId);
+  };
+
+  // Close user modal
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setSelectedUserInfo(null);
+    setUserError(null);
   };
 
   return (
@@ -307,13 +369,10 @@ const SystemLogs: React.FC = () => {
             </div>
           ) : logs.length > 0 ? (
             logs.map((log) => {
-              const oldData = parseJsonData(log.oldData);
-              const newData = parseJsonData(log.newData);
-              
               return (
                 <div key={log.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4 flex-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 flex-1">
                       <div className={`p-2 rounded-lg ${getActionColor(log.action)}`}>
                         {getActionIcon(log.action)}
                       </div>
@@ -328,9 +387,19 @@ const SystemLogs: React.FC = () => {
                           </span>
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600 mb-3">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
                           <div>
-                            <strong>User ID:</strong> {log.userId}
+                            <strong>ID người dùng:</strong>{' '}
+                            <button
+                              onClick={() => handleUserInfoClick(log.userId)}
+                              className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                            >
+                              <User size={14} />
+                              <span>{log.userId}</span>
+                            </button>
+                          </div>
+                          <div>
+                            <strong>Tên người dùng:</strong> {log.userName || 'N/A'}
                           </div>
                           <div>
                             <strong>Thời gian:</strong> {formatDate(log.actionTime)}
@@ -338,27 +407,6 @@ const SystemLogs: React.FC = () => {
                           <div>
                             <strong>Record ID:</strong> {log.recordId}
                           </div>
-                        </div>
-                        
-                        {/* Data Changes */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {oldData && (
-                            <div className="p-3 bg-gray-50 rounded text-sm">
-                              <strong className="text-red-600">Dữ liệu cũ:</strong>
-                              <pre className="mt-1 text-xs overflow-x-auto">
-                                {JSON.stringify(oldData, null, 2)}
-                              </pre>
-                            </div>
-                          )}
-                          
-                          {newData && (
-                            <div className="p-3 bg-gray-50 rounded text-sm">
-                              <strong className="text-green-600">Dữ liệu mới:</strong>
-                              <pre className="mt-1 text-xs overflow-x-auto">
-                                {JSON.stringify(newData, null, 2)}
-                              </pre>
-                            </div>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -406,6 +454,106 @@ const SystemLogs: React.FC = () => {
         )}
       </div>
 
+      {/* User Info Modal */}
+      <Modal
+        open={showUserModal}
+        onClose={closeUserModal}
+        title="Thông tin người dùng"
+      >
+        {userLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-blue mx-auto"></div>
+            <p className="text-gray-500 mt-2">Đang tải thông tin...</p>
+          </div>
+        ) : userError ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="mx-auto text-red-500 mb-4" size={48} />
+            <p className="text-red-600">{userError}</p>
+          </div>
+        ) : selectedUserInfo ? (
+          <div className="space-y-4">
+                         <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   ID
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.id}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Tên người dùng
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.name || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Email
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.email || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Số điện thoại
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.phoneNumber || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Vai trò
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.role || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Trạng thái
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                 </p>
+               </div>
+               {selectedUserInfo.address && (
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     Địa chỉ
+                   </label>
+                   <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                     {selectedUserInfo.address}
+                   </p>
+                 </div>
+               )}
+               {selectedUserInfo.gender && (
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     Giới tính
+                   </label>
+                   <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                     {selectedUserInfo.gender}
+                   </p>
+                 </div>
+               )}
+             </div>
+            
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={closeUserModal}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </Modal>
       
     </div>
   );

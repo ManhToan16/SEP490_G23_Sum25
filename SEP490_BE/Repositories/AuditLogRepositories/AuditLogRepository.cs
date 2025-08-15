@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SEP490_BE.DTO.AuthDTO;
 using SEP490_BE.Entities;
 
 namespace SEP490_BE.Repositories.AuditLogRepositories
@@ -29,9 +30,12 @@ namespace SEP490_BE.Repositories.AuditLogRepositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task<(List<AuditLog>, int)> GetLogsAsync(string? userId, string? action, string? tableName, string? recordId, int pageNumber, int pageSize)
+        public async Task<(List<AuditLogDTO>, int)> GetLogsAsync(string? userId, string? action, string? tableName, string? recordId, int pageNumber, int pageSize)
         {
-            var query = _context.AuditLogs.AsQueryable();
+            var query = _context.AuditLogs
+                .Include(x => x.User)
+                .AsQueryable();
+
 
             if (!string.IsNullOrWhiteSpace(userId))
                 query = query.Where(x => x.UserId == userId);
@@ -50,6 +54,18 @@ namespace SEP490_BE.Repositories.AuditLogRepositories
             var logs = await query.OrderByDescending(x => x.ActionTime)
                                   .Skip((pageNumber - 1) * pageSize)
                                   .Take(pageSize)
+                                  .Select(x => new AuditLogDTO
+                                  {
+                                      Id = x.Id,
+                                      UserId = x.UserId,
+                                      UserName = x.User != null ? x.User.Name : null,
+                                      Action = x.Action,
+                                      TableName = x.TableName,
+                                      RecordId = x.RecordId,
+                                      OldData = x.OldData,
+                                      NewData = x.NewData,
+                                      ActionTime = x.ActionTime
+                                  })
                                   .ToListAsync();
 
             return (logs, totalItems);
