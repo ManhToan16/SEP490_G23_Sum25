@@ -126,7 +126,7 @@ namespace Test2.Services.MedicineTest
             };
 
             var result = ValidateModel(dto);
-            Assert.That(result.Any(v => v.ErrorMessage == "Tên thuốc không được vượt quá 200 ký tự."));
+            Assert.That(result.Any(v => v.ErrorMessage == "Tên thuốc không được vượt quá 100 ký tự."));
         }
 
         [Test]
