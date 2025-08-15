@@ -31,6 +31,7 @@ namespace SEP490_BE.Services.TransactionServices
         Task<TransactionResponseDTO> UpdateImportTransactionAsync(string transactionId, ImportMaterialDTO updateDto, string userId);
         Task DeleteImportTransactionAsync(string transactionId, string userId);
         Task<List<TransactionResponseDTO>> GetPendingProvideTransactionsForNurseAsync(string nurseId);
-        Task<List<MaterialUsageHistoryDTO>> GetMaterialUsageHistoryAsync(string roomId, string materialId, DateTime? fromDate, DateTime? toDate);
+        Task<List<MaterialUsageHistoryDTO>> GetMaterialUsageHistoryAsync(string nurseId, DateTime? fromDate, DateTime? toDate);
+        Task<List<ApproveRejectHistoryDTO>> GetApproveRejectHistoryAsync(string userId, DateTime? fromDate, DateTime? toDate);
     }
 }

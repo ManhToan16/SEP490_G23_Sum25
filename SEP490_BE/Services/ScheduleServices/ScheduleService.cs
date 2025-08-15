@@ -707,6 +707,14 @@ namespace SEP490_BE.Services.ScheduleServices
                             throw new Exception($"Không tìm thấy phòng xét nghiệm '{roomName}' tại dòng {row}");
                         roomId = room.Id;
                     }
+                    else if (role == "NURSE")
+                    {
+                        var room = await _context.ExaminationRooms
+                            .FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                        if (room == null)
+                            throw new Exception($"Không tìm thấy phòng khám '{roomName}' tại dòng {row}");
+                        roomId = room.Id;
+                    }
                     else
                     {
                         throw new Exception($"Role của '{doctorName}' không được hỗ trợ tại dòng {row}");
