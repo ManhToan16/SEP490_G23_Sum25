@@ -64,6 +64,7 @@ using System.Text.Json;
 using Microsoft.Extensions.FileProviders;
 using SEP490_BE.Repositories.TransactionDetailRepository;
 using SEP490_BE.Services.StatisticServices;
+using SEP490_BE.Repositories.RoomMaterialStockRepositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -239,6 +240,7 @@ builder.Services.AddScoped<ILaboratoryFileRepository, LaboratoryFileRepository>(
 builder.Services.AddScoped<ILaboratoryResultRepository, LaboratoryResultRepository>();
 builder.Services.AddScoped<IPrescriptionRepository, PrescriptionRepository>();
 builder.Services.AddScoped<ITransactionDetailRepository, TransactionDetailRepository>();
+builder.Services.AddScoped<IRoomMaterialStockRepository, RoomMaterialStockRepository>();
 
 
 
