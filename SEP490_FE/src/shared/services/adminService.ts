@@ -278,16 +278,11 @@ export const adminService = {
       }
 
       const url = `/Schedules/role/${role}?fromDate=${fromDate}&toDate=${toDate}`;
-      console.log('📅 API Call:', url);
-
       const response = await api.get(url);
-      console.log('📅 API Response:', response.data?.length || 0, 'schedules');
 
       return response.data || [];
     } catch (error: any) {
       const message = error?.response?.data?.Message || error?.message || "Không thể tải lịch làm việc";
-      console.error("Error fetching schedules:", message);
-      console.error("Full error:", error);
       throw new Error(message);
     }
   },
@@ -564,8 +559,7 @@ export const adminService = {
   getLaboratoryRooms: async () => {
     try {
       const response = await api.get(`/LaboratoryRooms/active`);
-      console.log(response?.data[0]);
-      return response?.data[0]|| [];
+      return response?.data[0] || [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;
@@ -764,6 +758,20 @@ export const adminService = {
   },
 
   /**
+   * Lấy danh sách tất cả categories (không phân trang)
+   * @returns Danh sách tất cả categories
+   */
+  getCategories: async () => {
+    try {
+      const response = await api.get('/Categories?pageNumber=1&pageSize=10000');
+      return response.data?.[0]?.items || [];
+    } catch (error: any) {
+      console.error("Error fetching categories:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
    * Lấy thông tin chi tiết loại vật tư
    * @param id - ID loại vật tư
    * @returns Thông tin chi tiết loại vật tư
@@ -828,13 +836,160 @@ export const adminService = {
     }
   },
 
-  // Lấy hồ sơ bệnh án theo patientProfileId
-  getByPatientProfileMedicalRecord: async (patientProfileId: string) => {
+  // ===============================================
+  // MATERIAL MANAGEMENT - Quản lý vật tư
+  // ===============================================
+  
+  /**
+   * Lấy danh sách vật tư với phân trang
+   * @param pageNumber - Số trang (mặc định: 1)
+   * @param pageSize - Số item trên mỗi trang (mặc định: 10)
+   * @returns {items, totalItems, pageNumber, pageSize}
+   */
+  getMaterialList: async (pageNumber = 1, pageSize = 10) => {
     try {
-      const response = await api.get(`/MedicalRecord/patient-profile/${patientProfileId}`);
-      return response.data?.data?.[0];
+      const response = await api.get(`/Materials?pageNumber=${pageNumber}&pageSize=${pageSize}`);
+      
+      // Handle the nested array structure from the API
+      const materials = response.data.items;
+      
+      return {
+        items: materials || [],
+        totalItems: materials?.length || 0,
+        pageNumber: pageNumber,
+        pageSize: pageSize,
+      };
     } catch (error: any) {
-      console.error("Error fetching medical record by patient profile:", error?.response?.data?.message || error.message);
+      console.error("Error fetching material list:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy tổng quan vật tư cho phân phối (import summary)
+   * @returns Danh sách vật tư với thông tin quantity và giá
+   */
+  getMaterialImportSummary: async () => {
+    try {
+      const response = await api.get('/Materials/import-summary');
+      
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [[...materials]] }
+      const materials = response.data?.[0] || [];
+      
+      return materials.map((material: any) => ({
+        id: material.materialId,
+        name: material.materialName,
+        unit: material.unit,
+        totalQuantity: material.quantity,
+        availableQuantity: material.availableQuantity,
+        totalPrice: material.totalPrice,
+        // Default values for fields not provided by API
+        description: `${material.materialName} - ${material.unit}`,
+        category: 'Vật tư y tế',
+        minStockAlert: Math.max(1, Math.floor(material.quantity * 0.1)), // 10% of total quantity
+        roomAllocations: {},
+        batches: [],
+        totalValue: material.totalPrice,
+        averagePrice: material.quantity > 0 ? material.totalPrice / material.quantity : 0
+      }));
+    } catch (error: any) {
+      console.error("Error fetching material import summary:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thông tin chi tiết vật tư theo ID
+   * @param id - ID vật tư
+   * @returns Thông tin chi tiết vật tư
+   */
+  getMaterialById: async (id: string) => {
+    try {
+      const response = await api.get(`/Materials/${id}`);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error fetching material by id:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Tạo vật tư mới
+   * @param materialData.name - Tên vật tư
+   * @param materialData.categoryId - ID danh mục
+   * @param materialData.supplierId - ID nhà cung cấp
+   * @param materialData.unit - Đơn vị
+   * @param materialData.quantityInStock - Số lượng trong kho
+   * @param materialData.maxQuantity - Số lượng tối đa
+   * @param materialData.minQuantity - Số lượng tối thiểu
+   * @returns Vật tư đã tạo
+   */
+  createMaterial: async (materialData: {
+    name: string;
+    categoryId: string;
+    supplierId: string | null;
+    unit: string;
+    quantityInStock: number;
+    maxQuantity: number;
+    minQuantity: number;
+  }) => {
+    try {
+      // Kiểm tra token trước khi gửi request
+      const token = localStorage.getItem("clinic_auth_token");
+      if (!token) {
+        throw new Error("Không tìm thấy token xác thực. Vui lòng đăng nhập lại.");
+      }
+
+      const response = await api.post('/Materials', materialData);
+      return response?.data;
+    } catch (error: any) {
+      if (error?.response?.status === 401) {
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+      
+      throw new Error(error?.response?.data?.Message || error?.message || "Có lỗi xảy ra khi tạo vật tư");
+    }
+  },
+
+  /**
+   * Cập nhật thông tin vật tư
+   * @param id - ID vật tư cần cập nhật
+   * @param materialData - Thông tin mới
+   * @returns Vật tư đã cập nhật
+   */
+  updateMaterial: async (id: string, materialData: {
+    name: string;
+    categoryId: string;
+    supplierId: string | null;
+    unit: string;
+    quantityInStock: number;
+    maxQuantity: number;
+    minQuantity: number;
+  }) => {
+    try {
+      const response = await api.put(`/Materials/${id}`, materialData);
+      return response.data?.data;
+    } catch (error: any) {
+      console.error("Error updating material:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa vật tư
+   * @param id - ID vật tư cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteMaterial: async (id: string) => {
+    try {
+      const response = await api.delete(`/Materials/${id}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting material:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
   // ===============================================
   // SUPPLIER MANAGEMENT - Quản lý nhà cung cấp
   // ===============================================
@@ -843,14 +998,23 @@ export const adminService = {
    * Lấy danh sách tất cả nhà cung cấp
    * @returns Danh sách nhà cung cấp
    */
-    }},
-  
   getSupplierList: async () => {
     try {
       const response = await api.get('/Suppliers');
-      return response.data|| [];
+      return response.data || [];
     } catch (error: any) {
       console.error("Error fetching supplier list:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Lấy hồ sơ bệnh án theo patientProfileId
+  getByPatientProfileMedicalRecord: async (patientProfileId: string) => {
+    try {
+      const response = await api.get(`/MedicalRecord/patient-profile/${patientProfileId}`);
+      return response.data?.data?.[0];
+    } catch (error: any) {
+      console.error("Error fetching medical record by patient profile:", error?.response?.data?.message || error.message);
       throw error;
     }
   },
@@ -862,13 +1026,15 @@ export const adminService = {
       return response.data?.data?.[0];
     } catch (error: any) {
       console.error("Error fetching visit by patient profile:", error?.response?.data?.message || error.message);
+      throw error;
+    }
+  },
+
   /**
    * Lấy thông tin chi tiết nhà cung cấp theo ID
    * @param id - ID nhà cung cấp
    * @returns Thông tin chi tiết nhà cung cấp
    */
-    }},
-    
   getSupplierById: async (id: string) => {
     try {
       const response = await api.get(`/Suppliers/${id}`);
@@ -943,6 +1109,59 @@ export const adminService = {
   },
 
   // ===============================================
+  // TRANSACTION MANAGEMENT - Quản lý giao dịch vật tư
+  // ===============================================
+  
+  /**
+   * Lấy lịch sử phân phát vật tư
+   * @param materialName - Tên vật tư để lọc (tùy chọn)
+   * @param roomName - Tên phòng để lọc (tùy chọn)
+   * @returns Danh sách lịch sử phân phát
+   */
+  getProvideHistories: async (materialName?: string, roomName?: string) => {
+    try {
+      let url = '/Transactions/provide-histories';
+      const params = new URLSearchParams();
+      
+      if (materialName) {
+        params.append('materialName', materialName);
+      }
+      
+      if (roomName) {
+        params.append('roomName', roomName);
+      }
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await api.get(url);
+      
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Error fetching provide histories:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách đơn hàng trả lỗi
+   * @returns Danh sách đơn hàng trả lỗi
+   */
+  getDefectiveBatches: async () => {
+    try {
+      const response = await api.get('/Transactions/defective-batches');
+      
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Error fetching defective batches:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // ===============================================
   // MEDICINE MANAGEMENT - Quản lý thuốc
   // ===============================================
   
@@ -955,7 +1174,6 @@ export const adminService = {
   getMedicineList: async (pageNumber = 1, pageSize = 10) => {
     try {
       const response = await api.get(`/Medicines?pageNumber=${pageNumber}&pageSize=${pageSize}`);
-      console.log('Medicine API Response:', response);
       
       // Handle both array and object response formats
       let pageData;
@@ -1054,6 +1272,217 @@ export const adminService = {
       return response.data;
     } catch (error: any) {
       console.error("Error deleting medicine:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // ===============================================
+  // TRANSACTION IMPORT - Nhập lô hàng mới
+  // ===============================================
+  
+  /**
+   * Tạo phiếu nhập vật tư mới
+   * @param importData - Thông tin nhập hàng
+   * @param importData.materialId - ID vật tư
+   * @param importData.price - Giá nhập
+   * @param importData.quantity - Số lượng
+   * @param importData.defectiveQuantity - Số lượng lỗi (tùy chọn)
+   * @param importData.reason - Lý do nhập (tùy chọn)
+   * @param importData.importDate - Ngày nhập hàng
+   * @returns Kết quả tạo phiếu nhập
+   */
+  createImportTransaction: async (importData: {
+    materialId: string;
+    price: number;
+    quantity: number;
+    defectiveQuantity?: number;
+    reason?: string;
+    importDate: string;
+  }) => {
+    try {
+      const response = await api.post('/Transactions/import', importData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error creating import transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách transactions import cho một material
+   * @param materialId - ID của material
+   * @returns Danh sách transactions import
+   */
+  getImportTransactionsForMaterial: async (materialId: string) => {
+    try {
+      const response = await api.get(`/Transactions/import-to-provide/${materialId}`);
+      
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Error fetching import transactions for material:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phòng khám (examination rooms)
+   * @returns Danh sách phòng khám
+   */
+  getExaminationRoomsForDistribution: async () => {
+    try {
+      const response = await api.get('/ExaminationRooms/active');
+      return response.data[0] || [];
+    } catch (error: any) {
+      console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phòng xét nghiệm (laboratory rooms)
+   * @returns Danh sách phòng xét nghiệm
+   */
+  getLaboratoryRoomsForDistribution: async () => {
+    try {
+      const response = await api.get('/LaboratoryRooms/active');
+      return response.data[0] || [];
+    } catch (error: any) {
+      console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Phân phát vật tư cho các phòng
+   * @param provideData - Thông tin phân phát
+   * @param provideData.transactions - Danh sách transactions và phòng phân phát
+   * @param provideData.transactions[].transactionId - ID của transaction
+   * @param provideData.transactions[].rooms - Danh sách phòng và số lượng phân phát
+   * @param provideData.transactions[].rooms[].roomId - ID của phòng
+   * @param provideData.transactions[].rooms[].quantity - Số lượng phân phát cho phòng
+   * @returns Kết quả phân phát
+   */
+  createProvideTransaction: async (provideData: {
+    transactions: {
+      transactionId: string;
+      rooms: {
+        roomId: string;
+        quantity: number;
+      }[];
+    }[];
+  }) => {
+    try {
+      const response = await api.post('/Transactions/provide', provideData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error creating provide transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy lịch sử nhập hàng của một material
+   * @param materialId - ID của material
+   * @returns Danh sách lịch sử nhập hàng
+   */
+  getImportHistory: async (materialId: string) => {
+    try {
+      const response = await api.get(`/Transactions/import-history/${materialId}`);
+      
+      return response.data || [];
+    } catch (error: any) {
+      console.error("Error fetching import history:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật thông tin import transaction
+   * @param transactionId - ID của transaction
+   * @param updateData - Dữ liệu cập nhật
+   * @returns Kết quả cập nhật
+   */
+  updateImportTransaction: async (transactionId: string, updateData: {
+    materialId: string;
+    price: number;
+    quantity: number;
+    defectiveQuantity: number;
+    reason: string;
+    importDate: string;
+  }) => {
+    try {
+      const response = await api.put(`/Transactions/update-import/${transactionId}`, updateData);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error updating import transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Xóa import transaction
+   * @param transactionId - ID của transaction
+   * @returns Kết quả xóa
+   */
+    /**
+   * Xóa import transaction
+   * @param transactionId - ID của transaction cần xóa
+   * @returns Kết quả xóa
+   */
+  deleteImportTransaction: async (transactionId: string) => {
+    try {
+      const response = await api.delete(`/Transactions/delete-import/${transactionId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error deleting import transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Cập nhật số lượng lỗi của transaction
+   * @param transactionId - ID của transaction cần cập nhật
+   * @param newDefectiveQuantity - Số lượng lỗi mới
+   * @returns Kết quả cập nhật
+   */
+  updateDefectiveTransaction: async (transactionId: string, newDefectiveQuantity: number) => {
+    try {
+      const response = await api.put(`/Transactions/update-defective/${transactionId}`, {
+        newDefectiveQuantity
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error("Error updating defective transaction:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Duyệt đơn đổi trả hàng lỗi từ nhà cung cấp
+   * @param transactionId - ID của transaction cần duyệt
+   * @returns Kết quả duyệt
+   */
+  approveSupplierReturn: async (transactionId: string) => {
+    try {
+      const response = await api.put(`/Transactions/return/approve-supplier-return/${transactionId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error approving supplier return:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Từ chối đơn đổi trả hàng lỗi từ nhà cung cấp
+   * @param transactionId - ID của transaction cần từ chối
+   * @returns Kết quả từ chối
+   */
+  rejectSupplierReturn: async (transactionId: string) => {
+    try {
+      const response = await api.put(`/Transactions/return/reject-supplier-return/${transactionId}`);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error rejecting supplier return:", error?.response?.data?.Message || error.message);
       throw error;
     }
   },
