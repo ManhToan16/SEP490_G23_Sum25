@@ -1022,7 +1022,7 @@ namespace SEP490_BE.Services.TransactionServices
             {
                 throw new ResourceNotFoundException("Không tìm thấy giao dịch nhập hàng liên quan.");
             }
-            importTransaction.Quantity += transaction.Quantity;
+            //importTransaction.Quantity += transaction.Quantity;
             importTransaction.DefectiveQuantity -= transaction.Quantity;
             transaction.Status = "APPROVED";
             transaction.UpdatedAt = DateTime.UtcNow;
@@ -1316,7 +1316,7 @@ namespace SEP490_BE.Services.TransactionServices
                 var history = importHistories.FirstOrDefault(h => h.TransactionId == t.Id);
                 if (history != null)
                 {
-                    dto.Quantity = history.NewQuantity; // nếu NewQuantity nullable
+                    dto.Quantity = history.NewQuantity;
                 }
                 return dto;
             }).ToList();
