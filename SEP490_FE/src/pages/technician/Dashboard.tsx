@@ -62,7 +62,6 @@ const TechnicianDashboard: React.FC = () => {
   };
 
   return (
-    <TechnicianLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Bảng điều khiển Kỹ thuật viên</h1>
@@ -202,7 +201,6 @@ const TechnicianDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </TechnicianLayout>
   );
 };
 

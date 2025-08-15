@@ -5,7 +5,6 @@ import NurseLayout from '@/shared/components/layouts/NurseLayout';
 
 const NurseDashboard: React.FC = () => {
   return (
-    <NurseLayout>
       <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Bảng điều khiển Y tá</h1>
@@ -99,7 +98,6 @@ const NurseDashboard: React.FC = () => {
         </Card>
       </div>
       </div>
-    </NurseLayout>
   );
 };
 

@@ -302,7 +302,6 @@ const TestSchedule: React.FC = () => {
 
 
   return (
-    <TechnicianLayout>
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex items-center justify-between">
@@ -541,7 +540,6 @@ const TestSchedule: React.FC = () => {
           )}
         </div>
       </div>
-    </TechnicianLayout>
   );
 };
 

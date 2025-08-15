@@ -323,7 +323,6 @@ const LabPatientQueue: React.FC = () => {
 
 
   return (
-    <NurseLayout>
       <div className="space-y-6">
         {/* Header Section */}
         <div className="flex items-center justify-between">
@@ -605,7 +604,6 @@ const LabPatientQueue: React.FC = () => {
           )}
         </div>
       </div>
-    </NurseLayout>
   );
 };
 

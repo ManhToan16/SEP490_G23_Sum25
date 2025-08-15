@@ -111,7 +111,6 @@ const SupplyManagement: React.FC = () => {
   const outSupplies = supplies.filter(s => s.status === 'out');
 
   return (
-    <NurseLayout>
       <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Quản lý vật tư trong phòng</h1>
@@ -314,7 +313,6 @@ const SupplyManagement: React.FC = () => {
         </Card>
       )}
       </div>
-    </NurseLayout>
   );
 };
 
