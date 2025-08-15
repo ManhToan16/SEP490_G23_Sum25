@@ -286,6 +286,28 @@ namespace SEP490_BE.Controllers
                 });
            
         }
+        [HttpGet("historyProvideByRoomId")]
+        [SwaggerOperation(
+   Summary = "Lịch sử cấp phát theo mã phòng",
+   Description = "Thống kê lịch sử số vật tư đã cấp phát theo một phòng cụ thể"
+)]
+        public async Task<IActionResult> GetHistoryProvidedByRoomId([FromQuery] string roomId)
+        {
+
+            var summary = await _transactionService.GetHistoryProvidedByRoomId(roomId);
+            foreach (var item in summary.Where(s => s.IsLowStock == true))
+            {
+                await _notificationHubService.SendLowStockAlert(item);
+            }
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = summary
+            });
+
+        }
         [HttpGet("totalAllRooms")]
         [SwaggerOperation(
     Summary = "Tổng cấp phát tất cả các phòng",
@@ -330,15 +352,38 @@ namespace SEP490_BE.Controllers
                 });
             }
 
-            var transaction = await _transactionService.UseMaterial(useDto, userId);
-            await _notificationHubService.SendTransactionUpdate(transaction);
+            await _transactionService.UseMaterialAsync(useDto, userId);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.POST_SUCCESS,
-                Data = new[] { transaction }
+                Data = null
             });
+        }
+        [HttpGet("usage-history")]
+        [SwaggerOperation(
+        Summary = "Lấy lịch sử sử dụng vật tư",
+        Description = "Trả về danh sách lịch sử sử dụng vật tư trong phòng theo khoảng thời gian (nếu có). Lọc theo lý do 'Y tá sử dụng'."
+    )]
+        [ProducesResponseType(typeof(List<MaterialUsageHistoryDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMaterialUsageHistory(
+        [FromQuery] string roomId,
+        [FromQuery] string materialId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate)
+        {
+
+            var summary = await _transactionService.GetMaterialUsageHistoryAsync(roomId,materialId,fromDate,toDate);
+           
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = summary
+            });
+
         }
         [HttpPut("provide/approve/{transactionId}")]
         [Authorize(Roles =RoleConstants.Admin + "," + RoleConstants.Nurse)]
