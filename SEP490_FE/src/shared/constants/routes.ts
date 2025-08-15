@@ -140,11 +140,13 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.NURSE.PATIENT_QUEUE, label: 'Bệnh nhân tổng quát', icon: 'Users' },
     { path: ROUTES.NURSE.LAB_PATIENT_QUEUE, label: 'Bệnh nhân xét nghiệm', icon: 'TestTube' },
     { path: ROUTES.NURSE.SUPPLY_MANAGEMENT, label: 'Quản lý vật tư trong phòng', icon: 'Package' },
+    { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
   ],
 
   TECHNICIAN: [
     { path: ROUTES.TECHNICIAN.DASHBOARD, label: 'Thông tin của tôi', icon: 'User' },
     { path: ROUTES.TECHNICIAN.TEST_SCHEDULE, label: 'Lịch xét nghiệm', icon: 'Calendar' },
+    { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
   ],
 } as const;
 
