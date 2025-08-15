@@ -117,6 +117,7 @@ namespace SEP490_BE.Services.TransactionServices
             try
             {
                 await _transactionRepository.AddAsync(transaction);
+                await _transactionRepository.AddTransactionHistoryAsync(importHistory);
                 if (supplierReturnTransaction != null)
                 {
                     await _transactionRepository.AddAsync(supplierReturnTransaction);
