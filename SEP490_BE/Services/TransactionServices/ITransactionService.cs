@@ -17,7 +17,8 @@ namespace SEP490_BE.Services.TransactionServices
         Task<List<TransactionResponseDTO>> GetAllTransactions(string? materialId, string? transactionType, string? status);
         Task<List<ProvidedSummaryDTO>> GetTotalProvidedByRoomType(string roomType);
         Task<List<ProvidedSummaryDTO>> GetTotalProvidedByRoomId(string roomId);
-        Task<TransactionResponseDTO> UseMaterial(UseMaterialDTO useDto, string userId);
+        Task<List<ProvidedSummaryDTO>> GetHistoryProvidedByRoomId(string roomId);
+        Task UseMaterialAsync(UseMaterialDTO useDto, string userId);
         Task<TransactionResponseDTO> ApproveProvideTransaction(string transactionId, string adminId);
         Task<TransactionResponseDTO> RejectProvideTransaction(string transactionId, string adminId);
         Task<List<TransactionResponseDTO>> GetDefectiveBatches();
