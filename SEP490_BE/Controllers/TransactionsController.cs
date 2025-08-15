@@ -269,10 +269,10 @@ namespace SEP490_BE.Controllers
     Summary = "Tổng cấp phát theo mã phòng",
     Description = "Thống kê tổng số vật tư đã cấp phát theo một phòng cụ thể"
 )]
-        public async Task<IActionResult> GetTotalProvidedByRoomId([FromQuery] string roomId)
+        public async Task<IActionResult> GetTotalProvidedByRoomId([FromQuery] string userId)
         {
            
-                var summary = await _transactionService.GetTotalProvidedByRoomId(roomId);
+                var summary = await _transactionService.GetTotalProvidedByRoomId(userId);
                 foreach (var item in summary.Where(s => s.IsLowStock==true))
                 {
                     await _notificationHubService.SendLowStockAlert(item);
@@ -291,10 +291,10 @@ namespace SEP490_BE.Controllers
    Summary = "Lịch sử cấp phát theo mã phòng",
    Description = "Thống kê lịch sử số vật tư đã cấp phát theo một phòng cụ thể"
 )]
-        public async Task<IActionResult> GetHistoryProvidedByRoomId([FromQuery] string roomId)
+        public async Task<IActionResult> GetHistoryProvidedByRoomId([FromQuery] string userId)
         {
 
-            var summary = await _transactionService.GetHistoryProvidedByRoomId(roomId);
+            var summary = await _transactionService.GetHistoryProvidedByRoomId(userId);
             foreach (var item in summary.Where(s => s.IsLowStock == true))
             {
                 await _notificationHubService.SendLowStockAlert(item);

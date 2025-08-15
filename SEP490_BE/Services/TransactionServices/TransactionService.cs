@@ -545,110 +545,145 @@ namespace SEP490_BE.Services.TransactionServices
         }
 
 
-        public async Task<List<ProvidedSummaryDTO>> GetHistoryProvidedByRoomId(string roomId)
+        public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedByRoomId(string userId)
         {
-            if (string.IsNullOrEmpty(roomId))
-            {
-                throw new Exceptions.ArgumentException("RoomId là bắt buộc.");
-            }
+            if (string.IsNullOrEmpty(userId))
+                throw new Exceptions.ArgumentException("UserId là bắt buộc.");
 
-            var roomType = await DetectRoomTypeAsync(roomId);
+            var today = DateTime.UtcNow.Date;
+            var schedules = await _scheduleRepository.GetSchedulesByUserAndDateRangeAsync(
+                userId,
+                today,
+                today
+            );
 
-            var data = await _context.Transactions
-                .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomId == roomId)
-                .Join(_context.TransactionDetails,
-                    provide => provide.Id,
-                    detail => detail.TransactionId,
-                    (provide, detail) => new { provide, detail })
-                .Join(_context.Transactions,
-                    pd => pd.detail.ParentTransactionId,
-                    import => import.Id,
-                    (pd, import) => new
-                    {
-                        MaterialName = import.Material.Name,
-                        pd.provide.RoomId,
-                        ProvideTransactionId = pd.provide.Id,
-                        pd.provide.RoomType,
-                        BatchId = import.Id,
-                        Quantity = pd.provide.Quantity
-                    })
-                .ToListAsync();
-
-            if (!data.Any())
-            {
-                throw new ResourceNotFoundException("Không có giao dịch được phê duyệt cho phòng này.");
-            }
-
-            var summaries = data
-      .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
-      .Select(g => new ProvidedSummaryDTO
-      {
-          MaterialName = g.Key.MaterialName,
-          RoomId = g.Key.RoomId,
-          RoomType = g.Key.RoomType,
-          BatchInfo = g.Select(x => new BatchInfoDTO
-          {
-              TransactionId = x.ProvideTransactionId, 
-              Quantity = x.Quantity
-          }).ToList()
-      })
-      .ToList();
-
-
-            foreach (var s in summaries)
-            {
-                s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
-                s.IsLowStock = s.TotalQuantity < 10;
-            }
-
-            return summaries;
-        }
-        public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedByRoomId(string roomId)
-        {
-            if (string.IsNullOrEmpty(roomId))
-            {
-                throw new Exceptions.ArgumentException("RoomId là bắt buộc.");
-            }
-
-            // Lấy RoomType từ RoomId
-            var roomType = await DetectRoomTypeAsync(roomId);
-
-            // Lấy dữ liệu tồn kho vật tư của phòng
-            var stockList = await _context.RoomMaterialStocks
-                .Include(rms => rms.Material) // để lấy tên vật tư
-                .Where(rms => rms.RoomId == roomId)
-                .ToListAsync();
-
-            if (!stockList.Any())
-            {
-                throw new ResourceNotFoundException("Không có tồn kho cho phòng này.");
-            }
-
-            // Gom nhóm theo vật tư
-            var summaries = stockList
-                .GroupBy(s => new { s.Material.Name, s.RoomId, s.RoomType })
-                .Select(g => new ProvidedSummaryDTO
-                {
-                    MaterialName = g.Key.Name,
-                    RoomId = g.Key.RoomId,
-                    RoomType = g.Key.RoomType,
-                    BatchInfo = g.Select(x => new BatchInfoDTO
-                    {
-                        TransactionId = null, // Lấy từ RoomMaterialStock nên không có TransactionId
-                        Quantity = x.Quantity
-                    }).ToList()
-                })
+            var roomIds = schedules
+                .Where(s => s.Role != null && s.Role.Equals("NURSE", StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.RoomId)
+                .Distinct()
                 .ToList();
 
-            // Bổ sung thông tin tên phòng và check cảnh báo tồn kho
-            foreach (var s in summaries)
+            if (!roomIds.Any())
+                throw new ResourceNotFoundException("Người dùng không có lịch làm việc tại phòng nào hôm nay.");
+
+            var summaries = new List<ProvidedSummaryDTO>();
+
+            foreach (var roomId in roomIds)
             {
-                s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
-                s.IsLowStock = s.TotalQuantity < 10;
+                var roomType = await DetectRoomTypeAsync(roomId);
+
+                var stockList = await _context.RoomMaterialStocks
+                    .Include(rms => rms.Material)
+                    .Where(rms => rms.RoomId == roomId)
+                    .ToListAsync();
+
+                if (!stockList.Any())
+                    continue;
+
+                var roomSummaries = stockList
+                    .GroupBy(s => new { s.Material.Name, s.RoomId, s.RoomType })
+                    .Select(g => new ProvidedSummaryDTO
+                    {
+                        MaterialName = g.Key.Name,
+                        RoomId = g.Key.RoomId,
+                        RoomType = g.Key.RoomType,
+                        BatchInfo = g.Select(x => new BatchInfoDTO
+                        {
+                            TransactionId = null,
+                            Quantity = x.Quantity
+                        }).ToList()
+                    })
+                    .ToList();
+
+                foreach (var s in roomSummaries)
+                {
+                    s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                    s.IsLowStock = s.TotalQuantity < 10;
+                }
+
+                summaries.AddRange(roomSummaries);
             }
 
             return summaries;
         }
+
+        public async Task<List<ProvidedSummaryDTO>> GetHistoryProvidedByRoomId(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                throw new Exceptions.ArgumentException("UserId là bắt buộc.");
+
+            var today = DateTime.UtcNow.Date;
+            var schedules = await _scheduleRepository.GetSchedulesByUserAndDateRangeAsync(
+                userId,
+                today,
+                today
+            );
+
+            var roomIds = schedules
+                .Where(s => s.Role != null && s.Role.Equals("NURSE", StringComparison.OrdinalIgnoreCase))
+                .Select(s => s.RoomId)
+                .Distinct()
+                .ToList();
+
+            if (!roomIds.Any())
+                throw new ResourceNotFoundException("Người dùng không có lịch làm việc tại phòng nào hôm nay.");
+
+            var summaries = new List<ProvidedSummaryDTO>();
+
+            foreach (var roomId in roomIds)
+            {
+                var roomType = await DetectRoomTypeAsync(roomId);
+
+                var data = await _context.Transactions
+                    .Where(t => t.TransactionType == "PROVIDE" && t.Status == "APPROVED" && t.RoomId == roomId)
+                    .Join(_context.TransactionDetails,
+                        provide => provide.Id,
+                        detail => detail.TransactionId,
+                        (provide, detail) => new { provide, detail })
+                    .Join(_context.Transactions,
+                        pd => pd.detail.ParentTransactionId,
+                        import => import.Id,
+                        (pd, import) => new
+                        {
+                            MaterialName = import.Material.Name,
+                            pd.provide.RoomId,
+                            ProvideTransactionId = pd.provide.Id,
+                            pd.provide.RoomType,
+                            BatchId = import.Id,
+                            Quantity = pd.provide.Quantity
+                        })
+                    .ToListAsync();
+
+                if (!data.Any())
+                    continue;
+
+                var roomSummaries = data
+                    .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
+                    .Select(g => new ProvidedSummaryDTO
+                    {
+                        MaterialName = g.Key.MaterialName,
+                        RoomId = g.Key.RoomId,
+                        RoomType = g.Key.RoomType,
+                        BatchInfo = g.Select(x => new BatchInfoDTO
+                        {
+                            TransactionId = x.ProvideTransactionId,
+                            Quantity = x.Quantity
+                        }).ToList()
+                    })
+                    .ToList();
+
+                foreach (var s in roomSummaries)
+                {
+                    s.RoomName = await GetRoomNameAsync(s.RoomId!, s.RoomType!);
+                    s.IsLowStock = s.TotalQuantity < 10;
+                }
+
+                summaries.AddRange(roomSummaries);
+            }
+
+            return summaries;
+        }
+
 
         public async Task<List<ProvidedSummaryDTO>> GetTotalProvidedForAllRooms(string? materialName = null)
         {
