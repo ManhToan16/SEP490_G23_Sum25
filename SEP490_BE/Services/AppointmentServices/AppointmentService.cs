@@ -409,6 +409,11 @@ namespace SEP490_BE.Services.AppointmentServices
                     throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
                 }
 
+            if (appointment.Date.Date != DateTime.Today)
+            {
+                throw new Exceptions.ArgumentException("Chỉ có thể check-in cho các lịch hẹn trong ngày hôm nay.");
+            }
+
             appointment.Status = AppointmentStatus.CHECKED_IN;
             using var transaction = await _context.Database.BeginTransactionAsync();
             try

@@ -108,6 +108,7 @@ namespace SEP490_BE.Services.VisitServices
                 Status = VisitStatus.WAITING,
                 CreateAt = DateTime.UtcNow
             };
+            appointment.TotalPrice = visit.TotalPrice;
             appointment.Status = AppointmentStatus.IN_EXAMINATION_PROGRESS;
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -205,11 +206,14 @@ namespace SEP490_BE.Services.VisitServices
             if (visit.Status != VisitStatus.RETURNING)
                 throw new ArgumentException(MessageConstants.VISIT_INVALID_COMPLETED);
 
-            var incompleteAssignments = await _context.Assignments
-                .Where(a => a.VisitId == visit.Id && a.Status != AssignmentStatus.COMPLETED)
+            var assignments = await _context.Assignments
+                .Where(a => a.VisitId == visit.Id)
                 .ToListAsync();
-            if (incompleteAssignments.Any())
+
+            if (assignments.Any() && assignments.Any(a => a.Status != AssignmentStatus.COMPLETED))
+            {
                 throw new ArgumentException(MessageConstants.VISIT_INVALID_COMPLETED);
+            }
 
             visit.Status = VisitStatus.COMPLETED;
             visit.Appointment.Status = AppointmentStatus.COMPLETED;
