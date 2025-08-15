@@ -1504,6 +1504,43 @@ namespace SEP490_BE.Services.TransactionServices
             // 3. Map sang DTO
             return transactions.Select(MapToResponseDTO).ToList();
         }
+        public async Task<List<MaterialUsageHistoryDTO>> GetMaterialUsageHistoryAsync(
+      string roomId, string materialId, DateTime? fromDate, DateTime? toDate)
+        {
+            var query = _context.TransactionHistories
+                .Include(th => th.Transaction)
+                    .ThenInclude(t => t.Material)
+                        .ThenInclude(m => m.RoomMaterialStocks)
+                .Where(th =>
+                    th.Transaction.MaterialId == materialId &&
+                    th.Transaction.Material.RoomMaterialStocks.Any(rms => rms.RoomId == roomId) &&
+                    (th.NewReason == "Y tá sử dụng" || th.OldReason == "Y tá sử dụng"));
+
+            if (fromDate.HasValue)
+                query = query.Where(th => th.ChangedAt >= fromDate.Value);
+            if (toDate.HasValue)
+                query = query.Where(th => th.ChangedAt <= toDate.Value);
+
+            var histories = await query
+                .OrderByDescending(h => h.ChangedAt)
+                .Select(h => new MaterialUsageHistoryDTO
+                {
+                    HistoryId = h.Id,
+                    RoomId = roomId,
+                    MaterialId = materialId,
+                    MaterialName = h.Transaction.Material.Name,
+                    OldQuantity = h.OldQuantity,
+                    NewQuantity = h.NewQuantity,
+                    QuantityUsed = h.OldQuantity - h.NewQuantity,
+                    ChangedBy = h.ChangedBy,
+                   
+                })
+                .ToListAsync();
+
+            return histories;
+        }
+
+
 
     }
 }

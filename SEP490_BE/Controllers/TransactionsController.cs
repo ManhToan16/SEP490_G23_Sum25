@@ -361,6 +361,30 @@ namespace SEP490_BE.Controllers
                 Data = null
             });
         }
+        [HttpGet("usage-history")]
+        [SwaggerOperation(
+        Summary = "Lấy lịch sử sử dụng vật tư",
+        Description = "Trả về danh sách lịch sử sử dụng vật tư trong phòng theo khoảng thời gian (nếu có). Lọc theo lý do 'Y tá sử dụng'."
+    )]
+        [ProducesResponseType(typeof(List<MaterialUsageHistoryDTO>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetMaterialUsageHistory(
+        [FromQuery] string roomId,
+        [FromQuery] string materialId,
+        [FromQuery] DateTime? fromDate,
+        [FromQuery] DateTime? toDate)
+        {
+
+            var summary = await _transactionService.GetMaterialUsageHistoryAsync(roomId,materialId,fromDate,toDate);
+           
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = summary
+            });
+
+        }
         [HttpPut("provide/approve/{transactionId}")]
         [Authorize(Roles =RoleConstants.Admin + "," + RoleConstants.Nurse)]
         public async Task<IActionResult> ApproveProvideTransaction(string transactionId)
