@@ -191,11 +191,19 @@ const ImportHistoryModal: React.FC<ImportHistoryModalProps> = ({
 
             setLoading(true);
 
+            // Find the current transaction to get the import date
+            const currentTransaction = importHistory.find(t => t.id === transactionId);
+            if (!currentTransaction) {
+                throw new Error("Không tìm thấy thông tin giao dịch");
+            }
+
             const updateData = {
+                materialId: material?.id.toString() || '',
                 quantity,
                 defectiveQuantity,
                 price,
-                reason: editFormData.reason
+                reason: editFormData.reason,
+                importDate: currentTransaction.createdAt
             };
 
             await adminService.updateImportTransaction(transactionId, updateData);
