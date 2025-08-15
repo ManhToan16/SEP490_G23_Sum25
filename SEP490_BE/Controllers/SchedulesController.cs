@@ -233,8 +233,7 @@ namespace SEP490_BE.Controllers
             if (file == null || file.Length == 0)
                 return BadRequest("File Excel không hợp lệ.");
 
-            try
-            {
+         
                 // Đọc file, bên trong ReadScheduleExcelAsync đã tự tìm UserId + Role theo DoctorName
                 var assignments = await _scheduleService.ReadScheduleExcelAsync(file);
 
@@ -253,11 +252,7 @@ namespace SEP490_BE.Controllers
                     Message = MessageConstants.GET_SUCCESS,
                     Data = response
                 });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Lỗi khi tạo lịch từ Excel: {ex.Message}");
-            }
+           
         }
 
         [HttpGet("download-template")]
