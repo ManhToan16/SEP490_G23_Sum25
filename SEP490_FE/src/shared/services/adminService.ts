@@ -475,7 +475,7 @@ export const adminService = {
       
       return response.data;
     } catch (error: any) {
-      console.error("Error importing schedule from Excel:", error?.response?.data?.Message || error.message);
+      console.error("Error importing schedule from Excel:", error?.response?.data || error.message);
       throw error;
     }
   },
@@ -1233,7 +1233,7 @@ export const adminService = {
       const response = await api.post('/Medicines', medicineData);
       return response.data?.data;
     } catch (error: any) {
-      console.error("Error creating medicine:", error?.response?.data?.Message || error.message);
+      console.error("Error creating medicine:", error?.response?.data || error.message);
       throw error;
     }
   },
@@ -1256,7 +1256,7 @@ export const adminService = {
       const response = await api.put(`/Medicines/${id}`, medicineData);
       return response.data?.data;
     } catch (error: any) {
-      console.error("Error updating medicine:", error?.response?.data?.Message || error.message);
+      console.error("Error updating medicine:", error?.response?.data || error.message);
       throw error;
     }
   },
@@ -1271,7 +1271,7 @@ export const adminService = {
       const response = await api.delete(`/Medicines/${id}`);
       return response.data;
     } catch (error: any) {
-      console.error("Error deleting medicine:", error?.response?.data?.Message || error.message);
+      console.error("Error deleting medicine:", error?.response?.data || error.message);
       throw error;
     }
   },
