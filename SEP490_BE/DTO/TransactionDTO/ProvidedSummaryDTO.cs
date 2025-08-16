@@ -4,6 +4,7 @@ namespace SEP490_BE.DTO.TransactionDTO
 {
     public class ProvidedSummaryDTO
     {
+        public string MaterialId { get; set; } = null!;
         public string MaterialName { get; set; } = null!;
         public int TotalQuantity => BatchInfo.Sum(b => b.Quantity);
         public string? RoomId { get; set; }

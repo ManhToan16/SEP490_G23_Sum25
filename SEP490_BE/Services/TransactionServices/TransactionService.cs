@@ -517,6 +517,7 @@ namespace SEP490_BE.Services.TransactionServices
                     import => import.Id,
                     (pd, import) => new
                     {
+                        MaterialId=import.MaterialId,
                         MaterialName = import.Material.Name,
                         pd.provide.RoomId,
                         pd.provide.RoomType,
@@ -531,9 +532,10 @@ namespace SEP490_BE.Services.TransactionServices
             }
 
             var summaries = data
-                .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
+                .GroupBy(x => new {x.MaterialId, x.MaterialName, x.RoomId, x.RoomType })
                 .Select(g => new ProvidedSummaryDTO
                 {
+                    MaterialId=g.Key.MaterialId,
                     MaterialName = g.Key.MaterialName,
                     RoomId = g.Key.RoomId,
                     RoomType = g.Key.RoomType,
@@ -592,9 +594,10 @@ namespace SEP490_BE.Services.TransactionServices
                     continue;
 
                 var roomSummaries = stockList
-                    .GroupBy(s => new { s.Material.Name, s.RoomId, s.RoomType })
+                    .GroupBy(s => new { s.MaterialId,s.Material.Name, s.RoomId, s.RoomType })
                     .Select(g => new ProvidedSummaryDTO
                     {
+                        MaterialId=g.Key.MaterialId,
                         MaterialName = g.Key.Name,
                         RoomId = g.Key.RoomId,
                         RoomType = g.Key.RoomType,
@@ -656,6 +659,7 @@ namespace SEP490_BE.Services.TransactionServices
                         import => import.Id,
                         (pd, import) => new
                         {
+                              MaterialId=import.MaterialId,
                             MaterialName = import.Material.Name,
                             pd.provide.RoomId,
                             ProvideTransactionId = pd.provide.Id,
@@ -669,9 +673,10 @@ namespace SEP490_BE.Services.TransactionServices
                     continue;
 
                 var roomSummaries = data
-                    .GroupBy(x => new { x.MaterialName, x.RoomId, x.RoomType })
+                    .GroupBy(x => new { x.MaterialId,x.MaterialName, x.RoomId, x.RoomType })
                     .Select(g => new ProvidedSummaryDTO
                     {
+                        MaterialId = g.Key.MaterialId,
                         MaterialName = g.Key.MaterialName,
                         RoomId = g.Key.RoomId,
                         RoomType = g.Key.RoomType,
