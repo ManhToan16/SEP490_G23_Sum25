@@ -111,6 +111,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 Date = appointment.Date,
                 TimeSlotId = appointment.TimeSlotId,
                 Status = appointment.Status,
+                CancelReason = appointment.CancelReason,
                 TotalPrice = appointment.TotalPrice,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
@@ -211,6 +212,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotStartTime = appointment.TimeSlot.StartTime,
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
+                CancelReason = appointment.CancelReason,
                 TotalPrice = appointment.TotalPrice,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
@@ -308,6 +310,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -391,6 +394,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -408,6 +412,11 @@ namespace SEP490_BE.Services.AppointmentServices
                 {
                     throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
                 }
+
+            if (appointment.Date.Date != DateTime.Today)
+            {
+                throw new Exceptions.ArgumentException("Chỉ có thể check-in cho các lịch hẹn trong ngày hôm nay.");
+            }
 
             appointment.Status = AppointmentStatus.CHECKED_IN;
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -452,6 +461,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -525,12 +535,13 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
         }
 
-        public async Task<AppointmentResponseDTO> Cancel(string id)
+        public async Task<AppointmentResponseDTO> Cancel(string id, CancelAppointmentDTO request)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
@@ -542,6 +553,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
             appointment.Status = AppointmentStatus.CANCELLED;
+            appointment.CancelReason = request.CancelReason;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -608,8 +620,6 @@ namespace SEP490_BE.Services.AppointmentServices
                         }
                     }
                 }
-
-                
             }
             catch
             {
@@ -626,6 +636,7 @@ namespace SEP490_BE.Services.AppointmentServices
                     <p><strong>Bác sĩ mong muốn:</strong> {appointment.RequiredDoctor?.Name ?? "Không"}</p>
                     <br/>
                     <p>Lịch hẹn khám của bạn đã bị huỷ.</p>
+                    <p><strong>Lý do huỷ:</strong> {appointment.CancelReason}</p>
                     <p>Trân trọng,<br/>Khanh An Neurology Clinic</p>";
             await _emailService.SendAsync(
                 appointment.Email,
@@ -649,6 +660,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -711,6 +723,33 @@ namespace SEP490_BE.Services.AppointmentServices
                     Date = appointment.Date,
                     Status = appointment.Status,
                 });
+                if (visit != null)
+                {
+                    await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                    {
+                        Action = "UPDATE",
+                        VisitId = visit.Id,
+                        PatientName = visit.PatientName,
+                        ExaminationRoomId = visit.ExaminationRoomId,
+                        QueueNumber = visit.QueueNumber,
+                        Status = visit.Status,
+                        IsPrioritized = visit.IsPrioritized,
+                    });
+                    if (assignments != null)
+                    {
+                        foreach (var asm in assignments)
+                        {
+                            await _hubContext.Clients.All.SendAsync("AssignmentChanged", new
+                            {
+                                Action = "UPDATE",
+                                AssignmentId = asm.Id,
+                                PatientName = visit.PatientName,
+                                LaboratoryRoomId = asm.LaboratoryRoomId,
+                                Status = asm.Status
+                            });
+                        }
+                    }
+                }
             }
             catch
             {
@@ -735,6 +774,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -753,6 +793,7 @@ namespace SEP490_BE.Services.AppointmentServices
 
             foreach (var appointment in appointments)
             {
+                appointment.CancelReason = "Lịch hẹn hết hạn.";
                 appointment.Status = AppointmentStatus.CANCELLED;
                 await _appointmentRepository.Update(appointment);
             }

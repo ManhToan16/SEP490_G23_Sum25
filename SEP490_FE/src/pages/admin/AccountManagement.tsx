@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Users, Plus, Edit, Trash2, Search, Trash, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Users, Plus, Edit, Search, Loader2, RefreshCw, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -223,28 +223,7 @@ const AccountManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
-      return;
-    }
 
-    try {
-      await adminService.deleteUser(userId);
-      toast({
-        title: "Thành công",
-        description: "Xóa người dùng thành công",
-        variant: 'success',
-      });
-      loadUsers();
-    } catch (error) {
-      console.log("ERROR RESPONSE:", error);
-      toast({
-        title: "Lỗi",
-        description: error?.response?.data?.message || "Không thể xóa người dùng",
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleActivateUser = async (userId) => {
     if (!confirm('Bạn có chắc chắn muốn kích hoạt người dùng này?')) {
@@ -443,14 +422,7 @@ const AccountManagement: React.FC = () => {
                           Kích hoạt
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="p-1 text-red-600"
-                        onClick={() => handleDeleteUser(doctor.id)}
-                      >
-                        <Trash className="w-3 h-3" />
-                      </Button>
+
                     </div>
                   </div>
                 ))
@@ -534,14 +506,7 @@ const AccountManagement: React.FC = () => {
                           Kích hoạt
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="p-1 text-red-600"
-                        onClick={() => handleDeleteUser(receptionist.id)}
-                      >
-                        <Trash className="w-3 h-3" />
-                      </Button>
+
                     </div>
                   </div>
                 ))
@@ -625,14 +590,7 @@ const AccountManagement: React.FC = () => {
                           Kích hoạt
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="p-1 text-red-600"
-                        onClick={() => handleDeleteUser(technician.id)}
-                      >
-                        <Trash className="w-3 h-3" />
-                      </Button>
+
                     </div>
                   </div>
                 ))
@@ -716,14 +674,7 @@ const AccountManagement: React.FC = () => {
                           Kích hoạt
                         </Button>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="p-1 text-red-600"
-                        onClick={() => handleDeleteUser(nurse.id)}
-                      >
-                        <Trash className="w-3 h-3" />
-                      </Button>
+
                     </div>
                   </div>
                 ))
@@ -743,6 +694,7 @@ const AccountManagement: React.FC = () => {
         <UserForm
           userType={showForm}
           user={editingItem}
+          existingUsers={users}
           onSave={(userData) => handleSaveUser(showForm, userData)}
           onCancel={handleCloseForm}
           isOpen={isFormOpen}

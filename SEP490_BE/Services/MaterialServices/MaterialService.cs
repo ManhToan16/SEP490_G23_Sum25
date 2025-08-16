@@ -120,10 +120,24 @@ namespace SEP490_BE.Services.MaterialServices
             material.MaxQuantity = request.MaxQuantity ?? material.MaxQuantity;
             material.MinQuantity = request.MinQuantity ?? material.MinQuantity;
             material.UpdatedAt = DateTime.UtcNow;
-            if (await _materialRepository.IsMaterialExistsAsync(material.Name, material.CategoryId, material.SupplierId))
+            bool isChangedKey =
+       (request.Name != null && request.Name != material.Name) ||
+       (request.CategoryId != null && request.CategoryId != material.CategoryId) ||
+       (request.SupplierId != null && request.SupplierId != material.SupplierId);
+
+            if (isChangedKey)
             {
-                throw new InvalidOperationException("Vật tư đã tồn tại.");
+                bool existed = await _materialRepository.IsMaterialExistsAsync(
+                    request.Name ?? material.Name,
+                    request.CategoryId ?? material.CategoryId,
+                    request.SupplierId ?? material.SupplierId);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Vật tư đã tồn tại.");
+                }
             }
+
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -164,12 +178,55 @@ namespace SEP490_BE.Services.MaterialServices
             return MapToResponseDTO(material);
         }
 
-        public async Task<List<MaterialResponseDTO>> GetAllMaterials()
+        public async Task<(List<MaterialResponseDTO> Items, int TotalItems)> GetAllMaterials()
         {
             var materials = await _materialRepository.FindAll();
             var responseDtos = materials.Select(MapToResponseDTO).ToList();
-            return responseDtos;
+            int totalItems = responseDtos.Count;
+
+            return (responseDtos, totalItems);
         }
+
+        public async Task<List<MaterialImportSummaryDTO>> GetImportSummaryAsync()
+        {
+            // Lấy tất cả vật tư
+            var materials = await _context.Materials.Include(m => m.Category)
+        .Include(m => m.Supplier).ToListAsync();
+
+            // Lấy tất cả giao dịch nhập
+            var importTransactions = await _context.Transactions
+                .Where(t => t.TransactionType == "IMPORT")
+                .ToListAsync();
+
+            var summary = materials
+                .Select(m =>
+                {
+                    var relatedImports = importTransactions
+                        .Where(t => t.MaterialId == m.Id)
+                        .ToList();
+
+                    var totalQuantity = relatedImports.Sum(x => x.Quantity);
+                    var totalDefective = relatedImports.Sum(x => x.DefectiveQuantity ?? 0);
+                    var weightedTotalPrice = relatedImports.Sum(x => x.Quantity * (x.Price ?? 0));
+                    var averagePrice = totalQuantity > 0 ? weightedTotalPrice / totalQuantity : 0;
+
+                    return new MaterialImportSummaryDTO
+                    {
+                        MaterialId = m.Id,
+                        MaterialName = m.Name,
+                        Unit = m.Unit,
+                        Quantity = totalQuantity,
+                        AvailableQuantity = totalQuantity - totalDefective,
+                        TotalPrice = Math.Round(averagePrice * totalQuantity, 2),
+                        CategoryName = m.Category?.Name ?? "",
+                        SupplierName = m.Supplier?.Name ?? ""
+                    };
+                })
+                .ToList();
+
+            return summary;
+        }
+
 
 
         private MaterialResponseDTO MapToResponseDTO(Material material)
@@ -187,7 +244,8 @@ namespace SEP490_BE.Services.MaterialServices
                 MaxQuantity = material.MaxQuantity,
                 MinQuantity = material.MinQuantity,
                 CreatedAt = material.CreatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
-                UpdatedAt = material.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")
+                UpdatedAt = material.UpdatedAt?.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                IsLowStock = material.MinQuantity.HasValue && material.QuantityInStock < material.MinQuantity.Value
             };
         }
     }

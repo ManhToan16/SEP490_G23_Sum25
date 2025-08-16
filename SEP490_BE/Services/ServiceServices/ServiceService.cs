@@ -160,10 +160,23 @@ namespace SEP490_BE.Services.ServiceServices
             service.Name = request.Name ?? service.Name;
             service.Price = request.Price ?? service.Price;
             service.Description = request.Description ?? service.Description;
-            if (await _serviceRepository.ExistsByNameAsync(service.Name, service.LaboratoryRoomsId))
+            // chỉ check trùng khi đổi tên hoặc đổi phòng
+            bool isChanged =
+                (request.Name != null && request.Name != service.Name) ||
+                (request.LaboratoryRoomId != null && request.LaboratoryRoomId != service.LaboratoryRoomsId);
+
+            if (isChanged)
             {
-                throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
+                bool existed = await _serviceRepository.ExistsByNameAsync(
+                    request.Name ?? service.Name,
+                    request.LaboratoryRoomId ?? service.LaboratoryRoomsId);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Dịch vụ đã tồn tại trong phòng xét nghiệm này.");
+                }
             }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {

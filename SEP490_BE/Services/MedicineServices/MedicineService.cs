@@ -69,10 +69,23 @@ namespace SEP490_BE.Services.MedicineServices
             medicine.Packaging = request.Packaging ?? medicine.Packaging;
             medicine.Unit = request.Unit ?? medicine.Unit;
             medicine.Description = request.Description ?? medicine.Description;
-            if (await _medicineRepository.IsMedicineExistsAsync(medicine.Name, medicine.Strength))
+            // Chỉ kiểm tra trùng nếu người dùng thực sự thay đổi Name hoặc Strength
+            bool isChangedNameOrStrength =
+                (request.Name != null && request.Name != medicine.Name)
+                || (request.Strength != null && request.Strength != medicine.Strength);
+
+            if (isChangedNameOrStrength)
             {
-                throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
+                bool existed = await _medicineRepository.IsMedicineExistsAsync(
+                    request.Name ?? medicine.Name,
+                    request.Strength ?? medicine.Strength);
+
+                if (existed)
+                {
+                    throw new InvalidOperationException("Thuốc đã tồn tại trong hệ thống.");
+                }
             }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -96,8 +109,8 @@ namespace SEP490_BE.Services.MedicineServices
             {
                 throw new ResourceNotFoundException("Thuốc không tồn tại.");
             }
-                await _medicineRepository.DeleteAsync(medicine);
-                await _context.SaveChangesAsync();
+            medicine.IsActive = false;
+            await _context.SaveChangesAsync();
 
         }
 
@@ -127,6 +140,12 @@ namespace SEP490_BE.Services.MedicineServices
                 PageSize = pageSize
             };
         }
+        public async Task<List<MedicineResponseDTO>> GetActiveMedicinesAsync()
+        {
+            var medicines = await _medicineRepository.GetActiveMedicinesAsync();
+            return medicines.Select(m => MapToResponseDTO(m)).ToList();
+        }
+
 
         private MedicineResponseDTO MapToResponseDTO(Medicine medicine)
         {
@@ -138,7 +157,8 @@ namespace SEP490_BE.Services.MedicineServices
                 Strength = medicine.Strength,
                 Packaging = medicine.Packaging,
                 Unit = medicine.Unit,
-                Description = medicine.Description
+                Description = medicine.Description,
+                IsActive = medicine.IsActive
             };
         }
     }

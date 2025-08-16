@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Eye, Edit, Phone, Mail, Plus, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import Modal from '@/shared/components/common/Modal';
 import { adminService } from '@/shared/services/adminService';
 import { toast } from '@/shared/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const PAGE_SIZE = 10;
 
@@ -44,6 +45,7 @@ const PatientListCommon: React.FC = () => {
   // Modal Chi tiết bệnh nhân
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
+  const navigate = useNavigate();
 
   const handleViewDetail = (patient: any) => {
     setSelectedPatient(patient);
@@ -51,24 +53,24 @@ const PatientListCommon: React.FC = () => {
   };
 
   // Fetch danh sách bệnh nhân
-  const fetchPatients = async () => {
+  const fetchPatients = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const res = await adminService.getPatientList({ pageNumber: page, pageSize: PAGE_SIZE, name: searchName });
-      setPatients(Array.isArray(res.data.items) ? res.data.items : []);
-      setTotalItems(res.data.totalItems || 0);
+      setPatients(Array.isArray(res.items) ? res.items : []);
+      setTotalItems(res.totalItems || 0);
     } catch (err) {
       setPatients([]);
       setError('Lỗi tải dữ liệu bệnh nhân');
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, searchName]);
 
   useEffect(() => {
     fetchPatients();
-  }, [page, searchName]);
+  }, [fetchPatients]);
 
   // Thêm mới
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -79,13 +81,33 @@ const PatientListCommon: React.FC = () => {
     setFormLoading(true);
     try {
       await adminService.createPatient(formData);
-      toast({ title: 'Thành công', description: 'Tạo bệnh nhân mới thành công!', variant: 'success' });
+      toast({ title: 'Thành công', description: 'Tạo bệnh nhân mới thành công!' });
       setShowModal(false);
       setFormData({ name: '', citizenId: '', phoneNumber: '', email: '', dateOfBirth: '', gender: 'Nam', address: '' });
       setPage(1);
       fetchPatients();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error?.response?.data?.message || error.message, variant: 'destructive' });
+      // Lấy thông báo lỗi cụ thể từ response
+      let errorMessage = "Không thể tạo bệnh nhân";
+      
+      if (error.response && error.response.data) {
+        // Nếu có response data, ưu tiên lấy message từ đó (kiểm tra cả chữ hoa và chữ thường)
+        if (error.response.data.Message) {
+          errorMessage = error.response.data.Message;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.Error) {
+          errorMessage = error.response.data.Error;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({ title: 'Lỗi', description: errorMessage });
     } finally {
       setFormLoading(false);
     }
@@ -121,12 +143,32 @@ const PatientListCommon: React.FC = () => {
         gender: editFormData.gender,
         address: editFormData.address,
       });
-      toast({ title: 'Thành công', description: 'Cập nhật bệnh nhân thành công!', variant: 'success' });
+      toast({ title: 'Thành công', description: 'Cập nhật bệnh nhân thành công!' });
       setShowEditModal(false);
       setEditFormData({ id: '', name: '', citizenId: '', phoneNumber: '', email: '', dateOfBirth: '', gender: 'Nam', address: '' });
       fetchPatients();
     } catch (error: any) {
-      toast({ title: 'Lỗi', description: error?.response?.data?.message || error.message, variant: 'destructive' });
+      // Lấy thông báo lỗi cụ thể từ response
+      let errorMessage = "Không thể cập nhật bệnh nhân";
+      
+      if (error.response && error.response.data) {
+        // Nếu có response data, ưu tiên lấy message từ đó (kiểm tra cả chữ hoa và chữ thường)
+        if (error.response.data.Message) {
+          errorMessage = error.response.data.Message;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.Error) {
+          errorMessage = error.response.data.Error;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({ title: 'Lỗi', description: errorMessage });
     } finally {
       setEditFormLoading(false);
     }
@@ -302,7 +344,6 @@ const PatientListCommon: React.FC = () => {
               <select name="gender" value={formData.gender} onChange={handleInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue">
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
               </select>
             </div>
             <div>
@@ -346,7 +387,6 @@ const PatientListCommon: React.FC = () => {
               <select name="gender" value={editFormData.gender} onChange={handleEditInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue">
                 <option value="Nam">Nam</option>
                 <option value="Nữ">Nữ</option>
-                <option value="Khác">Khác</option>
               </select>
             </div>
             <div>
@@ -380,27 +420,30 @@ const PatientListCommon: React.FC = () => {
               <div>
                 <div className="font-semibold text-lg mb-2">Thông Tin Liên Hệ</div>
                 <div className="flex flex-col gap-2 text-gray-700">
-                  <div className="flex items-center gap-2"><Phone size={16} /> {selectedPatient.phoneNumber || 'Chưa cập nhật'}</div>
-                  <div className="flex items-center gap-2"><Mail size={16} /> {selectedPatient.email || 'Chưa cập nhật'}</div>
-                  <div className="flex items-center gap-2"><span className="material-icons text-base">location_on</span> {selectedPatient.address || 'Chưa cập nhật'}</div>
-                  <div className="flex items-center gap-2"><span className="material-icons text-base">cake</span> Sinh: {selectedPatient.dateOfBirth ? new Date(selectedPatient.dateOfBirth).toLocaleDateString() : 'Chưa cập nhật'}</div>
+                  <div>{selectedPatient.phoneNumber || 'Chưa cập nhật'}</div>
+                  <div>{selectedPatient.email || 'Chưa cập nhật'}</div>
+                  <div>{selectedPatient.address || 'Chưa cập nhật'}</div>
+                  <div>Sinh: {selectedPatient.dateOfBirth ? new Date(selectedPatient.dateOfBirth).toLocaleDateString() : 'Chưa cập nhật'}</div>
                 </div>
               </div>
               <div>
                 <div className="font-semibold text-lg mb-2">Thống Kê Khám Bệnh</div>
                 <div className="flex gap-2">
-                  <button className="px-4 py-2 rounded bg-blue-50 text-blue-700 font-semibold">Hồ sơ bệnh án</button>
-                  <button className="px-4 py-2 rounded bg-green-50 text-green-700 font-semibold">Lần khám cuối</button>
+                  <button
+                    className="px-4 py-2 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200 hover:bg-blue-100"
+                    onClick={() => navigate(`/admin/patient/${selectedPatient.id}/medical-records`)}
+                  >
+                    Hồ sơ bệnh án
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded bg-green-50 text-green-700 font-semibold border border-green-200 hover:bg-green-100"
+                    onClick={() => navigate(`/admin/patient/${selectedPatient.id}/history`)}
+                  >
+                    Lịch sử khám
+                  </button>
                 </div>
               </div>
-              <div>
-                <div className="font-semibold text-lg mb-2">Tiền Sử Bệnh</div>
-                <div className="text-gray-500">Chưa có thông tin tiền sử bệnh</div>
-              </div>
-              <div className="flex gap-4 mt-4">
-                <button className="px-5 py-2 bg-clinic-blue text-white rounded-lg font-semibold hover:bg-clinic-navy transition-colors">Chỉnh sửa Thông Tin</button>
-                <button className="px-5 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors">Tạo Hồ Sơ Bệnh Án</button>
-              </div>
+              {/* Đã bỏ phần Tiền Sử Bệnh */}
             </div>
           </div>
         )}

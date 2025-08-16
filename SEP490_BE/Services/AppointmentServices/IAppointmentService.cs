@@ -21,7 +21,7 @@ namespace SEP490_BE.Services.AppointmentServices
         Task<AppointmentResponseDTO> Update(string id, AppointmentRequestDTO request);
         Task<AppointmentResponseDTO> CheckIn(string id);
         Task<AppointmentResponseDTO> Confirm(string id);
-        Task<AppointmentResponseDTO> Cancel(string id);
+        Task<AppointmentResponseDTO> Cancel(string id, CancelAppointmentDTO request);
         Task<byte[]> GenerateInvoicePdf(string id);
         Task<AppointmentResponseDTO> MarkAsPaid(string id);
         Task AutoExpired();

@@ -21,6 +21,7 @@ namespace SEP490_BE.DTO.AppointmentDTO
         public TimeSpan TimeSlotEndTime { get; set; }
         public string Status { get; set; }
         public decimal? TotalPrice { get; set; }
+        public string? CancelReason { get; set; }
         public DateTime? ExpiredAt { get; set; }
         public DateTime? CreatedAt { get; set; }
 

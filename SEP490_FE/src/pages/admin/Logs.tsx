@@ -1,139 +1,242 @@
 
-import React, { useState } from 'react';
-import { Activity, Filter, Download, AlertTriangle, Info, CheckCircle, XCircle } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Activity, Filter, Download, AlertTriangle, Info, CheckCircle, XCircle, Search, RefreshCw, User } from 'lucide-react';
+import { auditLogService } from '../../shared/services/auditLog';
+import appointmentService from '../../shared/services/appointmentService';
+import Modal from '../../shared/components/common/Modal';
+
+interface AuditLog {
+  id: number;
+  userId: string;
+  userName?: string;
+  action: string;
+  tableName: string;
+  recordId: string;
+  oldData: string | null;
+  newData: string | null;
+  actionTime: string;
+  user: any;
+}
+
+interface AuditLogsResponse {
+  items: AuditLog[];
+  totalItems: number;
+  pageNumber: number;
+  pageSize: number;
+}
+
+interface UserInfo {
+  id: string;
+  name: string;
+  email: string;
+  phoneNumber: string;
+  role: string;
+  isActive: boolean;
+  address?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  // Thêm các trường khác nếu cần
+}
 
 const SystemLogs: React.FC = () => {
-  const [selectedType, setSelectedType] = useState('all');
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Modal states
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [selectedUserInfo, setSelectedUserInfo] = useState<UserInfo | null>(null);
+  const [userLoading, setUserLoading] = useState(false);
+  const [userError, setUserError] = useState<string | null>(null);
+  
+  // Filter states
+  const [filters, setFilters] = useState({
+    userId: '',
+    action: '',
+    tableName: '',
+    recordId: '',
+    pageNumber: 1,
+    pageSize: 10
+  });
+  
+  const [pagination, setPagination] = useState({
+    totalItems: 0,
+    pageNumber: 1,
+    pageSize: 10
+  });
 
-  const logs = [
-    {
-      id: 1,
-      timestamp: '2025-06-18 14:30:25',
-      type: 'LOGIN',
-      user: 'BS. Nguyễn Văn A',
-      action: 'Đăng nhập vào hệ thống',
-      ip: '192.168.1.100',
-      status: 'success',
-      details: 'Đăng nhập thành công từ Chrome browser'
-    },
-    {
-      id: 2,
-      timestamp: '2025-06-18 14:25:15',
-      type: 'CREATE_RECORD',
-      user: 'BS. Trần Thị B',
-      action: 'Tạo hồ sơ bệnh án mới',
-      ip: '192.168.1.105',
-      status: 'success',
-      details: 'Tạo hồ sơ cho bệnh nhân ID: 123'
-    },
-    {
-      id: 3,
-      timestamp: '2025-06-18 14:20:08',
-      type: 'UPDATE_APPOINTMENT',
-      user: 'Lễ tân Hoa',
-      action: 'Cập nhật trạng thái lịch hẹn',
-      ip: '192.168.1.102',
-      status: 'success',
-      details: 'Cập nhật lịch hẹn ID: 456 từ "Chờ khám" thành "Đang khám"'
-    },
-    {
-      id: 4,
-      timestamp: '2025-06-18 14:15:42',
-      type: 'LOGIN',
-      user: 'unknown_user',
-      action: 'Thử đăng nhập không thành công',
-      ip: '203.162.4.115',
-      status: 'error',
-      details: 'Đăng nhập thất bại - Sai mật khẩu (3 lần liên tiếp)'
-    },
-    {
-      id: 5,
-      timestamp: '2025-06-18 14:10:30',
-      type: 'SYSTEM',
-      user: 'System',
-      action: 'Backup dữ liệu tự động',
-      ip: 'localhost',
-      status: 'success',
-      details: 'Backup hoàn thành - Dung lượng: 2.3GB'
-    },
-    {
-      id: 6,
-      timestamp: '2025-06-18 14:05:17',
-      type: 'DELETE',
-      user: 'Admin Minh',
-      action: 'Xóa tài khoản người dùng',
-      ip: '192.168.1.101',
-      status: 'warning',
-      details: 'Xóa tài khoản bệnh nhân không hoạt động - ID: 789'
-    },
-    {
-      id: 7,
-      timestamp: '2025-06-18 13:55:23',
-      type: 'CREATE_USER',
-      user: 'Admin Minh',
-      action: 'Tạo tài khoản bác sĩ mới',
-      ip: '192.168.1.101',
-      status: 'success',
-      details: 'Tạo tài khoản cho BS. Lê Văn X - Chuyên khoa Thần kinh'
-    },
-    {
-      id: 8,
-      timestamp: '2025-06-18 13:50:45',
-      type: 'UPDATE_SYSTEM',
-      user: 'System',
-      action: 'Cập nhật cấu hình hệ thống',
-      ip: 'localhost',
-      status: 'info',
-      details: 'Cập nhật thời gian backup từ 02:00 thành 03:00'
+  // Fetch audit logs
+  const fetchAuditLogs = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await auditLogService.getAuditLogs(filters);
+      
+      setLogs(response.items);
+      setPagination({
+        totalItems: response.totalItems,
+        pageNumber: response.pageNumber,
+        pageSize: response.pageSize
+      });
+    } catch (err: any) {
+      // More detailed error handling
+      let errorMessage = 'Không thể tải dữ liệu audit logs';
+      
+      if (err.response) {
+        // Server responded with error status
+        if (err.response.status === 500) {
+          errorMessage = 'Lỗi server (500) - Vui lòng thử lại sau';
+        } else if (err.response.status === 404) {
+          errorMessage = 'API endpoint không tồn tại (404)';
+        } else if (err.response.status === 401) {
+          errorMessage = 'Không có quyền truy cập (401)';
+        } else {
+          errorMessage = `Lỗi server (${err.response.status}): ${err.response.data?.message || err.message}`;
+        }
+      } else if (err.request) {
+        // Network error
+        errorMessage = 'Lỗi kết nối mạng - Vui lòng kiểm tra kết nối internet';
+      } else {
+        // Other error
+        errorMessage = err.message || 'Có lỗi xảy ra khi tải dữ liệu';
+      }
+      
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
-  ];
+  }, [filters]);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'LOGIN': return <Info size={16} />;
-      case 'CREATE_RECORD': return <CheckCircle size={16} />;
-      case 'CREATE_USER': return <CheckCircle size={16} />;
-      case 'UPDATE_APPOINTMENT': return <Activity size={16} />;
-      case 'DELETE': return <XCircle size={16} />;
-      case 'SYSTEM': return <Activity size={16} />;
-      case 'UPDATE_SYSTEM': return <Activity size={16} />;
-      default: return <Info size={16} />;
+  // Load data on component mount and when filters change
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [filters.pageNumber, filters.pageSize, fetchAuditLogs]);
+
+  // Handle filter changes
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value,
+      pageNumber: 1 // Reset to first page when filters change
+    }));
+  };
+
+  // Handle pagination
+  const handlePageChange = (newPage: number) => {
+    setFilters(prev => ({
+      ...prev,
+      pageNumber: newPage
+    }));
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilters({
+      userId: '',
+      action: '',
+      tableName: '',
+      recordId: '',
+      pageNumber: 1,
+      pageSize: 10
+    });
+  };
+
+  // Get action icon
+  const getActionIcon = (action: string) => {
+    switch (action.toUpperCase()) {
+      case 'CREATE': return <CheckCircle size={16} className="text-green-600" />;
+      case 'UPDATE': return <Activity size={16} className="text-blue-600" />;
+      case 'DELETE': return <XCircle size={16} className="text-red-600" />;
+      default: return <Info size={16} className="text-gray-600" />;
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'success': return 'bg-green-100 text-green-800';
-      case 'error': return 'bg-red-100 text-red-800';
-      case 'warning': return 'bg-yellow-100 text-yellow-800';
-      case 'info': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'LOGIN': return 'bg-blue-100 text-blue-800';
-      case 'CREATE_RECORD': return 'bg-green-100 text-green-800';
-      case 'CREATE_USER': return 'bg-purple-100 text-purple-800';
-      case 'UPDATE_APPOINTMENT': return 'bg-yellow-100 text-yellow-800';
+  // Get action color
+  const getActionColor = (action: string) => {
+    switch (action.toUpperCase()) {
+      case 'CREATE': return 'bg-green-100 text-green-800';
+      case 'UPDATE': return 'bg-blue-100 text-blue-800';
       case 'DELETE': return 'bg-red-100 text-red-800';
-      case 'SYSTEM': return 'bg-gray-100 text-gray-800';
-      case 'UPDATE_SYSTEM': return 'bg-cyan-100 text-cyan-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const filteredLogs = selectedType === 'all' 
-    ? logs 
-    : logs.filter(log => log.type === selectedType);
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('vi-VN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  };
 
-  const logStats = {
-    total: logs.length,
-    success: logs.filter(l => l.status === 'success').length,
-    error: logs.filter(l => l.status === 'error').length,
-    warning: logs.filter(l => l.status === 'warning').length
+
+
+  // Calculate stats
+  const stats = {
+    total: pagination.totalItems,
+    create: logs.filter(log => log.action.toUpperCase() === 'CREATE').length,
+    update: logs.filter(log => log.action.toUpperCase() === 'UPDATE').length,
+    delete: logs.filter(log => log.action.toUpperCase() === 'DELETE').length
+  };
+
+  // Fetch user info by ID
+  const fetchUserInfo = async (userId: string) => {
+    setUserLoading(true);
+    setUserError(null);
+    
+    try {
+      const response = await appointmentService.getUserById(userId);
+      
+      // API trả về data trong array, lấy phần tử đầu tiên
+      if (response && response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setSelectedUserInfo(response.data[0]);
+      } else if (response && response.data) {
+        // Nếu data không phải array
+        setSelectedUserInfo(response.data);
+      } else {
+        throw new Error('Invalid user data format');
+      }
+      
+      setShowUserModal(true);
+    } catch (err: any) {
+      let errorMessage = 'Không thể tải thông tin người dùng';
+      
+      if (err.response) {
+        if (err.response.status === 404) {
+          errorMessage = 'Không tìm thấy người dùng';
+        } else if (err.response.status === 401) {
+          errorMessage = 'Không có quyền truy cập thông tin người dùng';
+        } else {
+          errorMessage = `Lỗi server (${err.response.status}): ${err.response.data?.message || err.message}`;
+        }
+      } else if (err.request) {
+        errorMessage = 'Lỗi kết nối mạng';
+      } else {
+        errorMessage = err.message || 'Có lỗi xảy ra khi tải thông tin người dùng';
+      }
+      
+      setUserError(errorMessage);
+    } finally {
+      setUserLoading(false);
+    }
+  };
+
+  // Handle user info button click
+  const handleUserInfoClick = (userId: string) => {
+    fetchUserInfo(userId);
+  };
+
+  // Close user modal
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setSelectedUserInfo(null);
+    setUserError(null);
   };
 
   return (
@@ -148,163 +251,310 @@ const SystemLogs: React.FC = () => {
           </p>
         </div>
         
-        <button className="flex items-center space-x-2 clinic-button-primary">
-          <Download size={20} />
-          <span>Xuất báo cáo</span>
+        <button 
+          onClick={fetchAuditLogs}
+          disabled={loading}
+          className="flex items-center space-x-2 clinic-button-secondary"
+        >
+          <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+          <span>{loading ? 'Đang tải...' : 'Làm mới'}</span>
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-clinic-navy">{logStats.total}</h3>
-          <p className="text-gray-600">Tổng sự kiện</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-green-600">{logStats.success}</h3>
-          <p className="text-gray-600">Thành công</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-red-600">{logStats.error}</h3>
-          <p className="text-gray-600">Lỗi</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-yellow-600">{logStats.warning}</h3>
-          <p className="text-gray-600">Cảnh báo</p>
-        </div>
-      </div>
+
 
       {/* Filters */}
       <div className="clinic-card">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-clinic-navy">Bộ lọc</h3>
+          <button 
+            onClick={clearFilters}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            Xóa bộ lọc
+          </button>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Loại sự kiện
-            </label>
-            <select
-              value={selectedType}
-              onChange={(e) => setSelectedType(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-            >
-              <option value="all">Tất cả sự kiện</option>
-              <option value="LOGIN">Đăng nhập</option>
-              <option value="CREATE_RECORD">Tạo hồ sơ</option>
-              <option value="CREATE_USER">Tạo người dùng</option>
-              <option value="UPDATE_APPOINTMENT">Cập nhật lịch hẹn</option>
-              <option value="DELETE">Xóa dữ liệu</option>
-              <option value="SYSTEM">Hệ thống</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Ngày
+              User ID
             </label>
             <input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              type="text"
+              value={filters.userId}
+              onChange={(e) => handleFilterChange('userId', e.target.value)}
+              placeholder="Nhập User ID..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
             />
           </div>
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Trạng thái
+              Hành động
             </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue">
-              <option value="all">Tất cả trạng thái</option>
-              <option value="success">Thành công</option>
-              <option value="error">Lỗi</option>
-              <option value="warning">Cảnh báo</option>
-              <option value="info">Thông tin</option>
+            <select
+              value={filters.action}
+              onChange={(e) => handleFilterChange('action', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+            >
+              <option value="">Tất cả hành động</option>
+              <option value="CREATE">CREATE</option>
+              <option value="UPDATE">UPDATE</option>
+              <option value="DELETE">DELETE</option>
             </select>
           </div>
+          
+                     <div>
+             <label className="block text-sm font-medium text-gray-700 mb-2">
+               Tên bảng
+             </label>
+             <select
+               value={filters.tableName}
+               onChange={(e) => handleFilterChange('tableName', e.target.value)}
+               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+             >
+               <option value="">Tất cả bảng</option>
+               <option value="Users">Người dùng</option>
+               <option value="PatientProfiles">Hồ sơ bệnh nhân</option>
+               <option value="MedicalRecords">Hồ sơ bệnh án</option>
+               <option value="ExaminationResults">Kết quả tổng quát</option>
+               <option value="LaboratoryResults">Kết quả xét nghiệm</option>
+             </select>
+           </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Record ID
+            </label>
+            <input
+              type="text"
+              value={filters.recordId}
+              onChange={(e) => handleFilterChange('recordId', e.target.value)}
+              placeholder="Nhập Record ID..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+            />
+          </div>
+        </div>
+        
+        <div className="mt-4 flex justify-end">
+          <button 
+            onClick={fetchAuditLogs}
+            disabled={loading}
+            className="flex items-center space-x-2 clinic-button-primary"
+          >
+            <Search size={16} />
+            <span>Tìm kiếm</span>
+          </button>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="clinic-card bg-red-50 border border-red-200">
+          <div className="flex items-center space-x-2">
+            <AlertTriangle className="text-red-600" size={20} />
+            <p className="text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
 
       {/* Logs Table */}
       <div className="clinic-card">
         <div className="space-y-3">
-          {filteredLogs.map((log) => (
-            <div key={log.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4 flex-1">
-                  <div className={`p-2 rounded-lg ${getTypeColor(log.type)}`}>
-                    {getTypeIcon(log.type)}
-                  </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="font-medium text-clinic-navy">{log.action}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(log.status)}`}>
-                        {log.status === 'success' ? 'Thành công' :
-                         log.status === 'error' ? 'Lỗi' :
-                         log.status === 'warning' ? 'Cảnh báo' : 'Thông tin'}
-                      </span>
-                      <span className={`px-2 py-1 rounded-full text-xs ${getTypeColor(log.type)}`}>
-                        {log.type}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                      <div>
-                        <strong>Người dùng:</strong> {log.user}
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-blue mx-auto"></div>
+              <p className="text-gray-500 mt-2">Đang tải dữ liệu...</p>
+            </div>
+          ) : logs.length > 0 ? (
+            logs.map((log) => {
+              return (
+                <div key={log.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4 flex-1">
+                      <div className={`p-2 rounded-lg ${getActionColor(log.action)}`}>
+                        {getActionIcon(log.action)}
                       </div>
-                      <div>
-                        <strong>Thời gian:</strong> {log.timestamp}
+                      
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3 mb-2">
+                          <h3 className="font-medium text-clinic-navy">
+                            {log.action} - {log.tableName}
+                          </h3>
+                          <span className={`px-2 py-1 rounded-full text-xs ${getActionColor(log.action)}`}>
+                            {log.action}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                          <div>
+                            <strong>ID người dùng:</strong>{' '}
+                            <button
+                              onClick={() => handleUserInfoClick(log.userId)}
+                              className="inline-flex items-center space-x-1 text-blue-600 hover:text-blue-800 hover:underline font-medium"
+                            >
+                              <User size={14} />
+                              <span>{log.userId}</span>
+                            </button>
+                          </div>
+                          <div>
+                            <strong>Tên người dùng:</strong> {log.userName || 'N/A'}
+                          </div>
+                          <div>
+                            <strong>Thời gian:</strong> {formatDate(log.actionTime)}
+                          </div>
+                          <div>
+                            <strong>Record ID:</strong> {log.recordId}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <strong>IP:</strong> {log.ip}
-                      </div>
-                    </div>
-                    
-                    <div className="mt-2 p-3 bg-gray-50 rounded text-sm text-gray-700">
-                      <strong>Chi tiết:</strong> {log.details}
                     </div>
                   </div>
                 </div>
-              </div>
+              );
+            })
+          ) : (
+            <div className="text-center py-8">
+              <Activity className="mx-auto text-gray-400 mb-4" size={48} />
+              <p className="text-gray-500">Không có nhật ký nào</p>
             </div>
-          ))}
+          )}
         </div>
         
-        {filteredLogs.length === 0 && (
-          <div className="text-center py-8">
-            <Activity className="mx-auto text-gray-400 mb-4" size={48} />
-            <p className="text-gray-500">Không có nhật ký nào</p>
+        {/* Pagination */}
+        {pagination.totalItems > 0 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Hiển thị {((pagination.pageNumber - 1) * pagination.pageSize) + 1} - {Math.min(pagination.pageNumber * pagination.pageSize, pagination.totalItems)} của {pagination.totalItems} kết quả
+            </div>
+            
+            <div className="flex space-x-2">
+              <button
+                onClick={() => handlePageChange(pagination.pageNumber - 1)}
+                disabled={pagination.pageNumber <= 1}
+                className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Trước
+              </button>
+              
+              <span className="px-3 py-1 text-sm">
+                Trang {pagination.pageNumber} của {Math.ceil(pagination.totalItems / pagination.pageSize)}
+              </span>
+              
+              <button
+                onClick={() => handlePageChange(pagination.pageNumber + 1)}
+                disabled={pagination.pageNumber >= Math.ceil(pagination.totalItems / pagination.pageSize)}
+                className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+              >
+                Sau
+              </button>
+            </div>
           </div>
         )}
       </div>
 
-      {/* Security Alerts */}
-      <div className="clinic-card">
-        <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-          Cảnh báo bảo mật
-        </h2>
-        
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <AlertTriangle className="text-red-600" size={20} />
-            <div>
-              <h4 className="font-medium text-red-800">Đăng nhập thất bại liên tiếp</h4>
-              <p className="text-sm text-red-600">
-                IP 203.162.4.115 thử đăng nhập thất bại 3 lần - 14:15
-              </p>
+      {/* User Info Modal */}
+      <Modal
+        open={showUserModal}
+        onClose={closeUserModal}
+        title="Thông tin người dùng"
+      >
+        {userLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-blue mx-auto"></div>
+            <p className="text-gray-500 mt-2">Đang tải thông tin...</p>
+          </div>
+        ) : userError ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="mx-auto text-red-500 mb-4" size={48} />
+            <p className="text-red-600">{userError}</p>
+          </div>
+        ) : selectedUserInfo ? (
+          <div className="space-y-4">
+                         <div className="grid grid-cols-2 gap-4">
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   ID
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.id}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Tên người dùng
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.name || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Email
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.email || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Số điện thoại
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.phoneNumber || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Vai trò
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.role || 'N/A'}
+                 </p>
+               </div>
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Trạng thái
+                 </label>
+                 <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                   {selectedUserInfo.isActive ? 'Hoạt động' : 'Không hoạt động'}
+                 </p>
+               </div>
+               {selectedUserInfo.address && (
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     Địa chỉ
+                   </label>
+                   <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                     {selectedUserInfo.address}
+                   </p>
+                 </div>
+               )}
+               {selectedUserInfo.gender && (
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                     Giới tính
+                   </label>
+                   <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
+                     {selectedUserInfo.gender}
+                   </p>
+                 </div>
+               )}
+             </div>
+            
+            <div className="flex justify-end pt-4">
+              <button
+                onClick={closeUserModal}
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Đóng
+              </button>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-3 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <AlertTriangle className="text-yellow-600" size={20} />
-            <div>
-              <h4 className="font-medium text-yellow-800">Dung lượng ổ cứng</h4>
-              <p className="text-sm text-yellow-600">
-                Dung lượng đã sử dụng 85% - Cần dọn dẹp hoặc mở rộng
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+        ) : null}
+      </Modal>
+      
     </div>
   );
 };

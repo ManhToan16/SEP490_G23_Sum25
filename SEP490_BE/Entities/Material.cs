@@ -7,6 +7,7 @@ namespace SEP490_BE.Entities
     {
         public Material()
         {
+            RoomMaterialStocks = new HashSet<RoomMaterialStock>();
             Transactions = new HashSet<Transaction>();
         }
 
@@ -23,6 +24,7 @@ namespace SEP490_BE.Entities
 
         public virtual Category? Category { get; set; }
         public virtual Supplier? Supplier { get; set; }
+        public virtual ICollection<RoomMaterialStock> RoomMaterialStocks { get; set; }
         public virtual ICollection<Transaction> Transactions { get; set; }
     }
 }

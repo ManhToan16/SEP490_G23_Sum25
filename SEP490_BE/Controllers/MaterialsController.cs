@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using SEP490_BE.Constants;
-using SEP490_BE.DTO.MaterialDTO;
 using SEP490_BE.DTO;
+using SEP490_BE.DTO.MaterialDTO;
+using SEP490_BE.Entities;
 using SEP490_BE.Services.MaterialServices;
+using System.ComponentModel;
 
 namespace SEP490_BE.Controllers
 {
@@ -20,6 +22,7 @@ namespace SEP490_BE.Controllers
         {
             _materialService = materialService;
         }
+
         [Authorize(Roles = RoleConstants.Admin)]
         [HttpPost]
         public async Task<IActionResult> CreateMaterial([FromBody] CreateMaterialDTO request)
@@ -77,14 +80,33 @@ namespace SEP490_BE.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllMaterials()
         {
-            var pagination = await _materialService.GetAllMaterials();
+            var (items, totalItems) = await _materialService.GetAllMaterials();
+
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = new[] { pagination }
+                Data = new
+                {
+                    Items = items,
+                    TotalItems = totalItems
+                }
             });
         }
+        [HttpGet("import-summary")]
+        public async Task<IActionResult> GetImportSummary()
+        {
+            var result = await _materialService.GetImportSummaryAsync();
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { result }
+            });
+        }
+
+
     }
 }

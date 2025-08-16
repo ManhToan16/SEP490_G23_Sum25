@@ -108,33 +108,7 @@ const DoctorSidebar: React.FC = () => {
           return null;
         })}
       </nav>
-      {/* Quick Stats */}
-      <div className="p-4 border-t bg-gray-50">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Lịch hôm nay</span>
-            <Badge variant="outline">8 bệnh nhân</Badge>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Đang chờ</span>
-            <Badge variant="secondary">3 người</Badge>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Đánh giá TB</span>
-            <Badge variant="default" className="bg-yellow-500">4.8 ⭐</Badge>
-          </div>
-        </div>
-      </div>
-      {/* Emergency Contact */}
-      <div className="p-4 bg-red-50 border-t border-red-100">
-        <div className="text-center">
-          <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-2">
-            <span className="text-white text-sm font-bold">!</span>
-          </div>
-          <p className="text-sm font-medium text-red-800">Khẩn cấp</p>
-          <p className="text-xs text-red-600">Nhấn để báo cáo sự cố</p>
-        </div>
-      </div>
+
     </div>
   );
 };

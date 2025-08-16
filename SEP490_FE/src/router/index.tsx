@@ -16,6 +16,8 @@ const AuthRoutes = React.lazy(() => import("./AuthRoutes"));
 const PatientRoutes = React.lazy(() => import("./PatientRoutes"));
 const DoctorRoutes = React.lazy(() => import("./DoctorRoutes"));
 const ReceptionistRoutes = React.lazy(() => import("./ReceptionistRoutes"));
+const NurseRoutes = React.lazy(() => import("./NurseRoutes"));
+const TechnicianRoutes = React.lazy(() => import("./TechnicianRoutes"));
 const AdminRoutes = React.lazy(() => import("./AdminRoutes"));
 
 // Common pages
@@ -23,6 +25,7 @@ const NotFound = React.lazy(() => import("@/pages/NotFound"));
 const HomePage = React.lazy(() => import("@/pages/Home"));
 const Health = React.lazy(() => import("@/pages/Health"));
 const Forbidden = React.lazy(() => import("@/pages/Forbiden"));
+const WaitingRoomDisplay = React.lazy(() => import("@/pages/WaitingRoomDisplay"));
 const MySchedule = React.lazy(() => import("@/pages/doctor/MySchedule"));
 
 interface AppRouterProps {
@@ -55,6 +58,9 @@ const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
             {/* Health check route */}
             <Route path="/health" element={<Health />} />
 
+            {/* Waiting room display - public route for TV display */}
+            <Route path="/waiting-room-display" element={<WaitingRoomDisplay />} />
+
             {/* Home route */}
             <Route path={ROUTES.HOME} element={<HomePage />} />
 
@@ -75,6 +81,20 @@ const AppRouter: React.FC<AppRouterProps> = ({ className }) => {
             <Route path="/receptionist/*" element={
               <ProtectedRoute requiredRoles={["RECEPTIONIST", "ADMIN"]}>
                 <ReceptionistRoutes />
+              </ProtectedRoute>
+            } />
+
+            {/* Nurse routes */}
+            <Route path="/nurse/*" element={
+              <ProtectedRoute requiredRoles={["NURSE", "ADMIN"]}>
+                <NurseRoutes />
+              </ProtectedRoute>
+            } />
+
+            {/* Technician routes */}
+            <Route path="/technician/*" element={
+              <ProtectedRoute requiredRoles={["TECHNICIAN", "ADMIN"]}>
+                <TechnicianRoutes />
               </ProtectedRoute>
             } />
 

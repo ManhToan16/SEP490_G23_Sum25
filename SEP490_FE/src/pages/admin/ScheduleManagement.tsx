@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
-import { Calendar, Clock, Users, User, Plus, Edit, Save, X, Building, AlertTriangle, Heart, Upload } from 'lucide-react';
+import { Calendar, Clock, Users, User, Plus, Edit, Save, X, Building, AlertTriangle, Heart, Upload, Download } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { useToast } from '@/shared/components/ui/use-toast';
 import { adminService } from '@/shared/services/adminService';
@@ -167,6 +167,7 @@ const ScheduleManagement: React.FC = () => {
   const [statsLoading, setStatsLoading] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [downloadLoading, setDownloadLoading] = useState(false);
 
   // Hooks
   const { toast } = useToast();
@@ -483,17 +484,78 @@ const ScheduleManagement: React.FC = () => {
         fileInput.value = '';
       }
     } catch (error: any) {
-      const message = error?.response?.data?.Message || error?.message || "Không thể import file Excel";
       console.error('Error importing Excel:', error);
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể import file Excel';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // Kiểm tra cấu trúc lỗi từ backend
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
       setImportLoading(false);
     }
   }, [selectedFile, getUserIdFromLocalStorage, toast, refreshSchedules]);
+
+  // Handle download template
+  const handleDownloadTemplate = useCallback(async () => {
+    setDownloadLoading(true);
+    try {
+      await adminService.downloadScheduleTemplate();
+      
+      toast({
+        title: "Thành công",
+        description: "Template Excel đã được tải xuống",
+        variant: 'default',
+      });
+    } catch (error: any) {
+      console.error('Error downloading template:', error);
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể tải template Excel';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Lỗi",
+        description: errorMessage,
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadLoading(false);
+    }
+  }, [toast]);
 
   const getScheduleForDay = useCallback((day: string, timeSlotId: string) => {
     return apiSchedules.filter(schedule => {
@@ -883,6 +945,22 @@ const ScheduleManagement: React.FC = () => {
                   {selectedFile.name}
                 </span>
               )}
+            </div>
+
+            {/* Download Template Button */}
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleDownloadTemplate}
+                disabled={downloadLoading}
+                className="flex items-center space-x-1 px-3 py-1.5 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors disabled:opacity-50"
+              >
+                {downloadLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-1"></div>
+                ) : (
+                  <Download size={14} />
+                )}
+                <span>{downloadLoading ? 'Đang tải...' : 'Tải template'}</span>
+              </button>
             </div>
 
             {/* View Mode */}

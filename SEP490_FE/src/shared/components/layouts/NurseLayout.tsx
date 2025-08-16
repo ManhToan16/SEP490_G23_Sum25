@@ -3,12 +3,12 @@ import BaseLayout from './BaseLayout';
 import NurseHeader from './components/headers/NurseHeader';
 import NurseSidebar from './components/sidebars/NurseSidebar';
 
-interface TechnicianLayoutProps {
+interface NurseLayoutProps {
   children: React.ReactNode;
   className?: string;
 }
 
-const NurseLayout: React.FC<TechnicianLayoutProps> = ({ 
+const NurseLayout: React.FC<NurseLayoutProps> = ({ 
   children, 
   className 
 }) => {
@@ -19,7 +19,9 @@ const NurseLayout: React.FC<TechnicianLayoutProps> = ({
       header={<NurseHeader />}
       sidebar={<NurseSidebar />}
     >
-      {children}
+      <div className="flex-1 p-6">
+        {children}
+      </div>
     </BaseLayout>
   );
 };

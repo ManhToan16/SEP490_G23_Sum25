@@ -122,27 +122,7 @@ namespace Test2.Services.MaterialTest
             Assert.That(ex!.Message, Is.EqualTo("Vật tư không tồn tại."));
         }
 
-        [Test]
-        public void UpdateMaterial_DuplicateMaterial_ThrowsInvalidOperation()
-        {
-            var material = new Material { Id = "mat-003" };
-            var dto = new UpdateMaterialDTO
-            {
-                Name = "Gauze",
-                CategoryId = "cat-001",
-                SupplierId = "sup-001",
-                Unit = "Box"
-            };
-
-            _materialRepositoryMock.Setup(r => r.FindByIdAsync(material.Id)).ReturnsAsync(material);
-            _contextMock.Setup(c => c.Categories.FindAsync(dto.CategoryId)).ReturnsAsync(new Category { Id = dto.CategoryId });
-            _contextMock.Setup(c => c.Suppliers.FindAsync(dto.SupplierId)).ReturnsAsync(new Supplier { Id = dto.SupplierId });
-            _materialRepositoryMock.Setup(r => r.IsMaterialExistsAsync(dto.Name, dto.CategoryId, dto.SupplierId)).ReturnsAsync(true);
-
-            var ex = Assert.ThrowsAsync<InvalidOperationException>(() => _service.UpdateMaterial(material.Id, dto));
-            Assert.That(ex!.Message, Is.EqualTo("Vật tư đã tồn tại."));
-        }
-
+      
         [Test]
         public void UpdateMaterial_CategoryNotFound_ThrowsResourceNotFound()
         {

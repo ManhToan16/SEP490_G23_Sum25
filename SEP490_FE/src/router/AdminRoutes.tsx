@@ -4,6 +4,9 @@ import Loading from "@/shared/components/common/LoadingSpinner";
 import ScheduleManagement from "@/pages/admin/ScheduleManagement";
 import MaterialTypeManagement from "@/pages/admin/MaterialTypeManagement";
 import SupplierManagement from "@/pages/admin/SupplierManagement";
+import MedicineManagement from "@/pages/admin/MedicineManagement";
+import MaterialManagement from "@/pages/admin/MaterialManagement";
+import DistributionMaterialManagement from "@/pages/admin/DistributionMaterialManagement";
 
 // Lazy load admin pages
 const Dashboard = React.lazy(() => import("@/pages/admin/Dashboard"));
@@ -20,6 +23,9 @@ const Logs = React.lazy(() => import("@/pages/admin/Logs"));
 const PatientListAdmin = React.lazy(
   () => import("@/pages/admin/PatientListAdmin")
 );
+const PatientMedicalRecords = React.lazy(() => import("@/pages/admin/PatientMedicalRecords"));
+const PatientVisit = React.lazy(() => import("@/pages/admin/PatientVisit"));
+const UserProfile = React.lazy(() => import("@/pages/admin/UserProfile"));
 
 
 const AdminRoutes: React.FC = () => {
@@ -31,11 +37,16 @@ const AdminRoutes: React.FC = () => {
         <Route path="clinic" element={<ClinicManagement />} />
         <Route path="doctor-feedback" element={<DoctorFeedbackList />} />
         <Route path="schedule-manage" element={<ScheduleManagement/>}/>
-        {/* <Route path="materials" element={<MaterialManagement/>}/> */}
+        <Route path="materials" element={<MaterialManagement/>}/>
+        <Route path="distribution-material" element={<DistributionMaterialManagement/>}/>
         <Route path="material-types" element={<MaterialTypeManagement/>}/>
         <Route path="suppliers" element={<SupplierManagement/>}/>
+        <Route path="medicines" element={<MedicineManagement />} />
         <Route path="logs" element={<Logs />} />
         <Route path="patients" element={<PatientListAdmin />} />
+        <Route path="patient/:id/medical-records" element={<PatientMedicalRecords />} />
+        <Route path="patient/:id/history" element={<PatientVisit />} />
+        <Route path="profile" element={<UserProfile />} />
       </Routes>
     </Suspense>
   );

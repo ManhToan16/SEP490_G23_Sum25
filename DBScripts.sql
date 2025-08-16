@@ -158,7 +158,7 @@ CREATE TABLE ScheduleChangeRequests (
 CREATE TABLE PatientProfiles (
    Id NVARCHAR(100) PRIMARY KEY,
    Name NVARCHAR(100) NOT NULL,
-   CitizenId NVARCHAR(20) NOT NULL UNIQUE,
+   CitizenId NVARCHAR(20) NULL DEFAULT '',
    PhoneNumber NVARCHAR(10) NOT NULL,
    Email NVARCHAR(100) NOT NULL,
    DateOfBirth DATE NOT NULL,
@@ -191,6 +191,7 @@ CREATE TABLE Appointments (
        'COMPLETED', 
        'CANCELLED'
      )),
+   CancelReason NVARCHAR(MAX) DEFAULT '',
    TotalPrice DECIMAL(18,2) DEFAULT 0,
    ExpiredAt DATETIME,
    CreatedAt DATETIME DEFAULT GETDATE(),
@@ -299,13 +300,14 @@ CREATE TABLE LaboratoryFiles (
 
 --22
 CREATE TABLE Medicines (
-   Id NVARCHAR(100) PRIMARY KEY,
-   Name NVARCHAR(255) NOT NULL,
-   ActiveIngredients NVARCHAR(MAX),
-   Strength NVARCHAR(MAX), 
-   Packaging NVARCHAR(50),
-   Unit NVARCHAR(100), 
-   Description NVARCHAR(MAX)
+    Id NVARCHAR(100) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL,
+    ActiveIngredients NVARCHAR(MAX) NOT NULL,
+    Strength NVARCHAR(MAX) NOT NULL,
+    Packaging NVARCHAR(50) NOT NULL,
+    Unit NVARCHAR(100) NOT NULL,
+    Description NVARCHAR(MAX),
+    IsActive BIT NOT NULL DEFAULT 1
 );
 
 --23
@@ -353,18 +355,18 @@ CREATE TABLE Suppliers (
 
 --27
 CREATE TABLE Materials (
-  Id NVARCHAR(100) PRIMARY KEY,
-  Name NVARCHAR(255) NOT NULL,
-  CategoryId NVARCHAR(100) NOT NULL, 
-  SupplierId NVARCHAR(100) NOT NULL, 
-  Unit NVARCHAR(50) NOT NULL, 
-  QuantityInStock INT NOT NULL CHECK (QuantityInStock >= 0),
-  MaxQuantity INT,
-  MinQuantity INT,
-  UpdatedAt DATETIME DEFAULT GETDATE(),
-  CreatedAt DATETIME DEFAULT GETDATE(),
-  FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id),
-  FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
+    Id NVARCHAR(100) PRIMARY KEY,
+    Name NVARCHAR(255) NOT NULL,
+    CategoryId NVARCHAR(100) NULL, 
+    SupplierId NVARCHAR(100) NULL, 
+    Unit NVARCHAR(50) NOT NULL, 
+    QuantityInStock INT NOT NULL CHECK (QuantityInStock >= 0),
+    MaxQuantity INT,
+    MinQuantity INT,
+    UpdatedAt DATETIME DEFAULT GETDATE(),
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id),
+    FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
 );
 
 --28
@@ -372,7 +374,7 @@ CREATE TABLE Transactions (
     Id NVARCHAR(100) PRIMARY KEY,
     MaterialId NVARCHAR(100) NOT NULL,
     TransactionType NVARCHAR(50) NOT NULL CHECK (TransactionType IN ('IMPORT', 'EXPORT', 'PROVIDE', 'RETURN', 'NURSE_RETURN', 'SUPPLIER_RETURN')),
-    Quantity INT NOT NULL CHECK (Quantity > 0),
+    Quantity INT NOT NULL CHECK (Quantity >= 0),
     RoomId NVARCHAR(100), 
     RoomType NVARCHAR (50), -- EXAMINATION / LABORATORY
     UserId NVARCHAR(100) NOT NULL,
@@ -402,6 +404,15 @@ CREATE TABLE TransactionHistory (
     FOREIGN KEY (ChangedBy) REFERENCES Users(Id)
 );
 
+--31
+CREATE TABLE TransactionDetails (
+    Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+    TransactionId NVARCHAR(100) NOT NULL, 
+    ParentTransactionId NVARCHAR(100) NULL, 
+    QuantityProvided INT NULL DEFAULT 0, 
+    FOREIGN KEY (TransactionId) REFERENCES Transactions(Id) ON DELETE CASCADE,
+    FOREIGN KEY (ParentTransactionId) REFERENCES Transactions(Id)
+);
 
 --30
 CREATE TABLE AssignmentServices (
@@ -412,6 +423,22 @@ CREATE TABLE AssignmentServices (
    FOREIGN KEY (ServiceId) REFERENCES Services(Id) ON DELETE CASCADE
 );
 GO 
+
+--31
+CREATE TABLE RoomMaterialStock (
+    Id NVARCHAR(100) NOT NULL PRIMARY KEY,
+    RoomId NVARCHAR(100) NOT NULL,
+    RoomType NVARCHAR(50) NOT NULL CHECK (RoomType IN ('EXAMINATION', 'LABORATORY')),
+    MaterialId NVARCHAR(100) NOT NULL,
+    Quantity INT NOT NULL CHECK (Quantity >= 0),     -- tồn hiện tại ở phòng
+    MinQuantity INT NULL,                            -- ngưỡng cảnh báo (tuỳ chọn)
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    UpdatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    CreatedBy NVARCHAR(100) NULL,
+    UpdatedBy NVARCHAR(100) NULL,
+    CONSTRAINT FK_RoomMaterialStock_Materials
+        FOREIGN KEY (MaterialId) REFERENCES Materials(Id) ON DELETE CASCADE
+);
 
 INSERT INTO Roles (Name, Description)
 VALUES

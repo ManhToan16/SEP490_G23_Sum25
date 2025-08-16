@@ -57,7 +57,7 @@ const Sidebar: React.FC = () => {
         { icon: Users, label: 'Danh sách bệnh nhân', path: '/receptionist/list' },
         { icon: Calendar, label: 'Lịch hẹn', path: '/receptionist/appointments' },
         { icon: UserPlus, label: 'Tạo bệnh nhân mới', path: '/receptionist/create-patient' },
-        { icon: ClipboardList, label: 'Tạo lịch hẹn', path: '/receptionist/create-appointment' },
+        { icon: ClipboardList, label: 'Tạo lịch khám', path: '/receptionist/create-appointment' },
       ];
     }
     

@@ -68,11 +68,22 @@ namespace SEP490_BE.Services.SupplierServices
             supplier.Address = request.Address ?? supplier.Address;
             supplier.Description = request.Description ?? supplier.Description;
             supplier.UpdatedAt = DateTime.UtcNow;
-            var isExists = await _supplierRepository.IsSupplierExistsAsync(supplier.Name, supplier.Email);
-            if (isExists)
+            bool isChanged =
+      (request.Name != null && request.Name != supplier.Name) ||
+      (request.Email != null && request.Email != supplier.Email);
+
+            if (isChanged)
             {
-                throw new InvalidOperationException("Nhà cung cấp đã tồn tại.");
+                var isExists = await _supplierRepository.IsSupplierExistsAsync(
+                    request.Name ?? supplier.Name,
+                    request.Email ?? supplier.Email);
+
+                if (isExists)
+                {
+                    throw new InvalidOperationException("Nhà cung cấp đã tồn tại.");
+                }
             }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -93,13 +104,24 @@ namespace SEP490_BE.Services.SupplierServices
         {
             var supplier = await _supplierRepository.FindByIdAsync(id);
             if (supplier == null)
-            {
                 throw new ResourceNotFoundException("Không tìm thấy nhà cung cấp.");
+
+            // 1. Tìm các Material đang tham chiếu tới supplier này
+            var relatedMaterials = await _context.Materials
+                .Where(m => m.SupplierId == id)
+                .ToListAsync();
+
+            // 2. Set SupplierId về null để tránh conflict
+            foreach (var material in relatedMaterials)
+            {
+                material.SupplierId = null;
             }
 
+            // 3. Xoá supplier
             await _supplierRepository.DeleteAsync(supplier);
             await _context.SaveChangesAsync();
         }
+
 
         public async Task<SupplierResponseDTO> GetSupplierById(string id)
         {

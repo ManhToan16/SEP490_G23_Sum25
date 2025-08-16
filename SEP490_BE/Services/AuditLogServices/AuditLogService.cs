@@ -1,4 +1,5 @@
 ﻿using SEP490_BE.DTO;
+using SEP490_BE.DTO.AuthDTO;
 using SEP490_BE.DTO.UserDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Repositories.AuditLogRepositories;
@@ -14,10 +15,10 @@ namespace SEP490_BE.Services.AuditLogServices
             _repository = repository;
         }
 
-        public async Task<Pagination<AuditLog>> GetLogsAsync(string? userId, string? action, string? tableName, string recordId, int pageNumber, int pageSize)
+        public async Task<Pagination<AuditLogDTO>> GetLogsAsync(string? userId, string? action, string? tableName, string recordId, int pageNumber, int pageSize)
         {
             var (logs, totalItems) = await _repository.GetLogsAsync(userId, action, tableName, recordId, pageNumber, pageSize);
-            return new Pagination<AuditLog>
+            return new Pagination<AuditLogDTO>
             {
                 Items = logs,
                 TotalItems = totalItems,
