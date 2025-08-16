@@ -211,7 +211,7 @@ namespace SEP490_BE.Services.ScheduleServices
 
                 if (!IsValidRoleForRoomType(roomType, userRole))
                 {
-                    throw new UnauthorizedAccessException($"Role {userRole} không được phép vào phòng {roomType}.");
+                    throw new ConflictDataException($"Role {userRole} không được phép vào phòng {roomType}.");
                 }
                
 
