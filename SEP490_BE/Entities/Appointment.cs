@@ -22,6 +22,7 @@ namespace SEP490_BE.Entities
         public DateTime Date { get; set; }
         public string TimeSlotId { get; set; } = null!;
         public string? Status { get; set; }
+        public string? CancelReason { get; set; }
         public decimal? TotalPrice { get; set; }
         public DateTime? ExpiredAt { get; set; }
         public DateTime? CreatedAt { get; set; }
