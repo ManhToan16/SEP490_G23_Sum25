@@ -215,7 +215,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<ExaminationResult>(entity =>
             {
-                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0CE2D462B9")
+                entity.HasIndex(e => e.AccessCode, "UQ__Examinat__24C20D0C4F7011EC")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
@@ -394,14 +394,13 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<PatientProfile>(entity =>
             {
-                entity.HasIndex(e => e.CitizenId, "UQ__PatientP__6E49FA0D32288964")
-                    .IsUnique();
-
                 entity.Property(e => e.Id).HasMaxLength(100);
 
                 entity.Property(e => e.Address).HasMaxLength(255);
 
-                entity.Property(e => e.CitizenId).HasMaxLength(20);
+                entity.Property(e => e.CitizenId)
+                    .HasMaxLength(20)
+                    .HasDefaultValueSql("('')");
 
                 entity.Property(e => e.CreatedAt)
                     .HasColumnType("datetime")
@@ -421,7 +420,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Permission>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Permissi__737584F74A66D81F");
+                    .HasName("PK__Permissi__737584F7787C9FAB");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -475,7 +474,7 @@ namespace SEP490_BE.Entities
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.HasKey(e => e.Name)
-                    .HasName("PK__Roles__737584F745BC7E37");
+                    .HasName("PK__Roles__737584F70B777FEA");
 
                 entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -746,7 +745,7 @@ namespace SEP490_BE.Entities
 
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E3899B9F3C5")
+                entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E38392EFECE")
                     .IsUnique();
 
                 entity.Property(e => e.Id).HasMaxLength(100);
