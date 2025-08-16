@@ -6,6 +6,14 @@ namespace SEP490_BE.Services.StatisticServices
     {
         //Task<PatientStatisticsDTO> GetPatientStatisticsAsync(DateTime? fromDate, DateTime? toDate);
 
+        // Dashboard Overview
+        Task<DashboardOverviewDTO> GetDashboardOverviewAsync();
+        Task<RevenueStatisticsDTO> GetRevenueStatisticsAsync(DateTime? fromDate, DateTime? toDate);
+        Task<PatientStatisticsDTO> GetPatientStatisticsAsync(DateTime? fromDate, DateTime? toDate);
+        Task<AppointmentStatisticsDTO> GetAppointmentStatisticsAsync(DateTime? fromDate, DateTime? toDate);
+        Task<StaffStatisticsDTO> GetStaffStatisticsAsync();
+        Task<RoomUtilizationDTO> GetRoomUtilizationAsync(DateTime? date);
+
         // Nhóm 2: Lịch hẹn & lịch làm việc
         Task<List<WorkScheduleStatDTO>> GetScheduleStatisticsAsync(DateTime? fromDate, DateTime? toDate);
 

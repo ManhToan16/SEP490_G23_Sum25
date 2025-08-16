@@ -99,12 +99,12 @@ builder.Services.Configure<ApiBehaviorOptions>(ValidationConfig.Configure);
 #endregion
 
 #region Redis
-var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+/*var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
 if (!string.IsNullOrEmpty(redisConnectionString))
 {
     builder.Services.AddSingleton<IConnectionMultiplexer>(
         ConnectionMultiplexer.Connect(redisConnectionString));
-}
+}*/
 #endregion
 
 #region Database SQL Server
