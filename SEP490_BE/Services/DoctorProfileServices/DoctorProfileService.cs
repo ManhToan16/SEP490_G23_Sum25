@@ -126,6 +126,15 @@ namespace SEP490_BE.Services.DoctorProfileServices
                 Biography = request.Biography,
                 Avatar = request.Avatar
             };
+            var newData = new
+            {
+                doctorProfile.Id,
+                doctorProfile.DoctorId,
+                doctorProfile.Qualifications,
+                doctorProfile.YearsOfExperience,
+                doctorProfile.Biography,
+                doctorProfile.Avatar
+            };
             var sessionUser = await _authService.GetAuthenticatedUser();
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -138,7 +147,7 @@ namespace SEP490_BE.Services.DoctorProfileServices
     tableName: "DoctorProfiles",
     recordId: doctorProfile.Id,
     oldData: null,
-    newData: doctorProfile
+    newData: newData
 );
                 await transaction.CommitAsync();
             }
