@@ -99,9 +99,9 @@ namespace SEP490_BE.Controllers
 
         [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
         [HttpPut("{id}/cancel")]
-        public async Task<ActionResult<ApiResponse>> Cancel(string id)
+        public async Task<ActionResult<ApiResponse>> Cancel(string id, [FromBody] CancelAppointmentDTO request)
         {
-            var result = await _appointmentService.Cancel(id);
+            var result = await _appointmentService.Cancel(id, request);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

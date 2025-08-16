@@ -65,6 +65,7 @@ namespace SEP490_BE.Repositories.AppointmentRepositories
                     TimeSlotStartTime = a.TimeSlot.StartTime,
                     TimeSlotEndTime = a.TimeSlot.EndTime,
                     Status = a.Status,
+                    CancelReason = a.CancelReason,
                     TotalPrice = a.TotalPrice,
                     ExpiredAt = a.ExpiredAt,
                     CreatedAt = a.CreatedAt

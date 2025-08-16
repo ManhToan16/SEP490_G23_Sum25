@@ -111,6 +111,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 Date = appointment.Date,
                 TimeSlotId = appointment.TimeSlotId,
                 Status = appointment.Status,
+                CancelReason = appointment.CancelReason,
                 TotalPrice = appointment.TotalPrice,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
@@ -211,6 +212,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotStartTime = appointment.TimeSlot.StartTime,
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
+                CancelReason = appointment.CancelReason,
                 TotalPrice = appointment.TotalPrice,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
@@ -308,6 +310,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -391,6 +394,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -457,6 +461,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -530,12 +535,13 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
         }
 
-        public async Task<AppointmentResponseDTO> Cancel(string id)
+        public async Task<AppointmentResponseDTO> Cancel(string id, CancelAppointmentDTO request)
         {
             var appointment = await _appointmentRepository.FindById(id);
             if (appointment == null)
@@ -547,6 +553,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 throw new Exceptions.ArgumentException(MessageConstants.APPOINTMENT_INVALID_UPDATE);
             }
             appointment.Status = AppointmentStatus.CANCELLED;
+            appointment.CancelReason = request.CancelReason;
 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -629,6 +636,7 @@ namespace SEP490_BE.Services.AppointmentServices
                     <p><strong>Bác sĩ mong muốn:</strong> {appointment.RequiredDoctor?.Name ?? "Không"}</p>
                     <br/>
                     <p>Lịch hẹn khám của bạn đã bị huỷ.</p>
+                    <p><strong>Lý do huỷ:</strong> {appointment.CancelReason}</p>
                     <p>Trân trọng,<br/>Khanh An Neurology Clinic</p>";
             await _emailService.SendAsync(
                 appointment.Email,
@@ -652,6 +660,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -765,6 +774,7 @@ namespace SEP490_BE.Services.AppointmentServices
                 TimeSlotEndTime = appointment.TimeSlot.EndTime,
                 Status = appointment.Status,
                 TotalPrice = appointment.TotalPrice,
+                CancelReason = appointment.CancelReason,
                 ExpiredAt = appointment.ExpiredAt,
                 CreatedAt = appointment.CreatedAt
             };
@@ -783,6 +793,7 @@ namespace SEP490_BE.Services.AppointmentServices
 
             foreach (var appointment in appointments)
             {
+                appointment.CancelReason = "Lịch hẹn hết hạn.";
                 appointment.Status = AppointmentStatus.CANCELLED;
                 await _appointmentRepository.Update(appointment);
             }
