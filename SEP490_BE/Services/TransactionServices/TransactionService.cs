@@ -773,6 +773,17 @@ namespace SEP490_BE.Services.TransactionServices
 
             if (roomStock.Quantity < useDto.Quantity)
                 throw new Exceptions.ArgumentException("Số lượng tồn kho phòng không đủ để sử dụng.");
+            var approvedTransactions = await _context.Transactions
+    .Where(t => t.TransactionType == "PROVIDE"
+        && t.Status == "APPROVED"
+        && t.RoomId == roomStock.RoomId
+        && t.MaterialId == roomStock.MaterialId)
+    .ToListAsync();
+            var latestTransaction = approvedTransactions.FirstOrDefault();
+            if (latestTransaction == null)
+            {
+                throw new Exceptions.ArgumentException("Không tìm thấy giao dịch cung cấp đã duyệt cho phòng này.");
+            }
 
             using var transactionScope = await _context.Database.BeginTransactionAsync();
             try
@@ -786,7 +797,7 @@ namespace SEP490_BE.Services.TransactionServices
                 var history = new TransactionHistory
                 {
                     Id = Guid.NewGuid().ToString(),
-                    TransactionId = null,
+                    TransactionId = latestTransaction.Id,
                     OldQuantity = oldQty,
                     NewQuantity = roomStock.Quantity,
                     OldReason = "Sử dụng vật tư",
