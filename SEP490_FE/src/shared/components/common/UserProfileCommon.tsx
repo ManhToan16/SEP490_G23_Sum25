@@ -542,19 +542,13 @@ const UserProfileCommon: React.FC<UserProfileCommonProps> = ({
               </div>
               <div>
                 <Label htmlFor="role">Vai trò</Label>
-                <select
+                <Input
                   id="role"
                   value={formData.role}
                   disabled={true}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100 cursor-not-allowed text-gray-600"
-                >
-                  <option value="">Chọn vai trò</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Doctor">Bác sĩ</option>
-                  <option value="Nurse">Y tá</option>
-                  <option value="Receptionist">Lễ tân</option>
-                  <option value="Technician">Kỹ thuật viên</option>
-                </select>
+                  className="bg-gray-100 cursor-not-allowed text-gray-600"
+                  readOnly
+                />
               </div>
             </div>
             <div>

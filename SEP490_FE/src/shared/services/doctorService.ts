@@ -35,9 +35,12 @@ export const doctorService = {
   // Cập nhật doctor profile
   updateDoctorProfile: async (doctorId: string, profileData: any) => {
     try {
+
+      
       const response = await api.put(`/Doctor/Profiles/${doctorId}`, profileData);
       return response;
     } catch (error) {
+
       throw error;
     }
   },
