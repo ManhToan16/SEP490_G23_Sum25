@@ -3,6 +3,7 @@ import { Calendar, Search, Filter, X } from "lucide-react";
 import { appointmentService, Appointment } from "@/shared/services/appointmentService";
 import { useToast } from "@/shared/components/ui/use-toast";
 import { Button } from "@/shared/components/ui/button";
+import { Label } from "@/shared/components/ui/label";
 import { signalRService } from "@/shared/services/signalRService";
 
 const AppointmentPendingConfirm: React.FC = () => {
@@ -13,6 +14,12 @@ const AppointmentPendingConfirm: React.FC = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
+
+  // State cho modal hủy lịch hẹn
+  const [showCancelAppointmentModal, setShowCancelAppointmentModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancellingAppointment, setCancellingAppointment] = useState(false);
+  const [selectedAppointmentForCancel, setSelectedAppointmentForCancel] = useState<Appointment | null>(null);
 
   // Fetch pending appointments from API
   const fetchPendingAppointments = useCallback(async () => {
@@ -161,22 +168,69 @@ const AppointmentPendingConfirm: React.FC = () => {
   };
 
   // Handle cancel appointment
-  const handleCancelAppointment = async (appointmentId: string) => {
+  const handleCancelAppointment = async (appointment: Appointment) => {
+    // Mở modal xác nhận hủy lịch hẹn
+    setSelectedAppointmentForCancel(appointment);
+    setShowCancelAppointmentModal(true);
+  };
+
+  const handleConfirmCancelAppointment = async () => {
+    if (!selectedAppointmentForCancel) return;
+
     try {
-      await appointmentService.cancelAppointment(appointmentId);
+      setCancellingAppointment(true);
+      
+      // Gọi API để hủy appointment với lý do
+      await appointmentService.cancelAppointment(selectedAppointmentForCancel.id, cancelReason);
+      
       toast({
         title: "Thành công",
-        description: "Đã hủy lịch hẹn",
+        description: "Đã hủy lịch hẹn thành công",
       });
-      fetchPendingAppointments(); // Refresh data
+      
+      // Đóng modal và reset form
+      setShowCancelAppointmentModal(false);
+      setCancelReason("");
+      setSelectedAppointmentForCancel(null);
+      
+      // Refresh data
+      fetchPendingAppointments();
     } catch (error: any) {
-      console.error('Error canceling appointment:', error);
+      console.error('Error cancelling appointment:', error);
+      
+      // Lấy thông báo lỗi cụ thể từ response
+      let errorMessage = "Không thể hủy lịch hẹn";
+      
+      if (error.response && error.response.data) {
+        if (error.response.data.Message) {
+          errorMessage = error.response.data.Message;
+        } else if (error.response.data.message) {
+          errorMessage = error.response.data.message;
+        } else if (error.response.data.Error) {
+          errorMessage = error.response.data.Error;
+        } else if (error.response.data.error) {
+          errorMessage = error.response.data.error;
+        } else if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: "Không thể hủy lịch hẹn",
+        description: errorMessage,
         variant: 'destructive',
       });
+    } finally {
+      setCancellingAppointment(false);
     }
+  };
+
+  const handleCloseCancelAppointmentModal = () => {
+    setShowCancelAppointmentModal(false);
+    setCancelReason("");
+    setSelectedAppointmentForCancel(null);
   };
 
   const getStatusColor = (status: string) => {
@@ -292,7 +346,7 @@ const AppointmentPendingConfirm: React.FC = () => {
                           variant="outline"
                           size="sm"
                           className="border-red-300 text-red-700 hover:bg-red-50"
-                          onClick={() => handleCancelAppointment(appointment.id)}
+                          onClick={() => handleCancelAppointment(appointment)}
                         >
                           Hủy
                         </Button>
@@ -339,6 +393,81 @@ const AppointmentPendingConfirm: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Modal xác nhận hủy lịch hẹn */}
+      {showCancelAppointmentModal && selectedAppointmentForCancel && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-lg font-semibold text-clinic-navy">
+                Xác nhận hủy lịch hẹn
+              </h3>
+              <button
+                onClick={handleCloseCancelAppointmentModal}
+                disabled={cancellingAppointment}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="mb-6">
+              <p className="text-gray-700 mb-4">
+                Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác.
+              </p>
+              <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                <div className="text-sm text-gray-600 mb-2">
+                  <strong>Bệnh nhân:</strong> {selectedAppointmentForCancel.name}
+                </div>
+                <div className="text-sm text-gray-600 mb-2">
+                  <strong>Số điện thoại:</strong> {selectedAppointmentForCancel.phoneNumber || 'N/A'}
+                </div>
+                <div className="text-sm text-gray-600 mb-2">
+                  <strong>Email:</strong> {selectedAppointmentForCancel.email || 'N/A'}
+                </div>
+                <div className="text-sm text-gray-600">
+                  <strong>Ngày sinh:</strong> {selectedAppointmentForCancel.dateOfBirth ? new Date(selectedAppointmentForCancel.dateOfBirth).toLocaleDateString("vi-VN") : 'N/A'}
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="cancel-reason" className="text-sm font-medium text-gray-700">
+                  Lý do hủy lịch hẹn *
+                </Label>
+                <textarea
+                  id="cancel-reason"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Nhập lý do hủy lịch hẹn..."
+                  className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                  rows={3}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={handleCloseCancelAppointmentModal}
+                disabled={cancellingAppointment}
+              >
+                Hủy
+              </Button>
+              <Button
+                onClick={handleConfirmCancelAppointment}
+                disabled={cancellingAppointment || !cancelReason.trim()}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {cancellingAppointment ? "Đang hủy..." : "Xác nhận hủy"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

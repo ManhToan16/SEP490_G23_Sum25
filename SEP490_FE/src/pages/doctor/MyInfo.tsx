@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { User, Mail, Phone, Calendar, Edit3, Save, Award, Loader2, Camera } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Mail, Phone, Calendar, Edit3, Save, Award, Loader2, Camera, Upload, X, Image as ImageIcon } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from "@/shared/store";
 import {
   fetchDoctorProfile,
@@ -10,6 +10,7 @@ import {
   clearSuccess,
 } from "@/shared/store/slices/doctorProfileSlice";
 import { useToast } from "@/shared/components/ui/use-toast";
+import { doctorAvatarService } from "@/shared/services/doctorAvatarService";
 
 // Interface cho doctor profile response (inline type theo yêu cầu)
 interface DoctorProfileData {
@@ -47,6 +48,15 @@ const DoctorProfile: React.FC = () => {
     biography: '',
     avatar: ''
   });
+  
+  // Avatar upload states
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get doctor ID from localStorage
   const getDoctorIdFromLocalStorage = () => {
@@ -129,6 +139,185 @@ const DoctorProfile: React.FC = () => {
     }));
   };
 
+  // Avatar upload handlers
+  const handleAvatarClick = () => {
+    if (isEditing) {
+      setShowAvatarModal(true);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    if (file) {
+      // Validate file type - chỉ chấp nhận các định dạng phổ biến
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: "Lỗi",
+          description: "Chỉ chấp nhận file JPG, PNG hoặc GIF",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "Lỗi",
+          description: "Kích thước file không được vượt quá 5MB",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate file name - không chấp nhận ký tự đặc biệt
+      const fileName = file.name.toLowerCase();
+      if (!fileName.match(/^[a-zA-Z0-9\s\-_.]+\.(jpg|jpeg|png|gif)$/)) {
+        toast({
+          title: "Lỗi",
+          description: "Tên file không được chứa ký tự đặc biệt",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAvatarFile(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleFileSelect(file);
+    }
+  };
+
+  const handleUploadAvatar = async () => {
+    if (!avatarFile || !profile?.id) {
+      toast({
+        title: "Lỗi",
+        description: "Vui lòng chọn file ảnh để upload",
+        variant: "destructive",
+      });
+      return;
+    }
+
+
+
+    setIsUploading(true);
+    try {
+              const response = await doctorAvatarService.uploadAvatar(profile.id, avatarFile);
+      
+
+      
+             // Kiểm tra response structure và lấy avatar URL
+       let avatarUrl = '';
+       
+       if (response && response.data) {
+         // Nếu data là array
+         if (Array.isArray(response.data) && response.data.length > 0) {
+           const firstItem = response.data[0];
+           // Kiểm tra nếu firstItem là object có avatar field
+           if (typeof firstItem === 'object' && firstItem.avatar) {
+             avatarUrl = firstItem.avatar;
+           } else {
+             avatarUrl = firstItem;
+           }
+         } 
+         // Nếu data là string trực tiếp
+         else if (typeof response.data === 'string') {
+           avatarUrl = response.data;
+         }
+         // Nếu data là object có avatar field
+         else if (response.data.avatar) {
+           avatarUrl = response.data.avatar;
+         }
+       }
+       
+
+      
+      if (avatarUrl) {
+        // Update local state
+        setFormData(prev => ({ ...prev, avatar: avatarUrl }));
+        
+                 // Update profile in store
+         if (profile) {
+           dispatch(updateDoctorProfile({
+             doctorId: profile.id,
+             data: {
+               doctorId: profile.doctorId,
+               qualifications: profile.qualifications,
+               yearsOfExperience: profile.yearsOfExperience,
+               biography: profile.biography,
+               avatar: avatarUrl
+             }
+           }));
+         }
+
+        toast({
+          title: "Thành công",
+          description: "Upload avatar thành công!",
+          variant: "default",
+        });
+
+        // Close modal and reset states
+        setShowAvatarModal(false);
+        setAvatarFile(null);
+        setAvatarPreview('');
+      } else {
+        throw new Error('Không thể lấy URL avatar từ response');
+      }
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      
+      // Lấy error message chi tiết
+      let errorMessage = "Có lỗi xảy ra khi upload avatar";
+      
+      if (error.response?.data?.Message) {
+        errorMessage = error.response.data.Message;
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Lỗi",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   const handleSave = () => {
     if (!doctorId) {
       toast({
@@ -147,11 +336,15 @@ const DoctorProfile: React.FC = () => {
       avatar: formData.avatar
     };
 
+
+
     if (profile?.id) {
       // Update existing profile
+
       dispatch(updateDoctorProfile({ doctorId: profile.id, data: profileData }));
     } else {
       // Create new profile
+
       dispatch(createDoctorProfile(profileData));
     }
   };
@@ -216,10 +409,15 @@ const DoctorProfile: React.FC = () => {
             <div className="text-center space-y-4">
               {/* Avatar */}
               <div className="relative">
-                <div className="w-24 h-24 bg-clinic-blue rounded-full flex items-center justify-center mx-auto shadow-lg">
-                  {profile?.avatar ? (
+                <div 
+                  className={`w-24 h-24 bg-clinic-blue rounded-full flex items-center justify-center mx-auto shadow-lg cursor-pointer transition-all hover:shadow-xl ${
+                    isEditing ? 'hover:scale-105' : ''
+                  }`}
+                  onClick={handleAvatarClick}
+                >
+                  {formData.avatar ? (
                     <img 
-                      src={profile.avatar} 
+                      src={formData.avatar} 
                       alt="Avatar" 
                       className="w-24 h-24 rounded-full object-cover"
                     />
@@ -228,9 +426,17 @@ const DoctorProfile: React.FC = () => {
                   )}
                 </div>
                 {isEditing && (
-                  <button className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center border-2 border-clinic-blue shadow-md hover:bg-gray-50 transition-colors">
+                  <button 
+                    className="absolute -bottom-1 -right-1 w-8 h-8 bg-white rounded-full flex items-center justify-center border-2 border-clinic-blue shadow-md hover:bg-gray-50 transition-colors"
+                    onClick={handleAvatarClick}
+                  >
                     <Camera size={16} className="text-clinic-blue" />
                   </button>
+                )}
+                {isEditing && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    Nhấp để thay đổi avatar
+                  </p>
                 )}
               </div>
 
@@ -252,7 +458,7 @@ const DoctorProfile: React.FC = () => {
                 </span>
               </div>
             </div>
-              </div>
+          </div>
 
           {/* Contact Info Card */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
@@ -279,9 +485,9 @@ const DoctorProfile: React.FC = () => {
                   }
                 </span>
               </div>
-              </div>
             </div>
           </div>
+        </div>
 
         {/* Right Column - Editable Profile Info */}
         <div className="lg:col-span-2">
@@ -359,27 +565,120 @@ const DoctorProfile: React.FC = () => {
                   </p>
                 )}
               </div>
-
-              {/* Avatar URL */}
-              {isEditing && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    URL Avatar
-                  </label>
-                  <input
-                    type="url"
-                    name="avatar"
-                    value={formData.avatar}
-                    onChange={handleInputChange}
-                    placeholder="https://example.com/avatar.jpg"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
-                  />
-                </div>
-              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Avatar Upload Modal */}
+      {showAvatarModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Thay đổi Avatar
+              </h3>
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* File Upload Area */}
+            <div
+              className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                dragActive 
+                  ? 'border-clinic-blue bg-clinic-blue/5' 
+                  : 'border-gray-300 hover:border-gray-400'
+              }`}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              {avatarPreview ? (
+                <div className="space-y-4">
+                  <img 
+                    src={avatarPreview} 
+                    alt="Preview" 
+                    className="w-32 h-32 rounded-full object-cover mx-auto border-4 border-gray-200"
+                  />
+                  <p className="text-sm text-gray-600">
+                    {avatarFile?.name}
+                  </p>
+                  <button
+                    onClick={() => {
+                      setAvatarFile(null);
+                      setAvatarPreview('');
+                    }}
+                    className="text-red-500 hover:text-red-700 text-sm font-medium"
+                  >
+                    Chọn lại
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                    <ImageIcon size={24} className="text-gray-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600 mb-2">
+                      Kéo thả file ảnh vào đây hoặc
+                    </p>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-clinic-blue hover:text-clinic-blue/80 font-medium"
+                    >
+                      Chọn file
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Hỗ trợ: JPG, PNG, GIF (tối đa 5MB, tên file không chứa ký tự đặc biệt)
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileInputChange}
+              className="hidden"
+            />
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setShowAvatarModal(false)}
+                className="flex-1 px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleUploadAvatar}
+                disabled={!avatarFile || isUploading}
+                className="flex-1 px-4 py-2 bg-clinic-blue text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {isUploading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={16} />
+                    Đang upload...
+                  </>
+                ) : (
+                  <>
+                    <Upload size={16} />
+                    Upload Avatar
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
