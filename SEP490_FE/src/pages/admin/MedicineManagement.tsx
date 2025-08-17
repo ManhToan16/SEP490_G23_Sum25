@@ -55,6 +55,59 @@ const MedicineManagement: React.FC = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
 
+  // Validation helper function
+  const validateMedicineData = (data: MedicineForm): string[] => {
+    const errors: string[] = [];
+    
+    // Validate required fields
+    if (!data.name.trim()) {
+      errors.push('Tên thuốc là bắt buộc.');
+    }
+    if (!data.activeIngredients.trim()) {
+      errors.push('Hoạt chất là bắt buộc.');
+    }
+    if (!data.strength.trim()) {
+      errors.push('Hàm lượng là bắt buộc.');
+    }
+    if (!data.packaging.trim()) {
+      errors.push('Quy cách đóng gói là bắt buộc.');
+    }
+    if (!data.unit.trim()) {
+      errors.push('Đơn vị là bắt buộc.');
+    }
+    
+    // Validate string length
+    if (data.name.length > 200) {
+      errors.push('Tên thuốc không được vượt quá 200 ký tự.');
+    }
+    if (data.packaging.length > 50) {
+      errors.push('Quy cách đóng gói không được vượt quá 50 ký tự.');
+    }
+    if (data.unit.length > 50) {
+      errors.push('Đơn vị không được vượt quá 50 ký tự.');
+    }
+    
+    // Validate pattern (only letters, numbers, spaces, hyphens, and dots)
+    const pattern = /^[a-zA-Z0-9\s\-\.]+$/;
+    if (data.name && !pattern.test(data.name)) {
+      errors.push('Tên thuốc chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+    }
+    if (data.activeIngredients && !pattern.test(data.activeIngredients)) {
+      errors.push('Hoạt chất chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+    }
+    if (data.strength && !pattern.test(data.strength)) {
+      errors.push('Hàm lượng chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+    }
+    if (data.packaging && !pattern.test(data.packaging)) {
+      errors.push('Quy cách đóng gói chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+    }
+    if (data.unit && !pattern.test(data.unit)) {
+      errors.push('Đơn vị chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+    }
+    
+    return errors;
+  };
+
   const fetchData = useCallback(async (pageNumber = 1) => {
     try {
       setLoading(true);
@@ -66,10 +119,28 @@ const MedicineManagement: React.FC = () => {
       setPage(res.pageNumber || 1);
     } catch (error: any) {
       console.error('Error fetching medicines:', error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách thuốc";
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể tải danh sách thuốc';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.Message) {
+          errorMessage = errorData.Message;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -134,10 +205,12 @@ const MedicineManagement: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!form.name || !form.activeIngredients || !form.strength || !form.packaging || !form.unit) {
+    // Validate form data
+    const validationErrors = validateMedicineData(form);
+    if (validationErrors.length > 0) {
       toast({
         title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin bắt buộc",
+        description: validationErrors.join(', '),
         variant: "destructive",
       });
       return;
@@ -162,10 +235,30 @@ const MedicineManagement: React.FC = () => {
     
     } catch (error: any) {
       console.error('Error submitting medicine:', error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể lưu thuốc";
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể lưu thuốc';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // Kiểm tra cấu trúc lỗi validation từ backend
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          // Nếu có validation errors, hiển thị tất cả lỗi
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.Message) {
+          errorMessage = errorData.Message;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -188,10 +281,28 @@ const MedicineManagement: React.FC = () => {
       fetchData(page);
     } catch (error: any) {
       console.error('Error deleting medicine:', error);
-      const message = error?.response?.data?.Message || error?.message || "Không thể xóa thuốc";
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể xóa thuốc';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.Message) {
+          errorMessage = errorData.Message;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: message,
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

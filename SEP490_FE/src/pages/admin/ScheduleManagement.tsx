@@ -484,11 +484,30 @@ const ScheduleManagement: React.FC = () => {
         fileInput.value = '';
       }
     } catch (error: any) {
-      const message = error?.response?.data?.Message || error?.message || "Không thể import file Excel";
       console.error('Error importing Excel:', error);
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể import file Excel';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // Kiểm tra cấu trúc lỗi từ backend
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -508,11 +527,29 @@ const ScheduleManagement: React.FC = () => {
         variant: 'default',
       });
     } catch (error: any) {
-      const message = error?.response?.data?.Message || error?.message || "Không thể tải template Excel";
       console.error('Error downloading template:', error);
+      console.error('Error details:', error?.response?.data);
+      
+      let errorMessage = 'Không thể tải template Excel';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.Message) {
+          errorMessage = errorData.Message;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: "Lỗi",
-        description: message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

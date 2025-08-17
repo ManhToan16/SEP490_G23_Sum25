@@ -1865,7 +1865,7 @@ const CreateExaminationForm: React.FC = () => {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tần xuất *
+                    Tần suất *
                   </label>
                   <input
                     type="text"
