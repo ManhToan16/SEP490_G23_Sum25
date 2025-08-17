@@ -37,7 +37,8 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
                 {
                     Id = lr.Id,
                     Name = lr.Name,
-                    Description = lr.Description
+                    Description = lr.Description,
+                    IsActive = lr.IsActive,
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -56,7 +57,9 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
+
             };
         }
 
