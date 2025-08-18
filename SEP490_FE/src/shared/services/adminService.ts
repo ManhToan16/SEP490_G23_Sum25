@@ -437,7 +437,7 @@ export const adminService = {
    * @param toDate - Ngày kết thúc (tùy chọn)
    * @returns Thống kê lịch làm việc
    */
-  getScheduleStatistics: async (role: string, fromDate?: string, toDate?: string) => {
+  getScheduleStatisticsByRole: async (role: string, fromDate?: string, toDate?: string) => {
     try {
       let url = `/Schedules/statistics/${role}`;
       if (fromDate && toDate) {
@@ -1483,6 +1483,199 @@ export const adminService = {
       return response.data;
     } catch (error: any) {
       console.error("Error rejecting supplier return:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // ===============================================
+  // STATISTICS API - Thống kê cho Dashboard
+  // ===============================================
+  
+  /**
+   * Lấy tổng quan dashboard
+   * @returns Dữ liệu tổng quan dashboard
+   */
+  getDashboardOverview: async () => {
+    try {
+      const response = await api.get("/Statistics/dashboard-overview");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching dashboard overview:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê doanh thu
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Thống kê doanh thu
+   */
+  getRevenueStatistics: async (fromDate?: string, toDate?: string) => {
+    try {
+      let url = "/Statistics/revenue-statistics";
+      if (fromDate && toDate) {
+        url += `?fromDate=${fromDate}&toDate=${toDate}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching revenue statistics:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê bệnh nhân
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Thống kê bệnh nhân
+   */
+  getPatientStatistics: async (fromDate?: string, toDate?: string) => {
+    try {
+      let url = "/Statistics/patient-statistics";
+      if (fromDate && toDate) {
+        url += `?fromDate=${fromDate}&toDate=${toDate}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching patient statistics:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê lịch hẹn
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Thống kê lịch hẹn
+   */
+  getAppointmentStatistics: async (fromDate?: string, toDate?: string) => {
+    try {
+      let url = "/Statistics/appointment-statistics";
+      if (fromDate && toDate) {
+        url += `?fromDate=${fromDate}&toDate=${toDate}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching appointment statistics:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê nhân viên
+   * @returns Thống kê nhân viên
+   */
+  getStaffStatistics: async () => {
+    try {
+      const response = await api.get("/Statistics/staff-statistics");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching staff statistics:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê sử dụng phòng
+   * @param date - Ngày cần thống kê (tùy chọn)
+   * @returns Thống kê sử dụng phòng
+   */
+  getRoomUtilization: async (date?: string) => {
+    try {
+      let url = "/Statistics/room-utilization";
+      if (date) {
+        url += `?date=${date}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching room utilization:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê lịch làm việc
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Thống kê lịch làm việc
+   */
+  getScheduleStatistics: async (fromDate?: string, toDate?: string) => {
+    try {
+      let url = "/Statistics/schedules";
+      if (fromDate && toDate) {
+        url += `?fromDate=${fromDate}&toDate=${toDate}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching schedule statistics:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê kho vật tư
+   * @returns Thống kê kho vật tư
+   */
+  getInventoryStatistics: async () => {
+    try {
+      const response = await api.get("/Statistics/inventory");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching inventory statistics:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê tỷ lệ có mặt của bác sĩ
+   * @param fromDate - Ngày bắt đầu (tùy chọn)
+   * @param toDate - Ngày kết thúc (tùy chọn)
+   * @returns Thống kê tỷ lệ có mặt
+   */
+  getAttendanceRate: async (fromDate?: string, toDate?: string) => {
+    try {
+      let url = "/Statistics/attendanceRate";
+      if (fromDate && toDate) {
+        url += `?fromDate=${fromDate}&toDate=${toDate}`;
+      }
+      const response = await api.get(url);
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching attendance rate:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê hàng chờ bệnh nhân (real-time)
+   * @returns Thống kê hàng chờ bệnh nhân
+   */
+  getPatientQueue: async () => {
+    try {
+      const response = await api.get("/Statistics/patient-queue");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching patient queue:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy thống kê nhân viên online (real-time)
+   * @returns Thống kê nhân viên online
+   */
+  getStaffOnline: async () => {
+    try {
+      const response = await api.get("/Statistics/staff-online");
+      return response.data;
+    } catch (error: any) {
+      console.error("Error fetching staff online:", error?.response?.data?.Message || error.message);
       throw error;
     }
   },
