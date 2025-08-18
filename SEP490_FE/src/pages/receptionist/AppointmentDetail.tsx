@@ -122,6 +122,10 @@ const AppointmentDetail: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<string>("");
   const [isPriority, setIsPriority] = useState(false);
 
+  // State cho modal hủy lịch hẹn
+  const [showCancelAppointmentModal, setShowCancelAppointmentModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+
   useEffect(() => {
     const fetchAppointmentDetail = async () => {
       if (!id) return;
@@ -282,18 +286,18 @@ const AppointmentDetail: React.FC = () => {
   const handleCancelAppointment = async () => {
     if (!appointment) return;
 
-    // Hiển thị dialog xác nhận
-    const confirmed = window.confirm(
-      "Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác."
-    );
-    
-    if (!confirmed) return;
+    // Mở modal xác nhận hủy lịch hẹn
+    setShowCancelAppointmentModal(true);
+  };
+
+  const handleConfirmCancelAppointment = async () => {
+    if (!appointment) return;
 
     try {
       setCancellingAppointment(true);
       
-      // Gọi API để hủy appointment
-      await appointmentService.cancelAppointment(appointment.id);
+      // Gọi API để hủy appointment với lý do
+      await appointmentService.cancelAppointment(appointment.id, cancelReason);
       
       toast({
         title: "Thành công",
@@ -303,6 +307,10 @@ const AppointmentDetail: React.FC = () => {
       // Refresh appointment data
       const result = await appointmentService.getAppointmentById(appointment.id);
       setAppointment(result);
+      
+      // Đóng modal và reset form
+      setShowCancelAppointmentModal(false);
+      setCancelReason("");
     } catch (error: any) {
       console.error("Error cancelling appointment:", error);
       
@@ -333,6 +341,11 @@ const AppointmentDetail: React.FC = () => {
     } finally {
       setCancellingAppointment(false);
     }
+  };
+
+  const handleCloseCancelAppointmentModal = () => {
+    setShowCancelAppointmentModal(false);
+    setCancelReason("");
   };
 
     const handleOpenUpdateAppointmentModal = () => {
@@ -484,7 +497,7 @@ const AppointmentDetail: React.FC = () => {
 
       setPatientForm({
         name: appointment.name || "",
-        citizenId: "",
+        citizenId: "", // Luôn khởi tạo là chuỗi rỗng
         phoneNumber: appointment.phoneNumber || "",
         email: appointment.email || "",
         dateOfBirth: dateOfBirth,
@@ -500,7 +513,7 @@ const AppointmentDetail: React.FC = () => {
     setShowCreateModal(false);
     setPatientForm({
       name: "",
-      citizenId: "",
+      citizenId: "", // Luôn là chuỗi rỗng
       phoneNumber: "",
       email: "",
       dateOfBirth: "",
@@ -965,7 +978,15 @@ const AppointmentDetail: React.FC = () => {
 
     setCreatingPatient(true);
     try {
-      const newPatient = await adminService.createPatient(patientForm);
+      // Chuẩn bị dữ liệu để gửi API - đảm bảo citizenId luôn là chuỗi rỗng nếu không có giá trị
+      const patientData = {
+        ...patientForm,
+        citizenId: patientForm.citizenId.trim() || "", // Đảm bảo citizenId luôn là chuỗi rỗng nếu không có giá trị
+        email: patientForm.email.trim() || "", // Tương tự cho email
+        address: patientForm.address.trim() || "", // Tương tự cho address
+      };
+
+      const newPatient = await adminService.createPatient(patientData);
 
       // Nếu API trả về thành công nhưng không có name, vẫn coi là thành công
       // vì có thể API trả về cấu trúc khác hoặc name nằm trong field khác
@@ -1206,6 +1227,27 @@ const AppointmentDetail: React.FC = () => {
             <Trash2 size={16} />
             <span>{cancellingAppointment ? "Đang hủy..." : "Hủy lịch hẹn"}</span>
           </Button>
+        )}
+
+        {/* Hiển thị lý do hủy khi trạng thái là CANCELLED */}
+        {appointment && appointment.status === "CANCELLED" && appointment.cancelReason && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 max-w-md">
+            <div className="flex items-start space-x-2">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-red-800 mb-1">
+                  Lý do hủy lịch hẹn
+                </h4>
+                <p className="text-sm text-red-700">
+                  {appointment.cancelReason}
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
@@ -1632,13 +1674,13 @@ const AppointmentDetail: React.FC = () => {
                     onChange={(e) => {
                       setPatientForm({
                         ...patientForm,
-                        citizenId: e.target.value,
+                        citizenId: e.target.value || "", // Đảm bảo luôn là chuỗi
                       });
                       if (formErrors.citizenId) {
                         setFormErrors({ ...formErrors, citizenId: "" });
                       }
                     }}
-                    placeholder="Nhập số CCCD (12 chữ số) - Không bắt buộc"
+                    placeholder="Nhập số CCCD (12 chữ số) "
                     className={`mt-1 ${
                       formErrors.citizenId
                         ? "border-red-500 focus:border-red-500 focus:ring-red-500"
@@ -2474,6 +2516,80 @@ const AppointmentDetail: React.FC = () => {
                   className="bg-green-600 hover:bg-green-700"
                 >
                   {processingPayment ? "Đang xử lý..." : "Xác nhận thanh toán"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal xác nhận hủy lịch hẹn */}
+        {showCancelAppointmentModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              {/* Header */}
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-semibold text-clinic-navy">
+                  Xác nhận hủy lịch hẹn
+                </h3>
+                <button
+                  onClick={handleCloseCancelAppointmentModal}
+                  disabled={cancellingAppointment}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="mb-6">
+                <p className="text-gray-700 mb-4">
+                  Bạn có chắc chắn muốn hủy lịch hẹn này? Hành động này không thể hoàn tác.
+                </p>
+                {appointment && (
+                  <div className="mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div className="text-sm text-gray-600 mb-2">
+                      <strong>Bệnh nhân:</strong> {appointment.name}
+                    </div>
+                    <div className="text-sm text-gray-600 mb-2">
+                      <strong>Ngày khám:</strong> {new Date(appointment.date).toLocaleDateString("vi-VN")}
+                    </div>
+                    <div className="text-sm text-gray-600">
+                      <strong>Giờ khám:</strong> {appointment.timeSlotStartTime.slice(0, 5)} - {appointment.timeSlotEndTime.slice(0, 5)}
+                    </div>
+                  </div>
+                )}
+                
+                <div>
+                  <Label htmlFor="cancel-reason" className="text-sm font-medium text-gray-700">
+                    Lý do hủy lịch hẹn *
+                  </Label>
+                  <textarea
+                    id="cancel-reason"
+                    value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    placeholder="Nhập lý do hủy lịch hẹn..."
+                    className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                    rows={3}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={handleCloseCancelAppointmentModal}
+                  disabled={cancellingAppointment}
+                >
+                  Hủy
+                </Button>
+                <Button
+                  onClick={handleConfirmCancelAppointment}
+                  disabled={cancellingAppointment || !cancelReason.trim()}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {cancellingAppointment ? "Đang hủy..." : "Xác nhận hủy"}
                 </Button>
               </div>
             </div>

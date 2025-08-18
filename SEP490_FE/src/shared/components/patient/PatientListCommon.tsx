@@ -80,7 +80,11 @@ const PatientListCommon: React.FC = () => {
     e.preventDefault();
     setFormLoading(true);
     try {
-      await adminService.createPatient(formData);
+      const patientData = {
+        ...formData,
+        citizenId: formData.citizenId.trim() || "" // Luôn gửi chuỗi rỗng nếu không có giá trị
+      };
+      await adminService.createPatient(patientData);
       toast({ title: 'Thành công', description: 'Tạo bệnh nhân mới thành công!' });
       setShowModal(false);
       setFormData({ name: '', citizenId: '', phoneNumber: '', email: '', dateOfBirth: '', gender: 'Nam', address: '' });
@@ -134,15 +138,16 @@ const PatientListCommon: React.FC = () => {
     e.preventDefault();
     setEditFormLoading(true);
     try {
-      await adminService.updatePatient(editFormData.id, {
+      const patientData = {
         name: editFormData.name,
-        citizenId: editFormData.citizenId,
+        citizenId: editFormData.citizenId.trim() || "", // Luôn gửi chuỗi rỗng nếu không có giá trị
         phoneNumber: editFormData.phoneNumber,
         email: editFormData.email,
         dateOfBirth: editFormData.dateOfBirth,
         gender: editFormData.gender,
         address: editFormData.address,
-      });
+      };
+      await adminService.updatePatient(editFormData.id, patientData);
       toast({ title: 'Thành công', description: 'Cập nhật bệnh nhân thành công!' });
       setShowEditModal(false);
       setEditFormData({ id: '', name: '', citizenId: '', phoneNumber: '', email: '', dateOfBirth: '', gender: 'Nam', address: '' });
@@ -324,8 +329,8 @@ const PatientListCommon: React.FC = () => {
               <input type="text" name="name" value={formData.name} onChange={handleInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" placeholder="Nhập họ và tên" />
             </div>
             <div>
-              <label className="block mb-1 font-medium">CCCD *</label>
-              <input type="text" name="citizenId" value={formData.citizenId} onChange={handleInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" placeholder="Nhập số CCCD" />
+              <label className="block mb-1 font-medium">CCCD</label>
+              <input type="text" name="citizenId" value={formData.citizenId} onChange={handleInputChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" placeholder="Nhập số CCCD" />
             </div>
             <div>
               <label className="block mb-1 font-medium">Số điện thoại *</label>
@@ -337,7 +342,15 @@ const PatientListCommon: React.FC = () => {
             </div>
             <div>
               <label className="block mb-1 font-medium">Ngày sinh *</label>
-              <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" />
+              <input 
+                type="date" 
+                name="dateOfBirth" 
+                value={formData.dateOfBirth} 
+                onChange={handleInputChange} 
+                max={new Date().toISOString().split('T')[0]}
+                required 
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" 
+              />
             </div>
             <div>
               <label className="block mb-1 font-medium">Giới tính *</label>
@@ -367,8 +380,8 @@ const PatientListCommon: React.FC = () => {
               <input type="text" name="name" value={editFormData.name} onChange={handleEditInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" placeholder="Nhập họ và tên" />
             </div>
             <div>
-              <label className="block mb-1 font-medium">CCCD *</label>
-              <input type="text" name="citizenId" value={editFormData.citizenId} onChange={handleEditInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" placeholder="Nhập số CCCD" />
+              <label className="block mb-1 font-medium">CCCD</label>
+              <input type="text" name="citizenId" value={editFormData.citizenId} onChange={handleEditInputChange} className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" placeholder="Nhập số CCCD" />
             </div>
             <div>
               <label className="block mb-1 font-medium">Số điện thoại *</label>
@@ -380,7 +393,15 @@ const PatientListCommon: React.FC = () => {
             </div>
             <div>
               <label className="block mb-1 font-medium">Ngày sinh *</label>
-              <input type="date" name="dateOfBirth" value={editFormData.dateOfBirth} onChange={handleEditInputChange} required className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" />
+              <input 
+                type="date" 
+                name="dateOfBirth" 
+                value={editFormData.dateOfBirth} 
+                onChange={handleEditInputChange} 
+                max={new Date().toISOString().split('T')[0]}
+                required 
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue" 
+              />
             </div>
             <div>
               <label className="block mb-1 font-medium">Giới tính *</label>

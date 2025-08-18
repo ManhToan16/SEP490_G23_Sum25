@@ -40,6 +40,7 @@ export interface Appointment {
   totalPrice: number;
   expiredAt: string;
   createdAt: string;
+  cancelReason?: string;
 }
 
 // Interface cho Paginated Response
@@ -256,9 +257,13 @@ export const appointmentService = {
   },
 
   // Hủy lịch hẹn (WAITING_FOR_CONFIRMATION -> CANCELLED)
-  cancelAppointment: async (appointmentId: string): Promise<any> => {
+  cancelAppointment: async (appointmentId: string, cancelReason?: string): Promise<any> => {
     try {
-      const response = await api.put(`/Appointment/${appointmentId}/cancel`);
+      const requestBody = {
+        cancelReason: cancelReason || ""
+      };
+      
+      const response = await api.put(`/Appointment/${appointmentId}/cancel`, requestBody);
 
       // API trả về: { statusCode: 200, success: true, message: "...", data: [{appointment}] }
       if (response && response.data) {
@@ -1370,7 +1375,9 @@ export const appointmentService = {
   // Lấy thông tin chi tiết người dùng (alias cho getUserById)
   getUserDetail: async (userId: string): Promise<any> => {
     return appointmentService.getUserById(userId);
-  }
+  },
+
+
 };
 
 export default appointmentService;

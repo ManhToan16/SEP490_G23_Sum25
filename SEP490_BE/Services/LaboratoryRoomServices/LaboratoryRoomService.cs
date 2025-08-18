@@ -37,7 +37,8 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
                 {
                     Id = lr.Id,
                     Name = lr.Name,
-                    Description = lr.Description
+                    Description = lr.Description,
+                    IsActive = lr.IsActive,
                 }).ToList(),
                 TotalItems = totalItems,
                 PageNumber = pageNumber,
@@ -56,7 +57,9 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive = room.IsActive,
+
             };
         }
 
@@ -70,7 +73,8 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = request.Name,
-                Description = request.Description
+                Description = request.Description,
+                IsActive=true
             };
 
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -90,7 +94,8 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
             {
                 Id = room.Id,
                 Name = room.Name,
-                Description = room.Description
+                Description = room.Description,
+                IsActive=room.IsActive,
             };
         }
         public async Task<bool> IsLaboratoryRoomExistsAsync(string name)

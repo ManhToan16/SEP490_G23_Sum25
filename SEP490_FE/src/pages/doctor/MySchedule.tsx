@@ -1,11 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Calendar, Clock, Plus, Edit, Trash2 } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
 import { workScheduleService } from '@/shared/services/workSchedule';
 import { adminService } from '@/shared/services/adminService';
 import { format, parse, getDay, addDays, startOfWeek } from 'date-fns';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/shared/components/ui/table';
 import { vi } from 'date-fns/locale/vi';
 import { getWeek, getYear } from 'date-fns';
+import { useSchedule } from '@/shared/hooks/business/useSchedule';
+
 
 const getInitialWeekString = () => {
   const today = new Date();
@@ -58,6 +61,8 @@ const DoctorSchedule: React.FC = () => {
   const [timeSlots, setTimeSlots] = useState([]);
 
   const [loading, setLoading] = useState(true);
+
+  const { schedules: apiSchedules, loading: scheduleLoading, loadSchedulesByRole, addSchedule: addScheduleAPI, removeSchedule: removeScheduleAPI } = useSchedule();
 
   useEffect(() => {
     const fetchSchedule = async () => {
@@ -121,6 +126,14 @@ const DoctorSchedule: React.FC = () => {
     return apiDate; // fallback
   };
 
+  const getScheduleForDay = useCallback((day: string, timeSlotId: string) => {
+    return apiSchedules.filter(schedule => {
+      if (!schedule || !schedule.date) return false;
+      const scheduleDate = formatDateFromAPI(schedule.date);
+      return scheduleDate === day && schedule.timeSlotId === timeSlotId;
+    });
+  }, [apiSchedules]);
+
   const schedule = weekDates.map(({ day, date }, idx) => {
     const shifts = scheduleData
       .filter((item) => formatDateFromAPI(item.date) === date)
@@ -172,93 +185,75 @@ const DoctorSchedule: React.FC = () => {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
             />
           </div>
-          <div className="text-right">
-            <p className="text-sm text-gray-600">Tổng giờ làm việc</p>
-            <p className="text-2xl font-bold text-clinic-navy">{totalHours}h</p>
-          </div>
         </div>
       </div>
 
       {/* Weekly Schedule */}
-      <div className="grid grid-cols-1 lg:grid-cols-7 gap-4">
-        {schedule.map((day) => (
-          <div key={day.id} className="clinic-card">
-            <div className="text-center mb-4">
-              <h3 className="font-medium text-clinic-navy">{day.day}</h3>
-              <p className="text-sm text-gray-600">{day.date}</p>
-            </div>
+      <div className="flex-1 overflow-auto">
+        <Table className="min-w-full border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+          <TableHeader className="sticky top-0 z-10">
+            <TableRow className="bg-white">
+              <TableHead className="w-28 text-xs font-semibold text-clinic-navy border-r border-gray-200">
+                Thời gian
+              </TableHead>
+              {weekDates.map((day) => (
+                <TableHead
+                  key={day.date}
+                  className="text-center min-w-28 text-xs font-semibold text-clinic-navy border-r border-gray-200"
+                >
+                  <div className="p-1">
+                    <div>{day.day}</div>
+                    <div className="text-xs text-gray-500">{day.date}</div>
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
 
-            <div className="space-y-2">
-              {day.shifts.length > 0 ? (
-                day.shifts.map((shift) => (
-                  <div key={shift.id} className="p-3 bg-clinic-blue rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-clinic-navy">
-                        {shift.type}
-                      </span>
-                    </div>
-                    <div className="space-y-1 text-sm text-clinic-navy">
-                      <div>👤 {shift.staffName}</div> {/* ← dòng thêm vào */}
-                      <div className="flex items-center space-x-1">
-                        <Clock size={12} />
-                        <span>{shift.startTime} - {shift.endTime}</span>
+          <TableBody>
+            {timeSlots.map((timeSlot) => (
+              <TableRow key={timeSlot.id} className="bg-white">   {/* ✅ luôn trắng */}
+                {/* Cột giờ */}
+                <TableCell className="font-medium sticky left-0 bg-white z-10 p-2 border-r border-gray-200">
+                  <div className="flex items-center space-x-1">
+                    <Clock size={12} className="text-clinic-navy" />
+                    <div>
+                      <div className="font-semibold text-clinic-navy text-xs">{timeSlot.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {timeSlot.startTime} - {timeSlot.endTime}
                       </div>
-                      <div>📍 {shift.room}</div>
                     </div>
                   </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-400">
-                  <Calendar size={32} className="mx-auto mb-2" />
-                  <p className="text-sm">Không có ca làm việc</p>
-                  <button className="mt-2 text-clinic-navy hover:underline text-sm">
-                    + Thêm ca
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+                </TableCell>
 
-      {/* Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-clinic-navy">
-            {schedule.filter((d) => d.shifts.length > 0).length}
-          </h3>
-          <p className="text-gray-600">Ngày làm việc</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-clinic-navy">
-            {schedule.reduce((sum, d) => sum + d.shifts.length, 0)}
-          </h3>
-          <p className="text-gray-600">Tổng ca làm việc</p>
-        </div>
-        <div className="clinic-card text-center">
-          <h3 className="text-2xl font-bold text-clinic-navy">{totalHours}h</h3>
-          <p className="text-gray-600">Tổng giờ làm việc</p>
-        </div>
-      </div>
-
-      {/* Upcoming Changes */}
-      <div className="clinic-card">
-        <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-          Thay đổi lịch sắp tới
-        </h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <div>
-              <h4 className="font-medium text-yellow-800">Thay đổi ca làm việc</h4>
-              <p className="text-sm text-yellow-700">
-                Thứ 3, 25/06 - Ca sáng được chuyển từ Phòng 1 sang Phòng 2
-              </p>
-            </div>
-            <button className="px-3 py-1 bg-yellow-200 text-yellow-800 rounded text-sm">
-              Xác nhận
-            </button>
-          </div>
-        </div>
+                {/* Các ngày trong tuần */}
+                {weekDates.map(day => {
+                  const daySchedules = scheduleData.filter(
+                    item => formatDateFromAPI(item.date) === day.date && item.timeSlotId === timeSlot.id
+                  );
+                  return (
+                    <TableCell
+                      key={`${day.date}-${timeSlot.id}`}
+                      className="p-1 align-top border-r border-gray-200 bg-white"
+                    >
+                      <div className="space-y-1 min-h-[50px]">
+                        {daySchedules.map((sch, index) => (
+                          <div
+                            key={`${sch.id}-${index}`}
+                            className="p-2 bg-blue-200 rounded-lg border border-blue-300 shadow-sm cursor-pointer hover:shadow-md transition"
+                          >
+                            <div className="text-xs font-semibold text-clinic-navy">{sch.userName}</div>
+                            <div className="text-xs text-gray-600">{sch.roomName}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </TableCell>
+                  );
+                })}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

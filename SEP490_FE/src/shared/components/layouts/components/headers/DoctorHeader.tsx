@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Bell, Search, Settings, User, LogOut } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
@@ -13,11 +13,24 @@ import {
 } from '@/shared/components/ui/dropdown-menu';
 import { Badge } from '@/shared/components/ui/badge';
 import { useAuth } from '@/shared/hooks/business/useAuth';
+import { useAppSelector, useAppDispatch } from '@/shared/store';
+import { fetchDoctorProfile } from '@/shared/store/slices/doctorProfileSlice';
 import { useNavigate } from 'react-router-dom';
 
 const DoctorHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  
+  // Get doctor profile from store to access avatar
+  const { profile } = useAppSelector((state) => state.doctorProfile);
+
+  // Load doctor profile when component mounts
+  useEffect(() => {
+    if (user?.UserId && !profile) {
+      dispatch(fetchDoctorProfile(user.UserId));
+    }
+  }, [dispatch, user?.UserId, profile]);
 
   const handleLogout = () => {
     logout();
@@ -26,6 +39,28 @@ const DoctorHeader: React.FC = () => {
 
   const handleUserProfile = () => {
     navigate('/doctor/user-profile');
+  };
+
+  // Helper function to get avatar URL
+  const getAvatarUrl = () => {
+    // Priority: doctor profile avatar > user avatar > null
+    if (profile?.avatar) {
+      return profile.avatar;
+    }
+    if (user?.avatar) {
+      return user.avatar;
+    }
+    return null;
+  };
+
+  // Helper function to get display name
+  const getDisplayName = () => {
+    return profile?.name || user?.name || 'Bác sĩ';
+  };
+
+  // Helper function to get unique name
+  const getUniqueName = () => {
+    return user?.unique_name || '';
   };
 
   return (
@@ -74,14 +109,13 @@ const DoctorHeader: React.FC = () => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center space-x-2 px-3">
               <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.avatar} />
+                <AvatarImage src={getAvatarUrl()} />
                 <AvatarFallback>
-                  {user?.name?.substring(0, 2).toUpperCase()}
+                  {getDisplayName()?.substring(0, 2).toUpperCase() || 'BS'}
                 </AvatarFallback>
               </Avatar>
               <div className="text-left">
-                <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-gray-500">{user?.unique_name}</p>
+                <p className="text-sm font-medium">{getDisplayName()}</p>
               </div>
             </Button>
           </DropdownMenuTrigger>
