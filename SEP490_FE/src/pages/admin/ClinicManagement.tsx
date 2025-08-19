@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { Plus, Edit, Trash } from 'lucide-react';
+import { Plus, Edit, CheckCircle, XCircle } from 'lucide-react';
 import { Card } from '../../shared/components/ui/card';
 import { Button } from '../../shared/components/ui/button';
-import { Badge } from '../../shared/components/ui/badge';
 import { useToast } from '../../shared/components/ui/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription } from '../../shared/components/ui/alert-dialog';
 import RoomForm from '@/shared/components/common/RoomForm';
 import { adminService } from '@/shared/services/adminService';
 
 const ClinicManagement: React.FC = () => {
-  const [showForm, setShowForm] = useState(null);
-  const [editingItem, setEditingItem] = useState(null);
-  const [rooms, setRooms] = useState({ examination: [], laboratory: [] });
-  const [roomToDelete, setRoomToDelete] = useState<{ roomType: string, roomId: string } | null>(null);
+  const [showForm, setShowForm] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [rooms, setRooms] = useState<{ examination: any[]; laboratory: any[] }>({
+    examination: [],
+    laboratory: [],
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -23,31 +23,27 @@ const ClinicManagement: React.FC = () => {
           adminService.getLaboratoryRooms(),
         ]);
         setRooms({ examination: examinationData, laboratory: laboratoryData });
+        console.log("rooms[roomType] =", rooms.examination);
       } catch (error) {
-        console.error("Failed to load rooms:", error);
+        console.error('Failed to load rooms:', error);
       }
     };
     fetchRooms();
   }, []);
 
-  const handleSaveRoom = async (roomType, roomData) => {
+  const handleSaveRoom = async (roomType: string, roomData: any) => {
     try {
-      console.log('roomType:', roomType);
-      console.log('roomData:', roomData);
-
       if (editingItem) {
         const hasChanges =
           editingItem.name !== roomData.name ||
-          editingItem.description !== roomData.description
+          editingItem.description !== roomData.description;
 
         if (!hasChanges) {
-          console.log('Không có thay đổi nào, đóng form');
           setShowForm(null);
           setEditingItem(null);
           return;
         }
 
-        
         let updatedRoom;
         if (roomType === 'examination') {
           updatedRoom = await adminService.updateExaminationRoom(editingItem.id, roomData);
@@ -56,12 +52,11 @@ const ClinicManagement: React.FC = () => {
         }
 
         const roomToUpdate = Array.isArray(updatedRoom) ? updatedRoom[0] : updatedRoom;
-
         setRooms(prev => ({
           ...prev,
           [roomType]: prev[roomType].map(room =>
             room.id === editingItem.id ? roomToUpdate : room
-          )
+          ),
         }));
       } else {
         let createdRoom;
@@ -85,20 +80,37 @@ const ClinicManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteRoom = async (roomType: string, roomId: string) => {
+  const handleToggleRoom = async (
+    roomType: 'examination' | 'laboratory',
+    roomId: string,
+    currentStatus: boolean
+  ) => {
     try {
-      if (roomType === 'examination') {
-        await adminService.deleteExaminationRoom(roomId);
-      } else if (roomType === 'laboratory') {
-        await adminService.deleteLaboratoryRoom(roomId);
-      }
+      await (
+        roomType === 'examination'
+          ? (currentStatus
+            ? adminService.deactivateExaminationRoom(roomId)
+            : adminService.activateExaminationRoom(roomId))
+          : (currentStatus
+            ? adminService.deactivateLaboratoryRoom(roomId)
+            : adminService.activateLaboratoryRoom(roomId))
+      );
 
+      // 🔥 Không dùng response nữa, chỉ toggle trong state
       setRooms(prev => ({
         ...prev,
-        [roomType]: prev[roomType].filter(room => room.id !== roomId)
+        [roomType]: prev[roomType].map(room =>
+          room.id === roomId ? { ...room, isActive: !currentStatus } : room
+        ),
       }));
+
+      toast({
+        title: currentStatus
+          ? 'Phòng đã bị vô hiệu'
+          : 'Phòng đã được kích hoạt',
+      });
     } catch (error) {
-      console.error('Lỗi khi xóa phòng:', error);
+      console.error('Lỗi khi toggle phòng:', error);
     }
   };
 
@@ -111,12 +123,73 @@ const ClinicManagement: React.FC = () => {
             roomType={roomType}
             room={editingItem}
             onSave={(roomData) => handleSaveRoom(roomType, roomData)}
-            onCancel={() => { setShowForm(null); setEditingItem(null); }}
+            onCancel={() => {
+              setShowForm(null);
+              setEditingItem(null);
+            }}
           />
         </div>
       </div>
     );
   }
+
+  const renderRoomList = (roomType: 'examination' | 'laboratory', title: string) => (
+    <Card className="p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold">{title}</h3>
+        <Button
+          size="sm"
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setShowForm(`room-${roomType}`)}
+        >
+          <Plus className="w-4 h-4 mr-1" />
+          Thêm Phòng
+        </Button>
+      </div>
+      <div className="space-y-2">
+        {rooms[roomType].map((room) => (
+          <div key={room.id} className="flex justify-between items-center p-3 border rounded">
+            <div className="flex items-center gap-3">
+              <div className="font-medium">{room.name}</div>
+              <span
+                className={`text-sm px-2 py-1 rounded ${room.isActive
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-200 text-gray-600'
+                  }`}
+              >
+                {room.isActive ? 'Đang hoạt động' : 'Vô hiệu'}
+              </span>
+            </div>
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="p-1"
+                onClick={() => {
+                  setEditingItem(room);
+                  setShowForm(`room-${roomType}`);
+                }}
+              >
+                <Edit className="w-3 h-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className={`p-1 ${room.isActive ? 'text-red-600' : 'text-green-600'}`}
+                onClick={() => handleToggleRoom(roomType, room.id, room.isActive)}
+              >
+                {room.isActive ? (
+                  <XCircle className="w-3 h-3" />
+                ) : (
+                  <CheckCircle className="w-3 h-3" />
+                )}
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -124,127 +197,12 @@ const ClinicManagement: React.FC = () => {
         <h1 className="text-3xl font-poppins font-bold text-clinic-navy mb-2">
           Quản lý phòng khám
         </h1>
-        <p className="text-gray-600">
-          Quản lý khoa phòng, dịch vụ và cơ sở vật chất
-        </p>
+        <p className="text-gray-600">Quản lý khoa phòng, dịch vụ và cơ sở vật chất</p>
       </div>
       <div className="grid grid-cols-2 gap-6">
-        {/* Examination Rooms */}
-        <Card className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Phòng Khám Tổng Quát</h3>
-            <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => setShowForm('room-examination')}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Thêm Phòng
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {rooms.examination.map((room) => (
-              <div key={room.id} className="flex justify-between items-center p-3 border rounded">
-                <div className="flex items-center gap-3">
-                  <div className="font-medium">{room.name}</div>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="p-1"
-                    onClick={() => {
-                      setEditingItem(room);
-                      setShowForm('room-examination');
-                    }}
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="p-1 text-red-600"
-                    onClick={() => setRoomToDelete({ roomType: 'examination', roomId: room.id })}
-                  >
-                    <Trash className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
-
-        {/* Laboratory Rooms */}
-        <Card className="p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Phòng Xét Nghiệm</h3>
-            <Button
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700"
-              onClick={() => setShowForm('room-laboratory')}
-            >
-              <Plus className="w-4 h-4 mr-1" />
-              Thêm Phòng
-            </Button>
-          </div>
-          <div className="space-y-2">
-            {rooms.laboratory.map((room) => (
-              <div key={room.id} className="flex justify-between items-center p-3 border rounded">
-                <div className="flex items-center gap-3">
-                  <div className="font-medium">{room.name}</div>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="p-1"
-                    onClick={() => {
-                      setEditingItem(room);
-                      setShowForm('room-laboratory');
-                    }}
-                  >
-                    <Edit className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="p-1 text-red-600"
-                    onClick={() => setRoomToDelete({ roomType: 'laboratory', roomId: room.id })}
-                  >
-                    <Trash className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        {renderRoomList('examination', 'Phòng Khám Tổng Quát')}
+        {renderRoomList('laboratory', 'Phòng Xét Nghiệm')}
       </div>
-
-      {/* Alert Dialog for Delete Confirmation - FIX: Di chuyển ra ngoài để tránh duplicate */}
-      <AlertDialog open={!!roomToDelete} onOpenChange={(open) => !open && setRoomToDelete(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Xác nhận xoá phòng</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn xoá phòng này? Thao tác này không thể hoàn tác.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setRoomToDelete(null)}>Hủy</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={async () => {
-                if (roomToDelete) {
-                  await handleDeleteRoom(roomToDelete.roomType, roomToDelete.roomId);
-                  toast({ title: 'Xoá phòng thành công!' });
-                  setRoomToDelete(null);
-                }
-              }}
-            >
-              Xoá
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 };
