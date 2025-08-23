@@ -279,9 +279,6 @@ const PatientListCommon: React.FC = () => {
                         <button className="p-2 text-clinic-navy hover:bg-clinic-blue rounded-lg transition-colors" onClick={() => handleEditClick(patient)}>
                           <Edit size={16} />
                         </button>
-                        <button className="p-2 text-clinic-navy hover:bg-clinic-blue rounded-lg transition-colors">
-                          <Phone size={16} />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -454,7 +451,7 @@ const PatientListCommon: React.FC = () => {
                     className="px-4 py-2 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200 hover:bg-blue-100"
                     onClick={() => navigate(`/admin/patient/${selectedPatient.id}/medical-records`)}
                   >
-                    Hồ sơ bệnh án
+                    Hồ sơ y tế
                   </button>
                   <button
                     className="px-4 py-2 rounded bg-green-50 text-green-700 font-semibold border border-green-200 hover:bg-green-100"

@@ -41,6 +41,15 @@ const CreateExaminationForm: React.FC = () => {
   const [examinationHistory, setExaminationHistory] = useState<any[]>([]);
   const [loadingMedicalRecord, setLoadingMedicalRecord] = useState(false);
   const [loadingExaminationHistory, setLoadingExaminationHistory] = useState(false);
+  // Medical record form states
+  const [medicalRecordForm, setMedicalRecordForm] = useState({
+    medicalHistory: '',
+    allergies: '',
+    surgicalHistory: '',
+    treatment: '',
+    currentMedications: ''
+  });
+  const [updatingMedicalRecord, setUpdatingMedicalRecord] = useState(false);
   
   // API data states
   const [laboratoryRooms, setLaboratoryRooms] = useState<any[]>([]);
@@ -1112,6 +1121,14 @@ const CreateExaminationForm: React.FC = () => {
       if (medicalRecordResponse && medicalRecordResponse.data && Array.isArray(medicalRecordResponse.data) && medicalRecordResponse.data.length > 0) {
         const record = medicalRecordResponse.data[0];
         setMedicalRecordData(record);
+        // Initialize form values from record
+        setMedicalRecordForm({
+          medicalHistory: record.medicalHistory || '',
+          allergies: record.allergies || '',
+          surgicalHistory: record.surgicalHistory || '',
+          treatment: record.treatment || '',
+          currentMedications: record.currentMedications || ''
+        });
         console.log('Medical record received:', record);
 
         // Fetch examination history using medical record ID
@@ -1157,6 +1174,32 @@ const CreateExaminationForm: React.FC = () => {
     } finally {
       setLoadingMedicalRecord(false);
       setLoadingExaminationHistory(false);
+    }
+  };
+
+  // Update medical record handlers
+  const handleMedicalRecordInputChange = (field: string, value: string) => {
+    setMedicalRecordForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleUpdateMedicalRecord = async () => {
+    if (!medicalRecordData?.medicalRecordId) {
+      toast({ title: "Lỗi!", description: 'Không tìm thấy mã hồ sơ để cập nhật', variant: "destructive" });
+      return;
+    }
+    setUpdatingMedicalRecord(true);
+    try {
+      await appointmentService.updateMedicalRecord(medicalRecordData.medicalRecordId, medicalRecordForm);
+      setMedicalRecordData((prev: any) => ({ ...prev, ...medicalRecordForm }));
+      toast({ title: "Thành công!", description: 'Cập nhật hồ sơ y tế thành công!', variant: "success" });
+    } catch (error) {
+      console.error('Error updating medical record:', error);
+      toast({ title: "Lỗi!", description: 'Không thể cập nhật hồ sơ y tế. Vui lòng thử lại.', variant: "destructive" });
+    } finally {
+      setUpdatingMedicalRecord(false);
     }
   };
 
@@ -2577,7 +2620,7 @@ const CreateExaminationForm: React.FC = () => {
                 onClick={handleViewMedicalRecord}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 font-medium"
               >
-                Hồ sơ bệnh án
+                Hồ sơ y tế
               </button>
               <button
                 onClick={() => setShowPatientModal(false)}
@@ -2796,14 +2839,14 @@ const CreateExaminationForm: React.FC = () => {
         </div>
       )}
 
-      {/* Modal hồ sơ bệnh án */}
+      {/* Modal hồ sơ y tế */}
       {showMedicalRecordModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-semibold text-gray-900">
-                Hồ sơ bệnh án
+                Hồ sơ y tế
               </h3>
               <button
                 onClick={() => {
@@ -2854,7 +2897,7 @@ const CreateExaminationForm: React.FC = () => {
                   <div className="bg-gray-50 rounded-lg p-4">
                     <div className="flex items-center mb-4">
                       <FileText size={20} className="text-blue-600 mr-2" />
-                      <h4 className="text-lg font-semibold text-gray-900">Thông tin hồ sơ bệnh án</h4>
+                      <h4 className="text-lg font-semibold text-gray-900">Thông tin hồ sơ y tế</h4>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -2873,6 +2916,89 @@ const CreateExaminationForm: React.FC = () => {
                           {medicalRecordData.patientProfileId || visitData?.patientProfileId || 'Chưa có thông tin'}
                         </p>
                       </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Chỉnh sửa hồ sơ y tế */}
+                {medicalRecordData && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">Hồ sơ y tế của bệnh nhân</h4>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        <label className="text-sm font-medium text-gray-700 pt-2">Tiền sử bệnh:</label>
+                        <div className="md:col-span-3">
+                          <textarea
+                            value={medicalRecordForm.medicalHistory}
+                            onChange={(e) => handleMedicalRecordInputChange('medicalHistory', e.target.value)}
+                            placeholder="Nhập tiền sử bệnh..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        <label className="text-sm font-medium text-gray-700 pt-2">Dị ứng:</label>
+                        <div className="md:col-span-3">
+                          <textarea
+                            value={medicalRecordForm.allergies}
+                            onChange={(e) => handleMedicalRecordInputChange('allergies', e.target.value)}
+                            placeholder="Nhập thông tin dị ứng..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        <label className="text-sm font-medium text-gray-700 pt-2">Tiền sử phẫu thuật:</label>
+                        <div className="md:col-span-3">
+                          <textarea
+                            value={medicalRecordForm.surgicalHistory}
+                            onChange={(e) => handleMedicalRecordInputChange('surgicalHistory', e.target.value)}
+                            placeholder="Nhập tiền sử phẫu thuật..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        <label className="text-sm font-medium text-gray-700 pt-2">Điều trị:</label>
+                        <div className="md:col-span-3">
+                          <textarea
+                            value={medicalRecordForm.treatment}
+                            onChange={(e) => handleMedicalRecordInputChange('treatment', e.target.value)}
+                            placeholder="Nhập thông tin điều trị..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
+                        <label className="text-sm font-medium text-gray-700 pt-2">Thuốc đang dùng:</label>
+                        <div className="md:col-span-3">
+                          <textarea
+                            value={medicalRecordForm.currentMedications}
+                            onChange={(e) => handleMedicalRecordInputChange('currentMedications', e.target.value)}
+                            placeholder="Nhập thông tin thuốc đang dùng..."
+                            rows={3}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end pt-4">
+                      <button
+                        onClick={handleUpdateMedicalRecord}
+                        disabled={updatingMedicalRecord}
+                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      >
+                        {updatingMedicalRecord ? 'Đang cập nhật...' : 'Cập nhật'}
+                      </button>
                     </div>
                   </div>
                 )}
