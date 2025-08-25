@@ -47,7 +47,7 @@ namespace SEP490_BE.Services.MedicineServices
                 await _medicineRepository.AddAsync(medicine);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                await _notificationHub.SendMedicineUpdate(MapToResponseDTO(medicine));
+                await _notificationHub.SendMedicineUpdate(MapToResponseDTO(medicine),"Create");
             }
             catch
             {
@@ -99,7 +99,7 @@ namespace SEP490_BE.Services.MedicineServices
                 await _medicineRepository.UpdateAsync(medicine);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                await _notificationHub.SendMedicineUpdate(MapToResponseDTO(medicine));
+                await _notificationHub.SendMedicineUpdate(MapToResponseDTO(medicine), "Update");
             }
             catch 
             {

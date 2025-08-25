@@ -56,7 +56,7 @@ namespace SEP490_BE.Controllers
         {
             var createdDto = await _serviceService.Create(dto);
             var data = createdDto != null ? new List<ServiceResponseDTO> { createdDto } : new List<ServiceResponseDTO>();
-            await _notificationHubService.SendServiceUpdate(createdDto);
+            await _notificationHubService.SendServiceUpdate(createdDto,"Create");
 
             return Ok(new ApiResponse
             {
@@ -72,7 +72,7 @@ namespace SEP490_BE.Controllers
         {
             var updatedDto = await _serviceService.Update(id, dto);
             var data = updatedDto != null ? new List<ServiceResponseDTO> { updatedDto } : new List<ServiceResponseDTO>();
-            await _notificationHubService.SendServiceUpdate(updatedDto);
+            await _notificationHubService.SendServiceUpdate(updatedDto,"Update");
 
             return Ok(new ApiResponse
             {

@@ -159,7 +159,7 @@ namespace SEP490_BE.Controllers
             var schedules = await _scheduleService.CreateScheduleRange(request);
             foreach (var schedule in schedules)
             {
-                await _notificationHubService.SendScheduleUpdate(schedule);
+                await _notificationHubService.SendScheduleUpdate(schedule, "Create");
             }
             return Ok(new ApiResponse
             {
@@ -176,7 +176,7 @@ namespace SEP490_BE.Controllers
            [FromBody] CreateScheduleDTO request)
         {
             var schedule = await _scheduleService.CreateSchedule(request);
-            await _notificationHubService.SendScheduleUpdate(schedule);
+            await _notificationHubService.SendScheduleUpdate(schedule, "Create");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -192,7 +192,7 @@ namespace SEP490_BE.Controllers
             [FromBody] UpdateScheduleDTO request)
         {
             var schedule = await _scheduleService.UpdateSchedule(id, request);
-            await _notificationHubService.SendScheduleUpdate(schedule);
+            await _notificationHubService.SendScheduleUpdate(schedule,"Update");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

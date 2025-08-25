@@ -28,7 +28,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateMedicine([FromBody] CreateMedicineDTO request)
         {          
             var medicine = await _medicineService.CreateMedicine(request);
-            await _notificationHubService.SendMedicineUpdate(medicine);
+            //await _notificationHubService.SendMedicineUpdate(medicine);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -43,7 +43,7 @@ namespace SEP490_BE.Controllers
         {
      
             var medicine = await _medicineService.UpdateMedicine(id, request);
-            await _notificationHubService.SendMedicineUpdate(medicine);
+            //await _notificationHubService.SendMedicineUpdate(medicine);
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
