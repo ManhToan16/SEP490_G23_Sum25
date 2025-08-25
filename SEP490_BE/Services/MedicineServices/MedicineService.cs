@@ -1,9 +1,10 @@
-﻿using SEP490_BE.DTO.MedicineDTO;
+﻿using Microsoft.EntityFrameworkCore;
 using SEP490_BE.DTO;
+using SEP490_BE.DTO.MedicineDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.MedicineRepositories;
-using Microsoft.EntityFrameworkCore;
 
 namespace SEP490_BE.Services.MedicineServices
 {
@@ -11,11 +12,16 @@ namespace SEP490_BE.Services.MedicineServices
     {
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly IMedicineRepository _medicineRepository;
+        private readonly INotificationHubService _notificationHub; // thêm
 
-        public MedicineService(KhanhAnNeurologyClinicContext context, IMedicineRepository medicineRepository)
+        public MedicineService(
+            KhanhAnNeurologyClinicContext context,
+            IMedicineRepository medicineRepository,
+            INotificationHubService notificationHub) // inject vào constructor
         {
             _context = context;
             _medicineRepository = medicineRepository;
+            _notificationHub = notificationHub;
         }
 
         public async Task<MedicineResponseDTO> CreateMedicine(CreateMedicineDTO request)
@@ -41,6 +47,7 @@ namespace SEP490_BE.Services.MedicineServices
                 await _medicineRepository.AddAsync(medicine);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+                await _notificationHub.SendMedicineUpdate(MapToResponseDTO(medicine));
             }
             catch
             {
@@ -92,6 +99,7 @@ namespace SEP490_BE.Services.MedicineServices
                 await _medicineRepository.UpdateAsync(medicine);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+                await _notificationHub.SendMedicineUpdate(MapToResponseDTO(medicine));
             }
             catch 
             {

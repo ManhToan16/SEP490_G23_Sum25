@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using SEP490_BE.Constants;
 
-namespace BackendProject.Utils
+namespace SEP490_BE.Utils
 {
     public class RequiredOwnerAttribute : Attribute, IAuthorizationFilter
     {
