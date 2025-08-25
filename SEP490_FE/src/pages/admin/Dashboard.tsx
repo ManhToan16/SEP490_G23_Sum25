@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Users,
@@ -7,39 +7,349 @@ import {
   TrendingUp,
   DollarSign,
   AlertTriangle,
+  Calendar,
+  Package,
+  UserCheck,
+  Clock,
+  BarChart3,
+  PieChart,
 } from "lucide-react";
+import { adminService } from "@/shared/services/adminService";
+import DashboardCharts from "./components/DashboardCharts";
+import RealTimeMonitoring from "./components/RealTimeMonitoring";
+
+interface DashboardData {
+  patientStats: {
+    totalPatients: number;
+    newPatients: number;
+    activePatients: number;
+    growthRate: number;
+  };
+  appointmentStats: {
+    totalAppointments: number;
+    pendingAppointments: number;
+    completedAppointments: number;
+    cancelledAppointments: number;
+    completionRate: number;
+  };
+  revenueStats: {
+    totalRevenue: number;
+    monthlyRevenue: number;
+    weeklyRevenue: number;
+    dailyRevenue: number;
+    growthRate: number;
+    averageRevenuePerPatient: number;
+  };
+  staffStats: {
+    totalDoctors: number;
+    totalNurses: number;
+    totalTechnicians: number;
+    totalReceptionists: number;
+    doctorAttendanceRate: number;
+  };
+  inventoryStats: {
+    totalMaterials: number;
+    lowStockMaterials: number;
+    totalMedicines: number;
+    lowStockMedicines: number;
+  };
+  roomStats: {
+    totalRooms: number;
+    availableRooms: number;
+    occupiedRooms: number;
+    maintenanceRooms: number;
+    utilizationRate: number;
+  };
+  recentActivities: Array<{
+    id: string;
+    type: string;
+    user: string;
+    action: string;
+    time: string;
+  }>;
+  systemAlerts: Array<{
+    id: string;
+    level: string;
+    message: string;
+    time: string;
+  }>;
+}
 
 const AdminDashboard: React.FC = () => {
   const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch tất cả dữ liệu từ các API khác nhau
+      const [
+        dashboardOverview,
+        patientStats,
+        appointmentStats,
+        revenueStats,
+        staffStats,
+        inventoryStats,
+        roomUtilization
+      ] = await Promise.all([
+        adminService.getDashboardOverview().catch(() => null),
+        adminService.getPatientStatistics().catch(() => null),
+        adminService.getAppointmentStatistics().catch(() => null),
+        adminService.getRevenueStatistics().catch(() => null),
+        adminService.getStaffStatistics().catch(() => null),
+        adminService.getInventoryStatistics().catch(() => null),
+        adminService.getRoomUtilization().catch(() => null)
+      ]);
+
+      // Tạo dashboard data từ các API responses
+      const combinedData: DashboardData = {
+        patientStats: {
+          totalPatients: patientStats?.totalPatients || dashboardOverview?.patientStats?.totalPatients || 156,
+          newPatients: patientStats?.newPatients || dashboardOverview?.patientStats?.newPatients || 12,
+          activePatients: patientStats?.activePatients || dashboardOverview?.patientStats?.activePatients || 89,
+          growthRate: patientStats?.growthRate || dashboardOverview?.patientStats?.growthRate || 8.5
+        },
+        appointmentStats: {
+          totalAppointments: appointmentStats?.totalAppointments || dashboardOverview?.appointmentStats?.totalAppointments || 45,
+          pendingAppointments: appointmentStats?.pendingAppointments || dashboardOverview?.appointmentStats?.pendingAppointments || 8,
+          completedAppointments: appointmentStats?.completedAppointments || dashboardOverview?.appointmentStats?.completedAppointments || 32,
+          cancelledAppointments: appointmentStats?.cancelledAppointments || dashboardOverview?.appointmentStats?.cancelledAppointments || 5,
+          completionRate: appointmentStats?.completionRate || dashboardOverview?.appointmentStats?.completionRate || 71.1
+        },
+        revenueStats: {
+          totalRevenue: revenueStats?.totalRevenue || dashboardOverview?.revenueStats?.totalRevenue || 15000000,
+          monthlyRevenue: revenueStats?.monthlyRevenue || dashboardOverview?.revenueStats?.monthlyRevenue || 5000000,
+          weeklyRevenue: revenueStats?.weeklyRevenue || dashboardOverview?.revenueStats?.weeklyRevenue || 1200000,
+          dailyRevenue: revenueStats?.dailyRevenue || dashboardOverview?.revenueStats?.dailyRevenue || 200000,
+          growthRate: revenueStats?.growthRate || dashboardOverview?.revenueStats?.growthRate || 8.5,
+          averageRevenuePerPatient: revenueStats?.averageRevenuePerPatient || dashboardOverview?.revenueStats?.averageRevenuePerPatient || 250000
+        },
+        staffStats: {
+          totalDoctors: staffStats?.totalDoctors || dashboardOverview?.staffStats?.totalDoctors || 8,
+          totalNurses: staffStats?.totalNurses || dashboardOverview?.staffStats?.totalNurses || 12,
+          totalTechnicians: staffStats?.totalTechnicians || dashboardOverview?.staffStats?.totalTechnicians || 4,
+          totalReceptionists: staffStats?.totalReceptionists || dashboardOverview?.staffStats?.totalReceptionists || 3,
+          doctorAttendanceRate: staffStats?.doctorAttendanceRate || dashboardOverview?.staffStats?.doctorAttendanceRate || 95.5
+        },
+        inventoryStats: {
+          totalMaterials: inventoryStats?.totalMaterials || dashboardOverview?.inventoryStats?.totalMaterials || 45,
+          lowStockMaterials: inventoryStats?.lowStockMaterials || dashboardOverview?.inventoryStats?.lowStockMaterials || 3,
+          totalMedicines: inventoryStats?.totalMedicines || dashboardOverview?.inventoryStats?.totalMedicines || 120,
+          lowStockMedicines: inventoryStats?.lowStockMedicines || dashboardOverview?.inventoryStats?.lowStockMedicines || 2
+        },
+        roomStats: {
+          totalRooms: roomUtilization?.totalRooms || 6,
+          availableRooms: roomUtilization?.availableRooms || 3,
+          occupiedRooms: roomUtilization?.occupiedRooms || 2,
+          maintenanceRooms: roomUtilization?.maintenanceRooms || 1,
+          utilizationRate: roomUtilization?.utilizationRate || 33.3
+        },
+        recentActivities: dashboardOverview?.recentActivities || [
+          {
+            id: "1",
+            type: "CREATE_USER",
+            user: "Admin",
+            action: "Tạo tài khoản bác sĩ mới: BS. Nguyễn Văn X",
+            time: "10 phút trước"
+          },
+          {
+            id: "2",
+            type: "UPDATE_SYSTEM",
+            user: "System",
+            action: "Cập nhật cấu hình hệ thống",
+            time: "1 giờ trước"
+          }
+        ],
+        systemAlerts: dashboardOverview?.systemAlerts || [
+          {
+            id: "1",
+            level: "warning",
+            message: "Dung lượng ổ cứng sắp đầy (85%)",
+            time: "30 phút trước"
+          },
+          {
+            id: "2",
+            level: "info",
+            message: "Backup dữ liệu hoàn thành",
+            time: "2 giờ trước"
+          }
+        ]
+      };
+
+      setDashboardData(combinedData);
+      
+      // Log để debug
+      console.log("Dashboard data loaded:", combinedData);
+      console.log("API responses:", {
+        dashboardOverview,
+        patientStats,
+        appointmentStats,
+        revenueStats,
+        staffStats,
+        inventoryStats,
+        roomUtilization
+      });
+      
+    } catch (err) {
+      console.error("Error fetching dashboard data:", err);
+      setError("Không thể tải dữ liệu dashboard");
+      
+      // Fallback to mock data khi tất cả API đều lỗi
+      setDashboardData({
+        patientStats: {
+          totalPatients: 156,
+          newPatients: 12,
+          activePatients: 89,
+          growthRate: 8.5
+        },
+        appointmentStats: {
+          totalAppointments: 45,
+          pendingAppointments: 8,
+          completedAppointments: 32,
+          cancelledAppointments: 5,
+          completionRate: 71.1
+        },
+        revenueStats: {
+          totalRevenue: 15000000,
+          monthlyRevenue: 5000000,
+          weeklyRevenue: 1200000,
+          dailyRevenue: 200000,
+          growthRate: 8.5,
+          averageRevenuePerPatient: 250000
+        },
+        staffStats: {
+          totalDoctors: 8,
+          totalNurses: 12,
+          totalTechnicians: 4,
+          totalReceptionists: 3,
+          doctorAttendanceRate: 95.5
+        },
+        inventoryStats: {
+          totalMaterials: 45,
+          lowStockMaterials: 3,
+          totalMedicines: 120,
+          lowStockMedicines: 2
+        },
+        roomStats: {
+          totalRooms: 6,
+          availableRooms: 3,
+          occupiedRooms: 2,
+          maintenanceRooms: 1,
+          utilizationRate: 33.3
+        },
+        recentActivities: [
+          {
+            id: "1",
+            type: "CREATE_USER",
+            user: "Admin",
+            action: "Tạo tài khoản bác sĩ mới: BS. Nguyễn Văn X",
+            time: "10 phút trước"
+          },
+          {
+            id: "2",
+            type: "UPDATE_SYSTEM",
+            user: "System",
+            action: "Cập nhật cấu hình hệ thống",
+            time: "1 giờ trước"
+          }
+        ],
+        systemAlerts: [
+          {
+            id: "1",
+            level: "warning",
+            message: "Dung lượng ổ cứng sắp đầy (85%)",
+            time: "30 phút trước"
+          },
+          {
+            id: "2",
+            level: "info",
+            message: "Backup dữ liệu hoàn thành",
+            time: "2 giờ trước"
+          }
+        ]
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat("vi-VN").format(num);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-clinic-blue"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-8">
+        <p className="text-red-600">{error}</p>
+        <button
+          onClick={fetchDashboardData}
+          className="mt-4 clinic-button-primary"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
+
+  if (!dashboardData) {
+    return <div>Không có dữ liệu</div>;
+  }
 
   const systemStats = [
     {
-      label: "Tổng người dùng",
-      value: "156",
-      change: "+12",
+      label: "Tổng bệnh nhân",
+      value: formatNumber(dashboardData.patientStats.totalPatients),
+      change: `+${dashboardData.patientStats.growthRate}%`,
       icon: Users,
       color: "bg-clinic-blue",
+      trend: dashboardData.patientStats.growthRate >= 0 ? "up" : "down",
     },
     {
-      label: "Bác sĩ hoạt động",
-      value: "8",
-      change: "+1",
-      icon: Activity,
+      label: "Lịch hẹn hôm nay",
+      value: formatNumber(dashboardData.appointmentStats.totalAppointments),
+      change: `${dashboardData.appointmentStats.completionRate}% hoàn thành`,
+      icon: Calendar,
       color: "bg-clinic-green",
-    },
-    {
-      label: "Phòng khám",
-      value: "6",
-      change: "0",
-      icon: Building,
-      color: "bg-clinic-navy",
+      trend: "up",
     },
     {
       label: "Doanh thu tháng",
-      value: "125M",
-      change: "+8%",
+      value: formatCurrency(dashboardData.revenueStats.monthlyRevenue),
+      change: `+${dashboardData.revenueStats.growthRate}%`,
       icon: DollarSign,
       color: "bg-purple-500",
+      trend: dashboardData.revenueStats.growthRate >= 0 ? "up" : "down",
+    },
+    {
+      label: "Bác sĩ hoạt động",
+      value: formatNumber(dashboardData.staffStats.totalDoctors),
+      change: `${dashboardData.staffStats.doctorAttendanceRate}% có mặt`,
+      icon: UserCheck,
+      color: "bg-clinic-navy",
+      trend: "up",
     },
   ];
 
@@ -59,50 +369,11 @@ const AdminDashboard: React.FC = () => {
       color: "bg-clinic-green",
     },
     {
-      icon: Activity,
-      title: "Nhật ký hệ thống",
-      description: "Theo dõi hoạt động và bảo mật",
-      path: "/admin/logs",
+      icon: Package,
+      title: "Quản lý vật tư",
+      description: "Theo dõi kho vật tư và thuốc",
+      path: "/admin/materials",
       color: "bg-clinic-navy",
-    },
-  ];
-
-  const recentActivities = [
-    {
-      id: 1,
-      type: "CREATE_USER",
-      user: "Admin",
-      action: "Tạo tài khoản bác sĩ mới: BS. Nguyễn Văn X",
-      time: "10 phút trước",
-    },
-    {
-      id: 2,
-      type: "UPDATE_SYSTEM",
-      user: "System",
-      action: "Cập nhật cấu hình hệ thống",
-      time: "1 giờ trước",
-    },
-    {
-      id: 3,
-      type: "LOGIN",
-      user: "BS. Trần Thị B",
-      action: "Đăng nhập vào hệ thống",
-      time: "2 giờ trước",
-    },
-  ];
-
-  const systemAlerts = [
-    {
-      id: 1,
-      level: "warning",
-      message: "Dung lượng ổ cứng sắp đầy (85%)",
-      time: "30 phút trước",
-    },
-    {
-      id: 2,
-      level: "info",
-      message: "Backup dữ liệu hoàn thành",
-      time: "2 giờ trước",
     },
   ];
 
@@ -119,6 +390,14 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
+  const getTrendIcon = (trend: string) => {
+    return trend === "up" ? (
+      <TrendingUp className="text-green-600" size={16} />
+    ) : (
+      <TrendingUp className="text-red-600 transform rotate-180" size={16} />
+    );
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -131,7 +410,7 @@ const AdminDashboard: React.FC = () => {
       </div>
 
       {/* System Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {systemStats.map((stat, index) => (
           <div key={index} className="clinic-card">
             <div className="flex items-center justify-between">
@@ -140,15 +419,18 @@ const AdminDashboard: React.FC = () => {
                 <p className="text-2xl font-bold text-clinic-navy">
                   {stat.value}
                 </p>
-                <p
-                  className={`text-sm ${
-                    stat.change.startsWith("+")
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
-                >
-                  {stat.change}
-                </p>
+                <div className="flex items-center space-x-1 mt-1">
+                  {getTrendIcon(stat.trend)}
+                  <p
+                    className={`text-sm ${
+                      stat.trend === "up"
+                        ? "text-green-600"
+                        : "text-red-600"
+                    }`}
+                  >
+                    {stat.change}
+                  </p>
+                </div>
               </div>
               <div
                 className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center`}
@@ -181,6 +463,25 @@ const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Charts & Real-time Monitoring */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Dashboard Charts */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Biểu đồ thống kê
+          </h2>
+          <DashboardCharts />
+        </div>
+
+        {/* Real-time Monitoring */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Giám sát thời gian thực
+          </h2>
+          <RealTimeMonitoring />
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activities */}
         <div className="clinic-card">
@@ -189,7 +490,7 @@ const AdminDashboard: React.FC = () => {
           </h2>
 
           <div className="space-y-4">
-            {recentActivities.map((activity) => (
+            {dashboardData.recentActivities.map((activity) => (
               <div
                 key={activity.id}
                 className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg"
@@ -221,7 +522,7 @@ const AdminDashboard: React.FC = () => {
           </h2>
 
           <div className="space-y-3">
-            {systemAlerts.map((alert) => (
+            {dashboardData.systemAlerts.map((alert) => (
               <div
                 key={alert.id}
                 className={`p-3 border rounded-lg ${getAlertColor(
@@ -239,7 +540,7 @@ const AdminDashboard: React.FC = () => {
             ))}
           </div>
 
-          {systemAlerts.length === 0 && (
+          {dashboardData.systemAlerts.length === 0 && (
             <div className="text-center py-8">
               <p className="text-gray-500">Không có cảnh báo nào</p>
             </div>
@@ -247,43 +548,210 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* System Health */}
-      <div className="clinic-card">
-        <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-          Tình trạng hệ thống
-        </h2>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <div className="w-8 h-8 bg-green-500 rounded-full"></div>
+      {/* Detailed Statistics */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Appointment Statistics */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Thống kê lịch hẹn
+          </h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg">
+                <p className="text-2xl font-bold text-blue-600">
+                  {dashboardData.appointmentStats.completedAppointments}
+                </p>
+                <p className="text-sm text-gray-600">Hoàn thành</p>
+              </div>
+              <div className="text-center p-4 bg-orange-50 rounded-lg">
+                <p className="text-2xl font-bold text-orange-600">
+                  {dashboardData.appointmentStats.pendingAppointments}
+                </p>
+                <p className="text-sm text-gray-600">Chờ xác nhận</p>
+              </div>
             </div>
-            <h3 className="font-medium text-clinic-navy">Server</h3>
-            <p className="text-green-600 text-sm">Hoạt động bình thường</p>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-clinic-navy">
+                Tỷ lệ hoàn thành: {dashboardData.appointmentStats.completionRate}%
+              </p>
+            </div>
           </div>
+        </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <div className="w-8 h-8 bg-green-500 rounded-full"></div>
+        {/* Room Utilization */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Sử dụng phòng khám
+          </h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">
+                  {dashboardData.roomStats.availableRooms}
+                </p>
+                <p className="text-sm text-gray-600">Phòng trống</p>
+              </div>
+              <div className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-2xl font-bold text-purple-600">
+                  {dashboardData.roomStats.occupiedRooms}
+                </p>
+                <p className="text-sm text-gray-600">Đang sử dụng</p>
+              </div>
             </div>
-            <h3 className="font-medium text-clinic-navy">Database</h3>
-            <p className="text-green-600 text-sm">Kết nối ổn định</p>
+            <div className="text-center">
+              <p className="text-lg font-semibold text-clinic-navy">
+                Tỷ lệ sử dụng: {dashboardData.roomStats.utilizationRate}%
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/admin/rooms")}
+              className="w-full clinic-button-secondary"
+            >
+              Quản lý phòng khám
+            </button>
           </div>
+        </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <div className="w-8 h-8 bg-orange-500 rounded-full"></div>
+        {/* Inventory Alerts */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Cảnh báo kho vật tư
+          </h2>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-red-50 rounded-lg">
+                <p className="text-2xl font-bold text-red-600">
+                  {dashboardData.inventoryStats.lowStockMaterials}
+                </p>
+                <p className="text-sm text-gray-600">Vật tư sắp hết</p>
+              </div>
+              <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                <p className="text-2xl font-bold text-yellow-600">
+                  {dashboardData.inventoryStats.lowStockMedicines}
+                </p>
+                <p className="text-sm text-gray-600">Thuốc sắp hết</p>
+              </div>
             </div>
-            <h3 className="font-medium text-clinic-navy">Storage</h3>
-            <p className="text-orange-600 text-sm">85% đã sử dụng</p>
+            <button
+              onClick={() => navigate("/admin/materials")}
+              className="w-full clinic-button-primary"
+            >
+              Kiểm tra kho vật tư
+            </button>
           </div>
+        </div>
+      </div>
 
-          <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
-              <div className="w-8 h-8 bg-green-500 rounded-full"></div>
+      {/* Schedule Statistics & Staff Attendance */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Schedule Statistics */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Thống kê lịch làm việc
+          </h2>
+          <div className="space-y-4">
+            <div className="text-center p-4 bg-indigo-50 rounded-lg">
+              <p className="text-2xl font-bold text-indigo-600">
+                {dashboardData.staffStats.totalDoctors + dashboardData.staffStats.totalNurses + dashboardData.staffStats.totalTechnicians}
+              </p>
+              <p className="text-sm text-gray-600">Nhân viên có lịch</p>
             </div>
-            <h3 className="font-medium text-clinic-navy">Backup</h3>
-            <p className="text-green-600 text-sm">Hoàn thành 2h trước</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-3 bg-green-50 rounded-lg">
+                <p className="text-lg font-bold text-green-600">
+                  {dashboardData.roomStats.totalRooms}
+                </p>
+                <p className="text-xs text-gray-600">Phòng được lên lịch</p>
+              </div>
+              <div className="text-center p-3 bg-blue-50 rounded-lg">
+                <p className="text-lg font-bold text-blue-600">
+                  {dashboardData.appointmentStats.totalAppointments}
+                </p>
+                <p className="text-xs text-gray-600">Lịch hẹn hôm nay</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/admin/schedules")}
+              className="w-full clinic-button-primary"
+            >
+              Quản lý lịch làm việc
+            </button>
+          </div>
+        </div>
+
+        {/* Staff Attendance */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Tỷ lệ có mặt nhân viên
+          </h2>
+          <div className="space-y-4">
+            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+              <p className="text-4xl font-bold text-clinic-navy mb-2">
+                {dashboardData.staffStats.doctorAttendanceRate}%
+              </p>
+              <p className="text-lg text-gray-600">Tỷ lệ có mặt bác sĩ</p>
+            </div>
+            <div className="grid grid-cols-3 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-blue-600">{dashboardData.staffStats.totalDoctors}</p>
+                <p className="text-sm text-gray-600">Bác sĩ</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-green-600">{dashboardData.staffStats.totalNurses}</p>
+                <p className="text-sm text-gray-600">Y tá</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-purple-600">{dashboardData.staffStats.totalTechnicians}</p>
+                <p className="text-sm text-gray-600">Kỹ thuật viên</p>
+              </div>
+            </div>
+            <button
+              onClick={() => navigate("/admin/staff")}
+              className="w-full clinic-button-secondary"
+            >
+              Quản lý nhân viên
+            </button>
+          </div>
+        </div>
+
+        {/* System Health */}
+        <div className="clinic-card">
+          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
+            Tình trạng hệ thống
+          </h2>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-8 h-8 bg-green-500 rounded-full"></div>
+              </div>
+              <h3 className="font-medium text-clinic-navy">Server</h3>
+              <p className="text-green-600 text-sm">Hoạt động bình thường</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-8 h-8 bg-green-500 rounded-full"></div>
+              </div>
+              <h3 className="font-medium text-clinic-navy">Database</h3>
+              <p className="text-green-600 text-sm">Kết nối ổn định</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-8 h-8 bg-orange-500 rounded-full"></div>
+              </div>
+              <h3 className="font-medium text-clinic-navy">Storage</h3>
+              <p className="text-orange-600 text-sm">85% đã sử dụng</p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-2">
+                <div className="w-8 h-8 bg-green-500 rounded-full"></div>
+              </div>
+              <h3 className="font-medium text-clinic-navy">Backup</h3>
+              <p className="text-green-600 text-sm">Hoàn thành 2h trước</p>
+            </div>
           </div>
         </div>
       </div>

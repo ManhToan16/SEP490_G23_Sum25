@@ -137,9 +137,23 @@ const RoomForm = ({ roomType, room, onSave, onCancel }) => {
                 title: `${room ? 'Cập nhật' : 'Thêm'} phòng thành công!`,
                 description: `Phòng đã được ${room ? 'cập nhật' : 'thêm'} vào hệ thống.`,
             });
-        } catch (err) {
+        } catch (err: any) {
             console.error('Lỗi lưu phòng:', err);
-            toast({ title: 'Lưu phòng thất bại', variant: 'destructive' });
+
+            const apiError = err.response?.data;
+            let errorMsg = 'Lưu phòng thất bại.';
+
+            if (apiError?.errors && Array.isArray(apiError.errors)) {
+                errorMsg = apiError.errors.map((e: any) => `${e.error}`).join(', ');
+            } else if (apiError?.message) {
+                errorMsg = apiError.message;
+            }
+
+            toast({
+                title: 'Lưu phòng thất bại',
+                description: errorMsg,
+                variant: 'destructive',
+            });
         }
     };
 
