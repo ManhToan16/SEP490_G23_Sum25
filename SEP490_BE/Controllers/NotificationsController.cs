@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490_BE.Hubs;
 using SEP490_BE.Services.NotificationServices;
 
 namespace SEP490_BE.Controllers
@@ -8,9 +9,9 @@ namespace SEP490_BE.Controllers
     [Route("api/[controller]")]
     public class NotificationsController : ControllerBase
     {
-        private readonly INotificationService _notificationService;
+        private readonly INotificationHubService _notificationService;
 
-        public NotificationsController(INotificationService notificationService)
+        public NotificationsController(INotificationHubService notificationService)
         {
             _notificationService = notificationService;
         }

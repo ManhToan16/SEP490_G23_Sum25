@@ -10,16 +10,21 @@ using SEP490_BE.DTO.ServiceDTO;
 using SEP490_BE.DTO.SupplierDTO;
 using SEP490_BE.DTO.TransactionDTO;
 using SEP490_BE.Entities;
+using StackExchange.Redis;
+using System.Text.Json;
 
 namespace SEP490_BE.Hubs
 {
     public class NotificationHubService : INotificationHubService
     {
         private readonly IHubContext<KhanhAnHub> _hubContext;
-
-        public NotificationHubService(IHubContext<KhanhAnHub> hubContext)
+        private readonly IDatabase _redisDb;
+        public NotificationHubService(
+        IHubContext<KhanhAnHub> hubContext,
+        IConnectionMultiplexer redis)
         {
             _hubContext = hubContext;
+            _redisDb = redis.GetDatabase();
         }
 
         public async Task SendDoctorProfileUpdate(DoctorProfileResponseDTO doctorProfile)
@@ -82,7 +87,17 @@ namespace SEP490_BE.Hubs
         }
         public async Task SendMedicineUpdate(MedicineResponseDTO medicine)
         {
-            await _hubContext.Clients.Group("ADMIN").SendAsync("ReceiveMedicineUpdate", medicine);
+            var json = JsonSerializer.Serialize(medicine);
+
+            // 🔔 Lưu vào Redis list (key: Notifications:ADMIN)
+            await _redisDb.ListLeftPushAsync("Notifications:ADMIN", json);
+
+            // 🔔 Giữ tối đa 50 noti
+            await _redisDb.ListTrimAsync("Notifications:ADMIN", 0, 49);
+
+            // 🔔 Gửi real-time
+            await _hubContext.Clients.Group("ADMIN")
+                .SendAsync("ReceiveMedicineUpdate", medicine);
         }
 
 
@@ -107,6 +122,13 @@ namespace SEP490_BE.Hubs
         public async Task SendTransactionUpdate(TransactionResponseDTO transaction)
         {
             await _hubContext.Clients.All.SendAsync("ReceiveTransactionUpdate", transaction);
+        }
+        public async Task<List<object>> GetNotifications(string role)
+        {
+            var values = await _redisDb.ListRangeAsync($"Notifications:{role}", 0, 49);
+            return values
+                .Select(v => JsonSerializer.Deserialize<object>(v!))
+                .ToList();
         }
     }
 }
