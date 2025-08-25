@@ -43,7 +43,7 @@ namespace SEP490_BE.Controllers
         {
             var createdDto = await _laboratoryRoomService.Create(dto);
             var data = createdDto != null ? new List<LaboratoryRoomResponseDTO> { createdDto } : new List<LaboratoryRoomResponseDTO>();
-            await _notificationHubService.SendLaboratoryRoomUpdate(createdDto);
+            await _notificationHubService.SendLaboratoryRoomUpdate(createdDto,"Create");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -58,7 +58,7 @@ namespace SEP490_BE.Controllers
         {
             var updatedDto = await _laboratoryRoomService.Update(id, dto);
             var data = updatedDto != null ? new List<LaboratoryRoomResponseDTO> { updatedDto } : new List<LaboratoryRoomResponseDTO>();
-            await _notificationHubService.SendLaboratoryRoomUpdate(updatedDto);
+            await _notificationHubService.SendLaboratoryRoomUpdate(updatedDto,"Update");
 
             return Ok(new ApiResponse
             {

@@ -17,28 +17,27 @@ namespace SEP490_BE.Hubs
         Task SendDoctorProfileUpdate(DoctorProfileResponseDTO doctorProfile);
         Task SendDoctorProfileDelete(string doctorProfileId);
         // Schedule
-        Task SendScheduleUpdate(ScheduleResponseDTO schedule);
+        Task SendScheduleUpdate(ScheduleResponseDTO schedule, string action);
         Task SendScheduleDelete(string scheduleId);
         // ScheduleChangeRequest
         Task SendScheduleChangeUpdate(ScheduleChangeResponseDTO changeRequest);
         // ExaminationRoom
-        Task SendExaminationRoomUpdate(ExaminationRoomResponseDTO room);
+        Task SendExaminationRoomUpdate(ExaminationRoomResponseDTO room, string action);
         Task SendExaminationRoomDelete(string roomId);
         // LaboratoryRoom
-        Task SendLaboratoryRoomUpdate(LaboratoryRoomResponseDTO room);
+        Task SendLaboratoryRoomUpdate(LaboratoryRoomResponseDTO room,string action);
         Task SendLaboratoryRoomDelete(string roomId);
         // Service
-        Task SendServiceUpdate(ServiceResponseDTO service);
+        Task SendServiceUpdate(ServiceResponseDTO service,string action);
         Task SendServiceDelete(string serviceId);
         // Supplier
-        Task SendSupplierUpdate(SupplierResponseDTO supplier);
+        Task SendSupplierUpdate(SupplierResponseDTO supplier, string action);
         Task SendSupplierDelete(string supplierId);
         // Medicine
-        Task SendMedicineUpdate(MedicineResponseDTO medicine);
+        Task SendMedicineUpdate(MedicineResponseDTO medicine,string action);
         Task SendMedicineDelete(string medicineId);
         // Category
-        Task SendCategoryUpdate(CategoryResponseDTO category);
-        Task SendCategoryDelete(string cateId);
+      
         // New: Low Stock Alert
         Task SendLowStockAlert(ProvidedSummaryDTO summary);
         // Transaction Update

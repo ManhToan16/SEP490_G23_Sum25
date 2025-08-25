@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using SEP490_BE.Constants;
+using SEP490_BE.DTO;
+using SEP490_BE.Entities;
 using SEP490_BE.Hubs;
-using SEP490_BE.Services.NotificationServices;
 
 namespace SEP490_BE.Controllers
 {
@@ -20,7 +22,14 @@ namespace SEP490_BE.Controllers
         public IActionResult GetNotifications(string role)
         {
             var notis = _notificationService.GetNotifications(role);
-            return Ok(notis);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status201Created,
+                Success = true,
+                Message = MessageConstants.GET_SUCCESS,
+                Data = new[] { notis }
+            });
+            //return Ok(notis);
         }
     }
 }

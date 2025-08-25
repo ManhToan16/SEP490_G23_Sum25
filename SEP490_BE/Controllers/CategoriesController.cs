@@ -29,7 +29,7 @@ namespace SEP490_BE.Controllers
         {
 
             var category = await _categoryService.CreateCategory(request);
-            await _notificationHubService.SendCategoryUpdate(category);
+           
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -45,7 +45,7 @@ namespace SEP490_BE.Controllers
         {
  
             var category = await _categoryService.UpdateCategory(id, request);
-            await _notificationHubService.SendCategoryUpdate(category);
+        
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -61,7 +61,7 @@ namespace SEP490_BE.Controllers
         {
 
             await _categoryService.DeleteCategory(id);
-            await _notificationHubService.SendCategoryDelete(id);
+      
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

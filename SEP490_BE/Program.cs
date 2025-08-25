@@ -51,7 +51,6 @@ using SEP490_BE.Services.LaboratoryRoomServices;
 using SEP490_BE.Services.MaterialServices;
 using SEP490_BE.Services.MedicalRecordServices;
 using SEP490_BE.Services.MedicineServices;
-using SEP490_BE.Services.NotificationServices;
 using SEP490_BE.Services.PatientProfileServices;
 using SEP490_BE.Services.PrescriptionServices;
 using SEP490_BE.Services.ScheduleChangeServices;
@@ -214,8 +213,6 @@ builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<ILaboratoryResultService, LaboratoryResultService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IStatisticService, StatisticService>();
-builder.Services.AddSingleton<INotificationStore, InMemoryNotificationStore>();
-builder.Services.AddScoped<INotificationService, NotificationService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
