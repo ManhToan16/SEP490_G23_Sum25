@@ -43,6 +43,7 @@ namespace SEP490_BE.Hubs
         Task SendLowStockAlert(ProvidedSummaryDTO summary);
         // Transaction Update
         Task SendTransactionUpdate(TransactionResponseDTO transaction);
+        Task<List<object>> GetNotifications(string role);
 
     }
 }
