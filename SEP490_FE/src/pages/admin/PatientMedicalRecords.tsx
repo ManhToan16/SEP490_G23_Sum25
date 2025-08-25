@@ -172,7 +172,7 @@ const PatientMedicalRecords: React.FC = () => {
       >
         <span style={{ fontSize: 18, lineHeight: 1 }}>&larr;</span> Quay lại
       </button>
-      <h1 className="text-2xl font-bold mb-4 text-clinic-navy text-center">Hồ sơ bệnh án của bệnh nhân</h1>
+      <h1 className="text-2xl font-bold mb-4 text-clinic-navy text-center">Hồ sơ y tế của bệnh nhân</h1>
       
       {/* Success/Error Messages */}
       {success && (
@@ -293,16 +293,7 @@ const PatientMedicalRecords: React.FC = () => {
               </div>
             </div>
 
-            {/* Submit button */}
-            <div className="flex justify-end pt-4">
-              <button
-                type="submit"
-                disabled={updating}
-                className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {updating ? 'Đang cập nhật...' : 'Cập nhật'}
-              </button>
-            </div>
+            {/* Submit button removed as per request */}
           </form>
         ) : (
           <div className="text-center py-8">
