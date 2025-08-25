@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore.Storage;
 using Moq;
 using SEP490_BE.DTO.MedicineDTO;
 using SEP490_BE.Entities;
+using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Services.MedicineServices;
 using System;
@@ -21,6 +22,7 @@ namespace Test2.Services.MedicineTest
         private Mock<KhanhAnNeurologyClinicContext> _contextMock = null!;
         private Mock<DatabaseFacade> _databaseMock = null!;
         private Mock<IDbContextTransaction> _transactionMock = null!;
+        private Mock<INotificationHubService> _notificationHubMock = null!;
         private MedicineService _service = null!;
 
         [SetUp]
@@ -28,6 +30,7 @@ namespace Test2.Services.MedicineTest
         {
             _medicineRepositoryMock = new Mock<IMedicineRepository>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>();
+            _notificationHubMock= new Mock<INotificationHubService>();
             _databaseMock = new Mock<DatabaseFacade>(_contextMock.Object);
             _transactionMock = new Mock<IDbContextTransaction>();
 
@@ -37,7 +40,7 @@ namespace Test2.Services.MedicineTest
 
             _transactionMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
             _transactionMock.Setup(t => t.RollbackAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _service = new MedicineService(_contextMock.Object,_medicineRepositoryMock.Object);
+            _service = new MedicineService(_contextMock.Object,_medicineRepositoryMock.Object, _notificationHubMock.Object);
         }
 
         private IList<ValidationResult> ValidateModel(object model)

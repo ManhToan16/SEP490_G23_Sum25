@@ -82,8 +82,9 @@ namespace SEP490_BE.Hubs
         }
         public async Task SendMedicineUpdate(MedicineResponseDTO medicine)
         {
-            await _hubContext.Clients.All.SendAsync("ReceiveMedicineUpdate", medicine);
+            await _hubContext.Clients.Group("ADMIN").SendAsync("ReceiveMedicineUpdate", medicine);
         }
+
 
         public async Task SendMedicineDelete(string medicineId)
         {
