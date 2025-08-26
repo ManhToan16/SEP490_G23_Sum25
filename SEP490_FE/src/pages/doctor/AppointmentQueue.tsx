@@ -520,7 +520,7 @@ const completedAppointments = appointments.filter(apt => apt.status === 'Hoàn t
                         visit.status === 'WAITING_FOR_CHECK_IN' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                         visit.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
                         visit.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800 border border-green-200' :
-                        visit.status === 'PENDING' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                        visit.status === 'PENDING' || visit.status === 'PENDING_WITHOUT_ASSIGNMENT' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
                         visit.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                         visit.status === 'IN_EXAMINATION' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                         visit.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
@@ -539,7 +539,7 @@ const completedAppointments = appointments.filter(apt => apt.status === 'Hoàn t
                          visit.status === 'WAITING_FOR_CHECK_IN' ? 'Chờ check-in' :
                          visit.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
                          visit.status === 'CHECKED_IN' ? 'Đã check-in' :
-                         visit.status === 'PENDING' ? 'Đang chờ thanh toán' :
+                         visit.status === 'PENDING' || visit.status === 'PENDING_WITHOUT_ASSIGNMENT' ? 'Đang chờ thanh toán' :
                          visit.status === 'IN_PROGRESS' ? 'Đang khám' :
                          visit.status === 'IN_EXAMINATION' ? 'Đang khám' :
                          visit.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
