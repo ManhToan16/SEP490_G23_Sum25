@@ -386,5 +386,76 @@ namespace SEP490_BE.Services.VisitServices
             }).ToList();
         }
 
+        public async Task<VisitResponseDTO> MarkAsCompleteWithoutAssignment(string id)
+        {
+            var visit = await _visitRepository.FindById(id);
+            if (visit == null)
+                throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
+
+            if (visit.Status != VisitStatus.IN_EXAMINATION)
+                throw new ArgumentException(MessageConstants.VISIT_INVALID_COMPLETED);
+
+            visit.Status = VisitStatus.PENDING_WITHOUT_ASSIGNMENT;
+            visit.Appointment.Status = AppointmentStatus.PENDING_WITHOUT_ASSIGNMENT;
+
+            var examResult = await _examinationResultRepository.FindByVisitIdAsync(id);
+            if (examResult == null)
+            {
+                throw new ArgumentException("Lượt khám chưa có kết quả khám tổng quát");
+            }
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                await _visitRepository.Update(visit);
+                await _appointmentRepository.Update(visit.Appointment);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                await _hubContext.Clients.All.SendAsync("AppointmentChanged", new
+                {
+                    Action = "UPDATE",
+                    Id = visit.Appointment.Id,
+                    Name = visit.Appointment.Name,
+                    Email = visit.Appointment.Email,
+                    PhoneNumber = visit.Appointment.PhoneNumber,
+                    DateOfBirth = visit.Appointment.DateOfBirth,
+                    Date = visit.Appointment.Date,
+                    Status = visit.Appointment.Status,
+                });
+
+                await _hubContext.Clients.All.SendAsync("VisitChanged", new
+                {
+                    Action = "UPDATE",
+                    VisitId = visit.Id,
+                    PatientName = visit.PatientName,
+                    ExaminationRoomId = visit.ExaminationRoomId,
+                    QueueNumber = visit.QueueNumber,
+                    Status = visit.Status,
+                    IsPrioritized = visit.IsPrioritized,
+                });
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+            return new VisitResponseDTO
+            {
+                VisitId = visit.Id,
+                ExaminationRoomId = visit.ExaminationRoomId,
+                ExaminationRoomName = visit.ExaminationRoom.Name,
+                AppointmentId = visit.AppointmentId,
+                AssignedDoctorId = visit.AssignedDoctorId,
+                AssignedDoctorName = visit.AssignedDoctor.Name,
+                PatientProfileId = visit.PatientProfileId,
+                PatientName = visit.PatientName,
+                QueueNumber = visit.QueueNumber,
+                TotalPrice = visit.TotalPrice ?? 0,
+                Status = visit.Status ?? "",
+                IsPrioritized = visit.IsPrioritized ?? false
+            };
+        }
+
     }
 }
