@@ -50,6 +50,18 @@ const CreateExaminationForm: React.FC = () => {
     currentMedications: ''
   });
   const [updatingMedicalRecord, setUpdatingMedicalRecord] = useState(false);
+
+  // Function to check if medical record can be updated (within 12 hours of appointment creation)
+  const canUpdateMedicalRecord = useCallback(() => {
+    if (!appointmentData?.createdAt) return false;
+    
+    const appointmentCreatedAt = new Date(appointmentData.createdAt);
+    const now = new Date();
+    const timeDifference = now.getTime() - appointmentCreatedAt.getTime();
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+    
+    return hoursDifference <= 12;
+  }, [appointmentData?.createdAt]);
   
   // API data states
   const [laboratoryRooms, setLaboratoryRooms] = useState<any[]>([]);
@@ -70,6 +82,9 @@ const CreateExaminationForm: React.FC = () => {
   const [completingVisit, setCompletingVisit] = useState(false);
   const [loadingExaminationResult, setLoadingExaminationResult] = useState(false);
   const [isVisitCompleted, setIsVisitCompleted] = useState(false);
+  const [currentVisitStatus, setCurrentVisitStatus] = useState<string | undefined>(
+    (typeof location.state?.visit?.status === 'string' ? location.state.visit.status : visitData?.status)
+  );
   
   // Modal states
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -94,6 +109,9 @@ const CreateExaminationForm: React.FC = () => {
   useEffect(() => {
     if (visitData?.status === 'COMPLETED') {
       setIsVisitCompleted(true);
+    }
+    if (visitData?.status) {
+      setCurrentVisitStatus(visitData.status);
     }
   }, [visitData?.status]);
   
@@ -808,7 +826,7 @@ const CreateExaminationForm: React.FC = () => {
     setShowCompleteModal(true);
   };
 
-  // Helper function để format date cho input
+  // Helper function để format date cho input type="date"
   const formatDateForInput = (dateString: string): string => {
     if (!dateString) return '';
     
@@ -833,6 +851,45 @@ const CreateExaminationForm: React.FC = () => {
       return '';
     } catch (error) {
       console.error('Error formatting date:', error);
+      return '';
+    }
+  };
+
+  // Helper format để HIỂN THỊ ở ô text (dd/MM/yyyy)
+  const formatDateForText = (dateString: string): string => {
+    if (!dateString) return '';
+    try {
+      // Nếu đã dd/MM/yyyy thì giữ nguyên
+      if (dateString.includes('/') && dateString.split('/').length === 3) {
+        return dateString;
+      }
+      // Nếu là YYYY-MM-DD hoặc YYYY-MM-DDTHH:mm:ss
+      if (dateString.includes('-') && dateString.split('-').length >= 3) {
+        const [year, month, dayWithTime] = dateString.split('-');
+        const day = (dayWithTime || '').split('T')[0];
+        return `${(day || '').padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+      }
+      const date = new Date(dateString);
+      if (!isNaN(date.getTime())) {
+        const d = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth()+1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+        return d;
+      }
+      return '';
+    } catch (e) {
+      return '';
+    }
+  };
+
+  // Parse từ ô text dd/MM/yyyy sang YYYY-MM-DD để gửi API
+  const parseBirthdateToISO = (dateText: string): string => {
+    if (!dateText) return '';
+    try {
+      if (dateText.includes('/') && dateText.split('/').length === 3) {
+        const [day, month, year] = dateText.split('/');
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      return formatDateForInput(dateText);
+    } catch {
       return '';
     }
   };
@@ -867,7 +924,8 @@ const CreateExaminationForm: React.FC = () => {
         name: appointmentData.name || '',
         email: appointmentData.email || '',
         phone: appointmentData.phoneNumber || '',
-        birthdate: formatDateForInput(appointmentData.dateOfBirth || ''),
+        // Hiển thị birthdate dạng text dd/MM/yyyy
+        birthdate: formatDateForText(appointmentData.dateOfBirth || ''),
         gender: appointmentData.gender === 'Nam' ? 'male' : appointmentData.gender === 'Nữ' ? 'female' : '',
         address: appointmentData.address || '',
         symptoms: '', // Để trống để bác sĩ điền
@@ -885,7 +943,7 @@ const CreateExaminationForm: React.FC = () => {
           name: appointment.name || '',
           email: appointment.email || '',
           phone: appointment.phoneNumber || '',
-          birthdate: formatDateForInput(appointment.dateOfBirth || ''),
+          birthdate: formatDateForText(appointment.dateOfBirth || ''),
           gender: appointment.gender === 'Nam' ? 'male' : appointment.gender === 'Nữ' ? 'female' : '',
           address: appointment.address || '',
           symptoms: '', // Để trống để bác sĩ điền
@@ -969,7 +1027,8 @@ const CreateExaminationForm: React.FC = () => {
         name: rescheduleFormData.name,
         phoneNumber: rescheduleFormData.phone,
         email: rescheduleFormData.email,
-        dateOfBirth: rescheduleFormData.birthdate,
+        // Convert birthdate text dd/MM/yyyy -> YYYY-MM-DD cho API
+        dateOfBirth: parseBirthdateToISO(rescheduleFormData.birthdate),
         gender: rescheduleFormData.gender === 'male' ? 'Nam' : 'Nữ',
         address: rescheduleFormData.address,
         symptom: rescheduleFormData.symptoms,
@@ -1013,6 +1072,38 @@ const CreateExaminationForm: React.FC = () => {
 
   const handleCancelReschedule = () => {
     setShowRescheduleModal(false);
+  };
+
+  const handleCompleteWithoutAssignment = async () => {
+    if (!visitData?.visitId) {
+      toast({
+        title: "Lỗi!",
+        description: 'Không tìm thấy thông tin visit để hoàn thành',
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setCompletingVisit(true);
+    try {
+      await appointmentService.markAsCompletedWithoutAssignment(visitData.visitId);
+      toast({
+        title: "Thành công!",
+        description: 'Hoàn thành khám bệnh (không chỉ định) thành công!',
+        variant: "success",
+      });
+      // Cập nhật trạng thái cục bộ để ẩn nút thêm/hoàn thành chỉ định
+      setCurrentVisitStatus('PENDING_WITHOUT_ASSIGNMENT');
+    } catch (error) {
+      console.error('Error completing visit without assignment:', error);
+      toast({
+        title: "Lỗi!",
+        description: 'Có lỗi xảy ra khi hoàn thành khám bệnh (không chỉ định). Vui lòng thử lại.',
+        variant: "destructive",
+      });
+    } finally {
+      setCompletingVisit(false);
+    }
   };
 
   const handleConfirmComplete = async () => {
@@ -1226,6 +1317,8 @@ const CreateExaminationForm: React.FC = () => {
         return "bg-blue-100 text-blue-800";
       case "WAITING_FOR_CONFIRMATION":
         return "bg-orange-100 text-orange-800";
+      case "PENDING_WITHOUT_ASSIGNMENT":
+        return "bg-orange-100 text-orange-800";
       case "CANCELLED":
         return "bg-red-100 text-red-800";
       case "IN_EXAMINATION_PROGRESS":
@@ -1245,6 +1338,8 @@ const CreateExaminationForm: React.FC = () => {
         return "Chờ check-in";
       case "WAITING_FOR_CONFIRMATION":
         return "Chờ xác nhận";
+      case "PENDING_WITHOUT_ASSIGNMENT":
+        return "Đang chờ thanh toán";
       case "CANCELLED":
         return "Đã hủy";
       case "IN_EXAMINATION_PROGRESS":
@@ -1350,6 +1445,13 @@ const CreateExaminationForm: React.FC = () => {
           >
             <User size={16} />
             <span>Xem hồ sơ bệnh nhân</span>
+          </button>
+          <button
+            onClick={handleViewMedicalRecord}
+            className="inline-flex items-center space-x-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-all duration-200 font-medium"
+          >
+            <FileText size={16} />
+            <span>Xem hồ sơ y tế</span>
           </button>
         </div>
 
@@ -1480,7 +1582,7 @@ const CreateExaminationForm: React.FC = () => {
 
           {/* Action Buttons */}
           <div className="flex space-x-3">
-            {!assignmentsCreated && !isVisitCompleted && (
+            {!assignmentsCreated && !isVisitCompleted && currentVisitStatus !== 'PENDING_WITHOUT_ASSIGNMENT' && (
               <button 
                 onClick={handleAddExamination}
                 disabled={!selectedRoom || !selectedRoomId || selectedServices.length === 0 || loadingServices}
@@ -1489,7 +1591,7 @@ const CreateExaminationForm: React.FC = () => {
                 <span>Thêm Chỉ Định</span>
               </button>
             )}
-            {!isVisitCompleted && (
+            {!isVisitCompleted && currentVisitStatus !== 'PENDING_WITHOUT_ASSIGNMENT' && (
               <button 
                 onClick={handleCompleteExaminations}
                 disabled={examinations.length === 0 || creatingAssignments || assignmentsCreated}
@@ -1741,7 +1843,7 @@ const CreateExaminationForm: React.FC = () => {
             className="w-full h-32 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
           />
           {/* Nút Lưu ngay dưới góc phải của ô Kết luận */}
-          {!isVisitCompleted && (
+          {!isVisitCompleted && currentVisitStatus !== 'PENDING_WITHOUT_ASSIGNMENT' && (
             <div className="flex justify-end mt-2">
               <button
                 onClick={handleSave}
@@ -1946,7 +2048,7 @@ const CreateExaminationForm: React.FC = () => {
                 </div>
               </div>
               
-              {!isVisitCompleted && (
+              {!isVisitCompleted && currentVisitStatus !== 'PENDING_WITHOUT_ASSIGNMENT' && (
                 <div className="flex justify-end">
                   <button
                     onClick={handleAddMedicineToList}
@@ -2055,39 +2157,41 @@ const CreateExaminationForm: React.FC = () => {
                     Xóa đơn thuốc
                   </button>
                 )}
-                <button
-                  onClick={handleSavePrescription}
-                  disabled={prescriptionItems.length === 0 || savingPrescription}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-                >
-                {savingPrescription ? (
-                  <div className="flex items-center space-x-2">
-                    <svg
-                      className="animate-spin h-4 w-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    <span>Đang lưu...</span>
-                  </div>
-                ) : (
-                  prescriptionId ? 'Cập nhật đơn thuốc' : 'Tạo đơn thuốc'
+                {currentVisitStatus !== 'PENDING_WITHOUT_ASSIGNMENT' && (
+                  <button
+                    onClick={handleSavePrescription}
+                    disabled={prescriptionItems.length === 0 || savingPrescription}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                  {savingPrescription ? (
+                    <div className="flex items-center space-x-2">
+                      <svg
+                        className="animate-spin h-4 w-4"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      <span>Đang lưu...</span>
+                    </div>
+                  ) : (
+                    prescriptionId ? 'Cập nhật đơn thuốc' : 'Tạo đơn thuốc'
+                  )}
+                </button>
                 )}
-              </button>
             </div>
             )}
           </div>
@@ -2161,6 +2265,19 @@ const CreateExaminationForm: React.FC = () => {
               ) : (
                 'Hoàn thành và đặt lịch tái khám'
               )}
+            </button>
+          </div>
+        )}
+
+        {/* Button hoàn thành không chỉ định - chỉ hiển thị khi trạng thái Đang khám */}
+        {(visitData?.status === 'IN_EXAMINATION' || visitData?.status === 'IN_EXAMINATION_PROGRESS') && !isVisitCompleted && (
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={handleCompleteWithoutAssignment}
+              disabled={completingVisit}
+              className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all duration-200 font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {completingVisit ? 'Đang hoàn thành...' : 'Hoàn thành và không chỉ định'}
             </button>
           </div>
         )}
@@ -2420,7 +2537,7 @@ const CreateExaminationForm: React.FC = () => {
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-600 mb-1">
-                      Triệu chứng
+                      Triệu chứng và lí do cần tái khám
                     </label>
                     <div className="bg-white p-3 rounded border border-gray-200">
                       <p className="text-gray-900">
@@ -2845,9 +2962,21 @@ const CreateExaminationForm: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-5xl mx-4 max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold text-gray-900">
-                Hồ sơ y tế
-              </h3>
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Hồ sơ y tế
+                </h3>
+                {appointmentData?.createdAt && (
+                  <div className="flex items-center space-x-2 mt-1 text-sm text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>
+                      Phiếu khám được tạo: {new Date(appointmentData.createdAt).toLocaleDateString('vi-VN')} {new Date(appointmentData.createdAt).toLocaleTimeString('vi-VN')}
+                    </span>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={() => {
                   setShowMedicalRecordModal(false);
@@ -2933,7 +3062,10 @@ const CreateExaminationForm: React.FC = () => {
                             onChange={(e) => handleMedicalRecordInputChange('medicalHistory', e.target.value)}
                             placeholder="Nhập tiền sử bệnh..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!canUpdateMedicalRecord()}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                              !canUpdateMedicalRecord() ? 'bg-gray-100 cursor-not-allowed' : ''
+                            }`}
                           />
                         </div>
                       </div>
@@ -2946,7 +3078,10 @@ const CreateExaminationForm: React.FC = () => {
                             onChange={(e) => handleMedicalRecordInputChange('allergies', e.target.value)}
                             placeholder="Nhập thông tin dị ứng..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!canUpdateMedicalRecord()}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                              !canUpdateMedicalRecord() ? 'bg-gray-100 cursor-not-allowed' : ''
+                            }`}
                           />
                         </div>
                       </div>
@@ -2959,7 +3094,10 @@ const CreateExaminationForm: React.FC = () => {
                             onChange={(e) => handleMedicalRecordInputChange('surgicalHistory', e.target.value)}
                             placeholder="Nhập tiền sử phẫu thuật..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!canUpdateMedicalRecord()}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                              !canUpdateMedicalRecord() ? 'bg-gray-100 cursor-not-allowed' : ''
+                            }`}
                           />
                         </div>
                       </div>
@@ -2972,7 +3110,10 @@ const CreateExaminationForm: React.FC = () => {
                             onChange={(e) => handleMedicalRecordInputChange('treatment', e.target.value)}
                             placeholder="Nhập thông tin điều trị..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!canUpdateMedicalRecord()}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                              !canUpdateMedicalRecord() ? 'bg-gray-100 cursor-not-allowed' : ''
+                            }`}
                           />
                         </div>
                       </div>
@@ -2985,20 +3126,39 @@ const CreateExaminationForm: React.FC = () => {
                             onChange={(e) => handleMedicalRecordInputChange('currentMedications', e.target.value)}
                             placeholder="Nhập thông tin thuốc đang dùng..."
                             rows={3}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            disabled={!canUpdateMedicalRecord()}
+                            className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                              !canUpdateMedicalRecord() ? 'bg-gray-100 cursor-not-allowed' : ''
+                            }`}
                           />
                         </div>
                       </div>
                     </div>
 
                     <div className="flex justify-end pt-4">
-                      <button
-                        onClick={handleUpdateMedicalRecord}
-                        disabled={updatingMedicalRecord}
-                        className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      >
-                        {updatingMedicalRecord ? 'Đang cập nhật...' : 'Cập nhật'}
-                      </button>
+                      {canUpdateMedicalRecord() ? (
+                        <button
+                          onClick={handleUpdateMedicalRecord}
+                          disabled={updatingMedicalRecord}
+                          className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                          {updatingMedicalRecord ? 'Đang cập nhật...' : 'Cập nhật'}
+                        </button>
+                      ) : (
+                        <div className="flex flex-col space-y-2 text-sm text-gray-500">
+                          <div className="flex items-center space-x-2">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>Hồ sơ chỉ có thể cập nhật trong 12 giờ đầu sau khi tạo phiếu khám</span>
+                          </div>
+                          {appointmentData?.createdAt && (
+                            <div className="text-xs text-gray-400 ml-6">
+                              Thời gian cập nhật đã hết hạn
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -3170,10 +3330,10 @@ const CreateExaminationForm: React.FC = () => {
                       Ngày sinh *
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       value={rescheduleFormData.birthdate}
                       onChange={(e) => handleRescheduleInputChange('birthdate', e.target.value)}
-                      max={new Date().toISOString().split('T')[0]}
+                      placeholder="dd/MM/yyyy"
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -3209,12 +3369,12 @@ const CreateExaminationForm: React.FC = () => {
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Triệu chứng
+                    Triệu chứng và lí do cần tái khám
                   </label>
                   <textarea
                     value={rescheduleFormData.symptoms}
                     onChange={(e) => handleRescheduleInputChange('symptoms', e.target.value)}
-                    placeholder="Mô tả triệu chứng hiện tại..."
+                    placeholder="Mô tả triệu chứng hiện tại và lý do cần tái khám..."
                     rows={3}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />

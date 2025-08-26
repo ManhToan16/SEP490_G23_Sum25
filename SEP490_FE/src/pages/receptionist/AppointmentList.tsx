@@ -225,6 +225,8 @@ const AppointmentList: React.FC = () => {
         return "bg-purple-100 text-purple-800";
       case "PENDING":
         return "bg-yellow-100 text-yellow-800";
+      case "PENDING_WITHOUT_ASSIGNMENT":
+        return "bg-yellow-100 text-yellow-800";
       case "IN_LABORATORY_PROGRESS":
         return "bg-indigo-100 text-indigo-800";
       case "COMPLETED":
@@ -247,6 +249,8 @@ const AppointmentList: React.FC = () => {
       case "IN_EXAMINATION_PROGRESS":
         return "Đang khám";
       case "PENDING":
+        return "Đang chờ thanh toán";
+      case "PENDING_WITHOUT_ASSIGNMENT":
         return "Đang chờ thanh toán";
       case "IN_LABORATORY_PROGRESS":
         return "Đang xét nghiệm";
@@ -300,6 +304,7 @@ const AppointmentList: React.FC = () => {
               <option value="CHECKED_IN">Đã check-in</option>
               <option value="IN_EXAMINATION_PROGRESS">Đang khám</option>
               <option value="PENDING">Đang chờ thanh toán</option>
+              <option value="PENDING_WITHOUT_ASSIGNMENT">Đang chờ thanh toán</option>
               <option value="IN_LABORATORY_PROGRESS">Đang xét nghiệm</option>
               <option value="COMPLETED">Hoàn thành</option>
               <option value="CANCELLED">Đã hủy</option>
