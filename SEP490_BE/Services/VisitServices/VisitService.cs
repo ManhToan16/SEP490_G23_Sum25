@@ -393,7 +393,7 @@ namespace SEP490_BE.Services.VisitServices
                 throw new ResourceNotFoundException(MessageConstants.VISIT_NOT_FOUND);
 
             if (visit.Status != VisitStatus.IN_EXAMINATION)
-                throw new ArgumentException(MessageConstants.VISIT_INVALID_COMPLETED);
+                throw new ArgumentException("Không thể hoàn thành lượt khám");
 
             visit.Status = VisitStatus.PENDING_WITHOUT_ASSIGNMENT;
             visit.Appointment.Status = AppointmentStatus.PENDING_WITHOUT_ASSIGNMENT;
