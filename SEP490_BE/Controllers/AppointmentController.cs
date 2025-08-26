@@ -155,7 +155,7 @@ namespace SEP490_BE.Controllers
         
         [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
         [HttpPut("{id}/mark-as-paid-without-assignment")]
-        public async Task<ActionResult<ApiResponse>> MarkAsPaidWithoutAssignmwnt(string id)
+        public async Task<ActionResult<ApiResponse>> MarkAsPaidWithoutAssignment(string id)
         {
             var result = await _appointmentService.MarkAsPaidWithoutAssignment(id);
             return Ok(new ApiResponse
