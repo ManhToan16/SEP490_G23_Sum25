@@ -18,6 +18,7 @@ namespace SEP490_BE.Services.VisitServices
         Task<VisitResponseDTO> Calling(string id);
         Task<VisitResponseDTO> GetByAppointmentId(string appointmentId);
         Task<List<VisitResponseDTO>> GetByPatientProfileId(string patientProfileId);
+        Task<VisitResponseDTO> MarkAsCompleteWithoutAssignment(string id);
 
     }
 }

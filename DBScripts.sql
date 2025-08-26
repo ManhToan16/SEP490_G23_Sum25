@@ -135,26 +135,6 @@ CREATE TABLE Schedules (
 );
 
 --13
-CREATE TABLE ScheduleChangeRequests (
-  Id NVARCHAR(100) PRIMARY KEY,
-  RequesterId NVARCHAR(100) NOT NULL,
-  RequesterScheduleId NVARCHAR(100) NOT NULL,
-  TargetUserId NVARCHAR(100) NOT NULL,
-  TargetScheduleId NVARCHAR(100) NOT NULL,
-  Reason NVARCHAR(MAX) NOT NULL,
-  Status NVARCHAR(50) DEFAULT 'PENDING' 
-    CHECK (Status IN (
-      'PENDING', 
-      'APPROVED', 
-      'REJECTED'
-    )),
-  FOREIGN KEY (RequesterId) REFERENCES Users(Id),
-  FOREIGN KEY (TargetUserId) REFERENCES Users(Id),
-  FOREIGN KEY (RequesterScheduleId) REFERENCES Schedules(Id),
-  FOREIGN KEY (TargetScheduleId) REFERENCES Schedules(Id)
-);
-
---14
 CREATE TABLE PatientProfiles (
    Id NVARCHAR(100) PRIMARY KEY,
    Name NVARCHAR(100) NOT NULL,
@@ -167,7 +147,7 @@ CREATE TABLE PatientProfiles (
    CreatedAt DATETIME DEFAULT GETDATE()
 );
 
---15
+--14
 CREATE TABLE Appointments (
    Id NVARCHAR(100) PRIMARY KEY,
    Name NVARCHAR(100) NOT NULL,
@@ -189,7 +169,8 @@ CREATE TABLE Appointments (
        'PENDING',
 	   'IN_LABORATORY_PROGRESS', 
        'COMPLETED', 
-       'CANCELLED'
+       'CANCELLED',
+	   'PENDING_WITHOUT_ASSIGNMENT'
      )),
    CancelReason NVARCHAR(MAX) DEFAULT '',
    TotalPrice DECIMAL(18,2) DEFAULT 0,
@@ -199,7 +180,7 @@ CREATE TABLE Appointments (
    FOREIGN KEY (TimeSlotId) REFERENCES TimeSlots(Id)
 );
 
---16
+--15
 CREATE TABLE Visits (
    Id NVARCHAR(100) PRIMARY KEY,
    ExaminationRoomId NVARCHAR(100) NOT NULL,
@@ -218,7 +199,8 @@ CREATE TABLE Visits (
        'IN_LABORATORY', 
        'RETURNING', 
        'COMPLETED',
-	   'CANCELLED'
+	   'CANCELLED',
+	   'PENDING_WITHOUT_ASSIGNMENT'
      )),
    CreateAt DATETIME DEFAULT GETDATE(),
    FOREIGN KEY (ExaminationRoomId) REFERENCES ExaminationRooms(Id),
@@ -227,7 +209,7 @@ CREATE TABLE Visits (
    FOREIGN KEY (AssignedDoctorId) REFERENCES Users(Id)
 );
 
---17
+--16
 CREATE TABLE Assignments (
    Id NVARCHAR(100) PRIMARY KEY,
    LaboratoryRoomId NVARCHAR(100) NOT NULL,
@@ -246,7 +228,7 @@ CREATE TABLE Assignments (
    FOREIGN KEY (VisitId) REFERENCES Visits(Id)
 );
 
---18
+--17
 CREATE TABLE MedicalRecords (
    Id NVARCHAR(100) PRIMARY KEY,
    PatientProfileId NVARCHAR(100) NOT NULL,
@@ -260,7 +242,7 @@ CREATE TABLE MedicalRecords (
    FOREIGN KEY (PatientProfileId) REFERENCES PatientProfiles(Id)
 );
 
---19
+--18
 CREATE TABLE ExaminationResults (
    Id NVARCHAR(100) PRIMARY KEY,
    MedicalRecordId NVARCHAR(100) NOT NULL,
@@ -276,7 +258,7 @@ CREATE TABLE ExaminationResults (
    FOREIGN KEY (VisitId) REFERENCES Visits(Id)
 );
 
---20
+--19
 CREATE TABLE LaboratoryResults (
    Id NVARCHAR(100) PRIMARY KEY,
    ExaminationResultId NVARCHAR(100) NOT NULL,
@@ -290,7 +272,7 @@ CREATE TABLE LaboratoryResults (
    FOREIGN KEY (AssignmentId) REFERENCES Assignments(Id)
 );
 
---21
+--20
 CREATE TABLE LaboratoryFiles (
    Id NVARCHAR(100) PRIMARY KEY,
    LaboratoryResultId NVARCHAR(100) NOT NULL,
@@ -298,7 +280,7 @@ CREATE TABLE LaboratoryFiles (
    FOREIGN KEY (LaboratoryResultId) REFERENCES LaboratoryResults(Id)
 );
 
---22
+--21
 CREATE TABLE Medicines (
     Id NVARCHAR(100) PRIMARY KEY,
     Name NVARCHAR(255) NOT NULL,
@@ -310,7 +292,7 @@ CREATE TABLE Medicines (
     IsActive BIT NOT NULL DEFAULT 1
 );
 
---23
+--22
 CREATE TABLE Prescriptions (
    Id NVARCHAR(100) PRIMARY KEY,
    ExaminationResultId NVARCHAR(100) NOT NULL,
@@ -319,7 +301,7 @@ CREATE TABLE Prescriptions (
    FOREIGN KEY (ExaminationResultId) REFERENCES ExaminationResults(Id)
 );
 
---24
+--23
 CREATE TABLE PrescriptionItems (
    Id NVARCHAR(100) PRIMARY KEY,
    PrescriptionId NVARCHAR(100) NOT NULL,
@@ -332,7 +314,7 @@ CREATE TABLE PrescriptionItems (
    FOREIGN KEY (MedicineId) REFERENCES Medicines(Id)
 );
 
---25
+--24
 CREATE TABLE Categories (
   Id NVARCHAR(100) PRIMARY KEY,
   Name NVARCHAR(255) NOT NULL,
@@ -341,7 +323,7 @@ CREATE TABLE Categories (
   CreatedAt DATETIME DEFAULT GETDATE()
 );
 
---26
+--25
 CREATE TABLE Suppliers (
   Id NVARCHAR(100) PRIMARY KEY,
   Name NVARCHAR(255) NOT NULL,
@@ -353,7 +335,7 @@ CREATE TABLE Suppliers (
   CreatedAt DATETIME DEFAULT GETDATE()
 );
 
---27
+--26
 CREATE TABLE Materials (
     Id NVARCHAR(100) PRIMARY KEY,
     Name NVARCHAR(255) NOT NULL,
@@ -369,7 +351,7 @@ CREATE TABLE Materials (
     FOREIGN KEY (CategoryId) REFERENCES Categories(Id)
 );
 
---28
+--27
 CREATE TABLE Transactions (
     Id NVARCHAR(100) PRIMARY KEY,
     MaterialId NVARCHAR(100) NOT NULL,
@@ -390,7 +372,7 @@ CREATE TABLE Transactions (
     FOREIGN KEY (SupplierId) REFERENCES Suppliers(Id)
 );
 
---29
+--28
 CREATE TABLE TransactionHistory (
     Id NVARCHAR(100) PRIMARY KEY,
     TransactionId NVARCHAR(100) NOT NULL,
@@ -404,7 +386,7 @@ CREATE TABLE TransactionHistory (
     FOREIGN KEY (ChangedBy) REFERENCES Users(Id)
 );
 
---31
+--29
 CREATE TABLE TransactionDetails (
     Id UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
     TransactionId NVARCHAR(100) NOT NULL, 
