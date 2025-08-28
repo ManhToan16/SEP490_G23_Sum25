@@ -29,8 +29,7 @@ const PatientQueue: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // State cho SignalR status real-time
-  const [signalRStatus, setSignalRStatus] = useState(signalRService.getConnectionState());
+  // SignalR status card removed; keep connection logic below
 
   // Function để lấy thông tin phòng khám từ roomId
   const getRoomInfo = async (roomId: string) => {
@@ -145,17 +144,7 @@ const PatientQueue: React.FC = () => {
     }
   }, [user, selectedDate, fetchNurseScheduleAndVisits]);
 
-  // SignalR status monitoring
-  useEffect(() => {
-    const updateStatus = () => {
-      setSignalRStatus(signalRService.getConnectionState());
-    };
-
-    // Update status every 2 seconds
-    const statusInterval = setInterval(updateStatus, 2000);
-
-    return () => clearInterval(statusInterval);
-  }, []);
+  // Removed SignalR status monitoring card
 
   // SignalR real-time updates
   useEffect(() => {
@@ -342,17 +331,7 @@ const PatientQueue: React.FC = () => {
             />
           </div>
           
-          {/* SignalR Status Debug */}
-          <div className="clinic-card min-w-[200px]">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              SignalR Status
-            </label>
-            <div className="text-sm">
-              <div className={`px-2 py-1 rounded ${signalRStatus === 'Connected' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                {signalRStatus}
-              </div>
-            </div>
-          </div>
+          
           
           <Button 
             onClick={handleOpenWaitingRoomDisplay}
@@ -472,6 +451,7 @@ const PatientQueue: React.FC = () => {
                         visit.status === 'WAITING_FOR_CONFIRMATION' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
                         visit.status === 'CHECKED_IN' ? 'bg-green-100 text-green-800 border border-green-200' :
                         visit.status === 'PENDING' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
+                        visit.status === 'PENDING_WITHOUT_ASSIGNMENT' ? 'bg-orange-100 text-orange-800 border border-orange-200' :
                         visit.status === 'IN_PROGRESS' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                         visit.status === 'IN_EXAMINATION' ? 'bg-blue-100 text-blue-800 border border-blue-200' :
                         visit.status === 'IN_EXAMINATION_PROGRESS' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
@@ -490,6 +470,7 @@ const PatientQueue: React.FC = () => {
                          visit.status === 'WAITING_FOR_CONFIRMATION' ? 'Chờ xác nhận' :
                          visit.status === 'CHECKED_IN' ? 'Đã check-in' :
                          visit.status === 'PENDING' ? 'Đang chờ thanh toán' :
+                         visit.status === 'PENDING_WITHOUT_ASSIGNMENT' ? 'Đang chờ thanh toán' :
                          visit.status === 'IN_PROGRESS' ? 'Đang xét nghiệm' :
                          visit.status === 'IN_EXAMINATION' ? 'Đang khám' :
                          visit.status === 'IN_EXAMINATION_PROGRESS' ? 'Đang khám' :
