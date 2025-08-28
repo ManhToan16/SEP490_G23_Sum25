@@ -132,6 +132,9 @@ const CreateExaminationForm: React.FC = () => {
   const usedRoomIds = examinations.map(exam => exam.roomId);
   const availableRooms = laboratoryRooms.filter(room => !usedRoomIds.includes(room.id));
 
+  // Disable prescription dropdown when visit completed or waiting for payment
+  const isPrescriptionDisabled = isVisitCompleted || currentVisitStatus === 'PENDING_WITHOUT_ASSIGNMENT';
+
   // Function to check if medical record can be updated (within 48 hours of examination result creation)
   const canUpdateMedicalRecord = useCallback(() => {
     // Ưu tiên sử dụng thời gian tạo examination result nếu có
@@ -408,6 +411,13 @@ const CreateExaminationForm: React.FC = () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Close medicine dropdown if disabled
+  useEffect(() => {
+    if (isPrescriptionDisabled) {
+      setIsDropdownOpen(false);
+    }
+  }, [isPrescriptionDisabled]);
 
   // Fetch services khi chọn phòng
   const fetchServicesForRoom = useCallback(async (roomId: string) => {
@@ -1459,8 +1469,8 @@ const CreateExaminationForm: React.FC = () => {
               Chỉ Định Xét Nghiệm
             </h3>
 
-          {/* Chọn phòng xét nghiệm - Ẩn sau khi hoàn thành */}
-          {!assignmentsCreated && !isVisitCompleted && (
+          {/* Chọn phòng xét nghiệm - Ẩn sau khi hoàn thành hoặc đang chờ thanh toán */}
+          {!assignmentsCreated && !isVisitCompleted && currentVisitStatus !== 'PENDING_WITHOUT_ASSIGNMENT' && (
             <>
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -1891,22 +1901,25 @@ const CreateExaminationForm: React.FC = () => {
                   type="text"
                   value={searchText}
                   onChange={(e) => {
+                    if (isPrescriptionDisabled) return;
                     setSearchText(e.target.value);
                     setIsDropdownOpen(true);
                   }}
-                  onFocus={() => setIsDropdownOpen(true)}
+                  onFocus={() => !isPrescriptionDisabled && setIsDropdownOpen(true)}
                   placeholder={selectedOption || 'Nhập tên thuốc hoặc chọn từ danh sách...'}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isPrescriptionDisabled}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <button
-                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                  className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+                  onClick={() => !isPrescriptionDisabled && setIsDropdownOpen(!isDropdownOpen)}
+                  disabled={isPrescriptionDisabled}
+                  className="px-3 py-2 border border-l-0 border-gray-300 rounded-r-lg bg-gray-50 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                 >
                   <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
               </div>
               
-              {isDropdownOpen && (
+              {isDropdownOpen && !isPrescriptionDisabled && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
                   {loadingMedicines ? (
                     <div className="px-3 py-4 text-center">
