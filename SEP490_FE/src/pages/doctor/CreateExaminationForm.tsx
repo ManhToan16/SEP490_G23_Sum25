@@ -51,17 +51,7 @@ const CreateExaminationForm: React.FC = () => {
   });
   const [updatingMedicalRecord, setUpdatingMedicalRecord] = useState(false);
 
-  // Function to check if medical record can be updated (within 12 hours of appointment creation)
-  const canUpdateMedicalRecord = useCallback(() => {
-    if (!appointmentData?.createdAt) return false;
-    
-    const appointmentCreatedAt = new Date(appointmentData.createdAt);
-    const now = new Date();
-    const timeDifference = now.getTime() - appointmentCreatedAt.getTime();
-    const hoursDifference = timeDifference / (1000 * 60 * 60);
-    
-    return hoursDifference <= 12;
-  }, [appointmentData?.createdAt]);
+
   
   // API data states
   const [laboratoryRooms, setLaboratoryRooms] = useState<any[]>([]);
@@ -78,6 +68,7 @@ const CreateExaminationForm: React.FC = () => {
   
   // Examination result states
   const [examinationResultId, setExaminationResultId] = useState<string | null>(null);
+  const [examinationResultCreatedAt, setExaminationResultCreatedAt] = useState<string | null>(null);
   const [savingExamination, setSavingExamination] = useState(false);
   const [completingVisit, setCompletingVisit] = useState(false);
   const [loadingExaminationResult, setLoadingExaminationResult] = useState(false);
@@ -141,17 +132,43 @@ const CreateExaminationForm: React.FC = () => {
   const usedRoomIds = examinations.map(exam => exam.roomId);
   const availableRooms = laboratoryRooms.filter(room => !usedRoomIds.includes(room.id));
 
+  // Function to check if medical record can be updated (within 48 hours of examination result creation)
+  const canUpdateMedicalRecord = useCallback(() => {
+    // Ưu tiên sử dụng thời gian tạo examination result nếu có
+    // Fallback về appointmentData.createdAt nếu chưa có examination result
+    let createdAt = null;
+    
+    if (examinationResultCreatedAt) {
+      // Sử dụng thời gian tạo examination result
+      createdAt = examinationResultCreatedAt;
+    } else if (appointmentData?.createdAt) {
+      // Fallback về thời gian tạo appointment
+      createdAt = appointmentData.createdAt;
+    }
+    
+    if (!createdAt) {
+      return false;
+    }
+    
+    const examinationCreatedAt = new Date(createdAt);
+    const now = new Date();
+    const timeDifference = now.getTime() - examinationCreatedAt.getTime();
+    const hoursDifference = timeDifference / (1000 * 60 * 60);
+    
+    return hoursDifference <= 24;
+    
+    return hoursDifference <= 24;
+  }, [examinationResultId, examinationResultCreatedAt, appointmentData?.createdAt]);
+
   // Fetch assignments by visitId
   const fetchAssignments = useCallback(async () => {
     if (!visitData?.visitId) {
-      console.log('No visitId available');
       return;
     }
 
     setLoadingAssignments(true);
     try {
       const response = await appointmentService.getAssignmentByVisitId(visitData.visitId);
-      console.log('Assignments response:', response);
       
       // API trả về: { statusCode: 200, success: true, message: "...", data: [Array(1)] }
       // Trong đó data[0] chứa array các assignments
@@ -179,12 +196,9 @@ const CreateExaminationForm: React.FC = () => {
     setLoadingResult(true);
     try {
       const response = await appointmentService.getLaboratoryResultByAssignmentId(assignmentId);
-      console.log('Laboratory result response:', response);
       
       // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
       if (response && response.data && Array.isArray(response.data) && response.data[0]) {
-        console.log('Laboratory result data structure:', response.data[0]);
-        console.log('Files in result:', response.data[0].files);
         setLaboratoryResult(response.data[0]);
       } else {
         setLaboratoryResult(null);
@@ -207,7 +221,6 @@ const CreateExaminationForm: React.FC = () => {
     setLoadingMedicines(true);
     try {
       const response = await appointmentService.getActiveMedicines();
-      console.log('Active medicines response:', response);
       
       // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
       if (response && response.data && Array.isArray(response.data)) {
@@ -228,18 +241,15 @@ const CreateExaminationForm: React.FC = () => {
   // Fetch examination result để load lại dữ liệu đã lưu
   const fetchExaminationResult = useCallback(async () => {
     if (!visitData?.visitId) {
-      console.log('No visitId available for fetching examination result');
       return;
     }
 
     setLoadingExaminationResult(true);
     try {
-      console.log('Fetching examination result for visit:', visitData.visitId);
       const response = await appointmentService.getExaminationResultByVisitId(visitData.visitId);
       
       if (response && response.data && Array.isArray(response.data) && response.data[0]) {
         const examinationResult = response.data[0];
-        console.log('Found existing examination result:', examinationResult);
         
         // Set dữ liệu vào form
         if (examinationResult.summary) {
@@ -249,8 +259,11 @@ const CreateExaminationForm: React.FC = () => {
           setConclusion(examinationResult.conclusion);
         }
         
-        // Lưu ID để dùng cho update
+        // Lưu ID và thời gian tạo để dùng cho update
         setExaminationResultId(examinationResult.id);
+        if (examinationResult.createdAt) {
+          setExaminationResultCreatedAt(examinationResult.createdAt);
+        }
         
         // Fetch prescription nếu có
         if (examinationResult.id) {
@@ -307,10 +320,10 @@ const CreateExaminationForm: React.FC = () => {
           }
         }
       } else {
-        console.log('No existing examination result found');
+        // No existing examination result found
       }
     } catch (error) {
-      console.log('No existing examination result found or error:', error);
+      // Error fetching examination result
     } finally {
       setLoadingExaminationResult(false);
     }
@@ -322,7 +335,6 @@ const CreateExaminationForm: React.FC = () => {
       setLoadingRooms(true);
       try {
         const response = await appointmentService.getLaboratoryRooms();
-        console.log('Laboratory rooms response:', response);
         
         // API trả về: { statusCode: 200, success: true, message: "...", data: [{ paginatedResponse }] }
         if (response && response.data && Array.isArray(response.data) && response.data[0]) {
@@ -407,7 +419,6 @@ const CreateExaminationForm: React.FC = () => {
     setLoadingServices(true);
     try {
       const services = await appointmentService.getServices(roomId);
-      console.log('Services response:', services);
       
       // API trả về array of ServiceResponseDTO
       if (services && Array.isArray(services)) {
@@ -576,25 +587,25 @@ const CreateExaminationForm: React.FC = () => {
         conclusion: conclusion.trim(),
       };
       
-      console.log('Examination data to save:', examinationData);
+
 
       // Kiểm tra xem đã có examination result cho visit này chưa
       let existingResult = null;
-      try {
-        console.log('Checking existing examination result for visit:', visitData.visitId);
-        const checkResponse = await appointmentService.getExaminationResultByVisitId(visitData.visitId);
-        if (checkResponse && checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data[0]) {
-          existingResult = checkResponse.data[0];
-          console.log('Found existing examination result:', existingResult);
+              try {
+          const checkResponse = await appointmentService.getExaminationResultByVisitId(visitData.visitId);
+          if (checkResponse && checkResponse.data && Array.isArray(checkResponse.data) && checkResponse.data[0]) {
+            existingResult = checkResponse.data[0];
+          }
+        } catch (checkError) {
+          // No existing examination result found, will create new one
         }
-      } catch (checkError) {
-        console.log('No existing examination result found, will create new one');
-      }
 
       if (existingResult && existingResult.id) {
         // Cập nhật examination result đã có
-        console.log('Updating existing examination result:', existingResult.id);
         setExaminationResultId(existingResult.id);
+        if (existingResult.createdAt) {
+          setExaminationResultCreatedAt(existingResult.createdAt);
+        }
         
         await appointmentService.updateExaminationResult(existingResult.id, examinationData);
         toast({
@@ -604,15 +615,15 @@ const CreateExaminationForm: React.FC = () => {
         });
       } else {
         // Tạo mới examination result
-        console.log('Creating new examination result for visit:', visitData.visitId);
-        
         const createResponse = await appointmentService.createExaminationResult(visitData.visitId, examinationData);
         
-        console.log('Create examination result response:', createResponse);
-        
-        // Lấy ID từ response để dùng cho update sau này
+        // Lấy ID và thời gian tạo từ response để dùng cho update sau này
         if (createResponse && createResponse.data && Array.isArray(createResponse.data) && createResponse.data[0]) {
-          setExaminationResultId(createResponse.data[0].id);
+          const newResult = createResponse.data[0];
+          setExaminationResultId(newResult.id);
+          if (newResult.createdAt) {
+            setExaminationResultCreatedAt(newResult.createdAt);
+          }
         }
         
         toast({
@@ -915,12 +926,8 @@ const CreateExaminationForm: React.FC = () => {
     }
 
     // Tự động điền thông tin bệnh nhân từ appointment data
-    if (appointmentData) {
-      console.log('Using existing appointmentData:', appointmentData);
-      console.log('Original dateOfBirth:', appointmentData.dateOfBirth);
-      console.log('Formatted birthdate:', formatDateForInput(appointmentData.dateOfBirth || ''));
-      
-      setRescheduleFormData({
+          if (appointmentData) {
+        setRescheduleFormData({
         name: appointmentData.name || '',
         email: appointmentData.email || '',
         phone: appointmentData.phoneNumber || '',
@@ -1043,8 +1050,7 @@ const CreateExaminationForm: React.FC = () => {
         appointmentService.createAppointment(appointmentData)
       ]);
       
-      console.log('Mark completed result:', markCompletedResult);
-      console.log('Create appointment result:', createAppointmentResult);
+
       
       toast({
         title: "Thành công!",
@@ -1109,8 +1115,7 @@ const CreateExaminationForm: React.FC = () => {
   const handleConfirmComplete = async () => {
     setCompletingVisit(true);
     try {
-      console.log('Completing visit:', visitData.visitId);
-      await appointmentService.markAsCompleted(visitData.visitId);
+          await appointmentService.markAsCompleted(visitData.visitId);
       
       toast({
         title: "Thành công!",
@@ -1146,13 +1151,11 @@ const CreateExaminationForm: React.FC = () => {
     setShowAppointmentModal(true);
     
     // Gọi API để lấy thông tin appointment nếu có appointmentId
-    if (visitData?.appointmentId && !appointmentData) {
-      setLoadingAppointment(true);
-      try {
-        console.log('Fetching appointment with ID:', visitData.appointmentId);
-        const appointment = await appointmentService.getAppointmentById(visitData.appointmentId);
-        console.log('Appointment data received:', appointment);
-        setAppointmentData(appointment);
+          if (visitData?.appointmentId && !appointmentData) {
+        setLoadingAppointment(true);
+        try {
+          const appointment = await appointmentService.getAppointmentById(visitData.appointmentId);
+          setAppointmentData(appointment);
       } catch (error) {
         console.error('Error fetching appointment:', error);
         toast({
@@ -1170,13 +1173,11 @@ const CreateExaminationForm: React.FC = () => {
     setShowPatientModal(true);
     
     // Gọi API để lấy thông tin bệnh nhân nếu có patientProfileId
-    if (visitData?.patientProfileId && !patientData) {
-      setLoadingPatient(true);
-      try {
-        console.log('Fetching patient with ID:', visitData.patientProfileId);
-        const patient = await adminService.getPatientById(visitData.patientProfileId);
-        console.log('Patient data received:', patient);
-        setPatientData(patient);
+          if (visitData?.patientProfileId && !patientData) {
+        setLoadingPatient(true);
+        try {
+          const patient = await adminService.getPatientById(visitData.patientProfileId);
+          setPatientData(patient);
       } catch (error) {
         console.error('Error fetching patient:', error);
         toast({
@@ -1206,7 +1207,6 @@ const CreateExaminationForm: React.FC = () => {
 
     try {
       // Fetch medical record
-      console.log('Fetching medical record for patient:', visitData.patientProfileId);
       const medicalRecordResponse = await appointmentService.getMedicalRecordByPatientProfile(visitData.patientProfileId);
       
       if (medicalRecordResponse && medicalRecordResponse.data && Array.isArray(medicalRecordResponse.data) && medicalRecordResponse.data.length > 0) {
@@ -1220,17 +1220,14 @@ const CreateExaminationForm: React.FC = () => {
           treatment: record.treatment || '',
           currentMedications: record.currentMedications || ''
         });
-        console.log('Medical record received:', record);
 
         // Fetch examination history using medical record ID
         if (record.medicalRecordId) {
           try {
-            console.log('Fetching examination history for medical record:', record.medicalRecordId);
             const historyResponse = await appointmentService.getExaminationResultByMedicalRecord(record.medicalRecordId);
             
             if (historyResponse && historyResponse.success && historyResponse.data) {
               setExaminationHistory(Array.isArray(historyResponse.data) ? historyResponse.data : []);
-              console.log('Examination history received:', historyResponse.data);
             } else {
               setExaminationHistory([]);
             }
@@ -1744,7 +1741,7 @@ const CreateExaminationForm: React.FC = () => {
                 ) : assignmentData.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
-                      Chưa có chỉ định nào cho visit này
+                      Chưa có chỉ định nào cho lượt khám này
                     </td>
                   </tr>
                 ) : (

@@ -322,6 +322,7 @@ const WaitingRoomDisplay: React.FC = () => {
       case "IN_PROGRESS":
         return "bg-blue-100 text-blue-800 border border-blue-200";
       case "PENDING":
+      case "PENDING_WITHOUT_ASSIGNMENT":
         return "bg-orange-100 text-orange-800 border border-orange-200";
       case "IN_LABORATORY":
         return "bg-purple-100 text-purple-800 border border-purple-200";
@@ -346,6 +347,7 @@ const WaitingRoomDisplay: React.FC = () => {
       case "IN_EXAMINATION": return "Đang khám";
       case "IN_PROGRESS": return "Đang khám";
       case "PENDING": return "Đang chờ thanh toán";
+      case "PENDING_WITHOUT_ASSIGNMENT": return "Đang chờ thanh toán";
       case "IN_LABORATORY": return "Đang xét nghiệm";
       case "RETURNING": return "Đang quay lại phòng";
       case "COMPLETED": return "Hoàn thành";
