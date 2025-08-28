@@ -869,7 +869,7 @@ const AppointmentDetail: React.FC = () => {
       const priorityText = isPriority ? " (Ưu tiên)" : "";
       toast({
         title: "Thành công",
-        description: `Đã tạo visit cho phòng: ${room.room.name}${priorityText}`,
+        description: `Đã tạo lượt khám cho phòng: ${room.room.name}${priorityText}`,
       });
       
       // Refresh appointment data để cập nhật trạng thái

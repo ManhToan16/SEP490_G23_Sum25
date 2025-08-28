@@ -337,22 +337,6 @@ const PatientVisit: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Visit ID
-                        </label>
-                        <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                          {selectedVisit.visitId || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Appointment ID
-                        </label>
-                        <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                          {selectedVisit.appointmentId || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
                           Phòng khám
                         </label>
                         <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
@@ -373,15 +357,6 @@ const PatientVisit: React.FC = () => {
                         </label>
                         <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
                           {selectedVisit.patientName || 'N/A'}
-                        </p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Hồ sơ bệnh nhân
-                        </label>
-                        <p className="text-sm text-gray-900 bg-gray-50 p-2 rounded">
-                          {selectedVisit.patientProfileId || 'N/A'}
                         </p>
                       </div>
                     </div>
