@@ -10,5 +10,6 @@
         public const string IN_LABORATORY_PROGRESS = "IN_LABORATORY_PROGRESS";
         public const string COMPLETED = "COMPLETED";
         public const string CANCELLED = "CANCELLED";
+        public const string PENDING_WITHOUT_ASSIGNMENT = "PENDING_WITHOUT_ASSIGNMENT";
     }
 }

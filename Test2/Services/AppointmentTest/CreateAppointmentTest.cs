@@ -25,6 +25,7 @@ using SEP490_BE.DTO.AppointmentDTO;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.TimeSlotRepositories;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using SEP490_BE.Repositories.ExaminationResultRepositories;
 
 namespace Test2.Services.AppointmentTest
 {
@@ -45,6 +46,7 @@ namespace Test2.Services.AppointmentTest
         private Mock<IHubClients> _clientsMock;
         private Mock<ITimeSlotRepository> _timeSlotRepositoryMock;
         private KhanhAnNeurologyClinicContext _context;
+        private Mock<IExaminationResultRepository> _examinationResultRepository;
 
         [SetUp]
         public void SetUp()
@@ -64,10 +66,10 @@ namespace Test2.Services.AppointmentTest
             _visitServiceMock = new Mock<IVisitService>();
             _assignmentServiceMock = new Mock<IAssignmentService>();
             _timeSlotRepositoryMock = new Mock<ITimeSlotRepository>();
+            _examinationResultRepository = new Mock<IExaminationResultRepository>();
 
 
-
-        _hubContextMock = new Mock<IHubContext<KhanhAnHub>>();
+            _hubContextMock = new Mock<IHubContext<KhanhAnHub>>();
             _clientProxyMock = new Mock<IClientProxy>();
             _clientsMock = new Mock<IHubClients>();
             _clientsMock.Setup(c => c.All).Returns(_clientProxyMock.Object);
@@ -85,7 +87,8 @@ namespace Test2.Services.AppointmentTest
                 _assignmentServiceMock.Object,
                 null,
                 _hubContextMock.Object,
-                _timeSlotRepositoryMock.Object
+                _timeSlotRepositoryMock.Object,
+                _examinationResultRepository.Object
             );
         }
 

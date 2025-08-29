@@ -9,6 +9,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
+using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Repositories.TimeSlotRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
@@ -42,6 +43,7 @@ namespace Test2.Services.AppointmentTest
         private Mock<IHubClients> _clientsMock;
         private Mock<ITimeSlotRepository> _timeSlotRepositoryMock;
         private KhanhAnNeurologyClinicContext _context;
+        private Mock<IExaminationResultRepository> _examinationResultRepository;
 
         [SetUp]
         public void SetUp()
@@ -61,7 +63,7 @@ namespace Test2.Services.AppointmentTest
             _visitServiceMock = new Mock<IVisitService>();
             _assignmentServiceMock = new Mock<IAssignmentService>();
             _timeSlotRepositoryMock = new Mock<ITimeSlotRepository>();
-
+            _examinationResultRepository = new Mock<IExaminationResultRepository>();
 
 
             _hubContextMock = new Mock<IHubContext<KhanhAnHub>>();
@@ -82,7 +84,8 @@ namespace Test2.Services.AppointmentTest
                 _assignmentServiceMock.Object,
                 null,
                 _hubContextMock.Object,
-                _timeSlotRepositoryMock.Object
+                _timeSlotRepositoryMock.Object,
+                _examinationResultRepository.Object
             );
         }
 
@@ -151,7 +154,8 @@ namespace Test2.Services.AppointmentTest
                     new Mock<IAssignmentService>().Object,
                     null,
                     new Mock<IHubContext<KhanhAnHub>>().Object,
-                    new Mock<ITimeSlotRepository>().Object
+                    new Mock<ITimeSlotRepository>().Object,
+                    new Mock<IExaminationResultRepository>().Object
                 );
             }
 

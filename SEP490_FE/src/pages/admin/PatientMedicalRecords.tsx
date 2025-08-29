@@ -224,10 +224,11 @@ const PatientMedicalRecords: React.FC = () => {
                 <div className="md:col-span-3">
                   <textarea
                     value={formData.medicalHistory}
-                    onChange={(e) => handleInputChange('medicalHistory', e.target.value)}
                     placeholder="Nhập tiền sử bệnh..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+                    disabled
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -239,10 +240,11 @@ const PatientMedicalRecords: React.FC = () => {
                 <div className="md:col-span-3">
                   <textarea
                     value={formData.allergies}
-                    onChange={(e) => handleInputChange('allergies', e.target.value)}
                     placeholder="Nhập thông tin dị ứng..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+                    disabled
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -254,10 +256,11 @@ const PatientMedicalRecords: React.FC = () => {
                 <div className="md:col-span-3">
                   <textarea
                     value={formData.surgicalHistory}
-                    onChange={(e) => handleInputChange('surgicalHistory', e.target.value)}
                     placeholder="Nhập tiền sử phẫu thuật..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+                    disabled
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -269,10 +272,11 @@ const PatientMedicalRecords: React.FC = () => {
                 <div className="md:col-span-3">
                   <textarea
                     value={formData.treatment}
-                    onChange={(e) => handleInputChange('treatment', e.target.value)}
                     placeholder="Nhập thông tin điều trị..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+                    disabled
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -284,10 +288,11 @@ const PatientMedicalRecords: React.FC = () => {
                 <div className="md:col-span-3">
                   <textarea
                     value={formData.currentMedications}
-                    onChange={(e) => handleInputChange('currentMedications', e.target.value)}
                     placeholder="Nhập thông tin thuốc đang dùng..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue focus:border-transparent"
+                    disabled
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
                   />
                 </div>
               </div>
