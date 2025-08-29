@@ -688,10 +688,15 @@ namespace SEP490_BE.Services.ScheduleServices
                     if (role == null || !(new[] { "DOCTOR", "TECHNICIAN", "NURSE" }.Contains(role)))
                     {
                         throw new Exception($"Bác sĩ '{doctorName}' không có role hợp lệ tại dòng {row}");
-                    }
+                }// Check TimeSlotId hợp lệ
+                var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(t => t.Id == timeSlotId.Trim());
+                if (timeSlot == null)
+                {
+                    throw new ConflictDataException($"TimeSlot '{timeSlotId}' không tồn tại trong hệ thống (dòng {row}).");
+                }
 
-                    // Tìm phòng theo role của user
-                    string? roomId = null;
+                // Tìm phòng theo role của user
+                string? roomId = null;
                 if (role == "DOCTOR")
                 {
                     var examRoom = await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
