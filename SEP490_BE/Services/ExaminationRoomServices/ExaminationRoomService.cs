@@ -292,7 +292,7 @@ namespace SEP490_BE.Services.ExaminationRoomServices
                 }
 
                 dto.PatientCount = await _context.Visits
-                        .CountAsync(v => v.ExaminationRoomId == room.Id &&
+                        .CountAsync(v => v.ExaminationRoomId == room.Id && v.CreateAt.Value.Date == DateTime.Today && 
                                    (v.Status == VisitStatus.WAITING || v.Status == VisitStatus.IN_EXAMINATION));
                 result.Add(dto);
             }

@@ -1377,6 +1377,46 @@ export const appointmentService = {
     return appointmentService.getUserById(userId);
   },
 
+  // Đánh dấu appointment đã thanh toán (không cần assignment)
+  markAsPaidWithoutAssignment: async (appointmentId: string): Promise<any> => {
+    try {
+      const url = `/Appointment/${appointmentId}/mark-as-paid-without-assignment`;
+      const response = await api.put(url);
+
+      console.log('Mark as paid without assignment response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error marking appointment as paid without assignment:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  // Đánh dấu visit đã hoàn thành (không cần assignment)
+  markAsCompletedWithoutAssignment: async (visitId: string): Promise<any> => {
+    try {
+      const url = `/Visit/${visitId}/mark-as-completed-without-assignment`;
+      const response = await api.put(url);
+
+      console.log('Mark visit as completed without assignment response:', response);
+
+      // API trả về: { statusCode: 200, success: true, message: "...", data: [...] }
+      if (response && (response as any).statusCode === 200) {
+        return response;
+      } else {
+        throw new Error('Invalid response from API');
+      }
+    } catch (error: any) {
+      console.error("Error marking visit as completed without assignment:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
 
 };
 

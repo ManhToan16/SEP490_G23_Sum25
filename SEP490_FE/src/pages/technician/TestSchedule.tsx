@@ -177,7 +177,6 @@ const TestSchedule: React.FC = () => {
   useEffect(() => {
     
     const handleAssignmentChanged = (assignmentData: any) => {
-      console.log('🔔 [TestSchedule] Received AssignmentChanged event:', assignmentData);
       
       // Normalize data structure - backend sends camelCase, we expect PascalCase
       const normalizedData = {
@@ -188,15 +187,13 @@ const TestSchedule: React.FC = () => {
         Status: assignmentData.status || assignmentData.Status
       };
       
-      console.log('🔄 [TestSchedule] Normalized data:', normalizedData);
-      console.log('🏠 [TestSchedule] Current room ID:', currentRoomId);
+      
       
       // Chỉ xử lý nếu assignment thuộc về phòng xét nghiệm hiện tại
       if (normalizedData.LaboratoryRoomId === currentRoomId) {
-        console.log('✅ [TestSchedule] Assignment belongs to current room, processing...');
         
         if (normalizedData.Action === 'CREATE') {
-          console.log('➕ [TestSchedule] Creating new assignment');
+          
           // Thêm assignment mới vào danh sách
           const newAssignment = {
             id: normalizedData.AssignmentId,
@@ -221,9 +218,7 @@ const TestSchedule: React.FC = () => {
           // Tự động ẩn thông báo sau 5 giây
           setTimeout(() => setRealtimeNotification(null), 5000);
         } else if (normalizedData.Action === 'UPDATE') {
-          console.log('🔄 [TestSchedule] Updating existing assignment');
-          console.log('🔍 [TestSchedule] Looking for assignment ID:', normalizedData.AssignmentId);
-          console.log('📋 [TestSchedule] Current assignments:', assignmentsRef.current.map(a => ({ id: a.id, assignmentId: a.assignmentId, status: a.status })));
+          
           
           // Cập nhật assignment trong danh sách - thử cả id và assignmentId
           setAssignments(prev => {
@@ -232,13 +227,13 @@ const TestSchedule: React.FC = () => {
                              assignment.assignmentId === normalizedData.AssignmentId;
               
               if (isMatch) {
-                console.log('✅ [TestSchedule] Found matching assignment, updating status from', assignment.status, 'to', normalizedData.Status);
+                
                 return { ...assignment, status: normalizedData.Status };
               }
               return assignment;
             });
             
-            console.log('📋 [TestSchedule] Updated assignments:', updated.map(a => ({ id: a.id, assignmentId: a.assignmentId, status: a.status })));
+            
             return updated;
           });
           
@@ -260,14 +255,12 @@ const TestSchedule: React.FC = () => {
           
           // Force refresh để đảm bảo UI được cập nhật
           setTimeout(() => {
-            console.log('🔄 [TestSchedule] Force refreshing data after SignalR update');
+            
             if (selectedDateRef.current) {
               fetchFunctionRef.current(selectedDateRef.current);
             }
           }, 1000);
         }
-      } else {
-        console.log('❌ [TestSchedule] Assignment does not belong to current room, ignoring');
       }
     };
 
@@ -290,10 +283,8 @@ const TestSchedule: React.FC = () => {
     setSignalRStatus('connecting');
     signalRService.startConnection().then(() => {
       setSignalRStatus('connected');
-      console.log('🔗 [TestSchedule] SignalR connected successfully');
     }).catch(() => {
       setSignalRStatus('disconnected');
-      console.error('❌ [TestSchedule] SignalR connection failed');
     });
     
     // Theo dõi connection status định kỳ
@@ -302,11 +293,10 @@ const TestSchedule: React.FC = () => {
     // Fallback: Refresh data định kỳ nếu SignalR không hoạt động
     const fallbackRefreshInterval = setInterval(() => {
       if (!signalRService.isConnected()) {
-        console.log('🔄 [TestSchedule] SignalR disconnected, refreshing data as fallback');
         const currentDate = selectedDateRef.current || new Date().toISOString().split('T')[0];
         fetchFunctionRef.current(currentDate);
       }
-    }, 30000); // Refresh mỗi 30 giây nếu SignalR không hoạt động
+    }, 30000);
     
     // Cleanup khi component unmount
     return () => {
@@ -369,23 +359,7 @@ const TestSchedule: React.FC = () => {
           <p className="text-gray-600 mt-2">Quản lý lịch trình xét nghiệm và theo dõi tiến độ</p>
         </div>
         
-        {/* SignalR Status Indicator */}
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${
-            signalRStatus === 'connected' ? 'bg-green-500' :
-            signalRStatus === 'connecting' ? 'bg-yellow-500' :
-            'bg-red-500'
-          }`}></div>
-          <span className={`text-sm font-medium ${
-            signalRStatus === 'connected' ? 'text-green-600' :
-            signalRStatus === 'connecting' ? 'text-yellow-600' :
-            'text-red-600'
-          }`}>
-            {signalRStatus === 'connected' ? 'Real-time kết nối' :
-             signalRStatus === 'connecting' ? 'Đang kết nối...' :
-             'Mất kết nối'}
-          </span>
-        </div>
+        
       </div>
 
       {/* Real-time Notification */}

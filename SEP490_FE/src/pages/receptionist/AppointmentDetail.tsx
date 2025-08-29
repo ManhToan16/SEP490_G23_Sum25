@@ -254,7 +254,11 @@ const AppointmentDetail: React.FC = () => {
       setProcessingPayment(true);
       
       // Gọi API để đánh dấu appointment đã thanh toán
-      await appointmentService.markAsPaid(appointment.id);
+      if (appointment.status === "PENDING_WITHOUT_ASSIGNMENT") {
+        await appointmentService.markAsPaidWithoutAssignment(appointment.id);
+      } else {
+        await appointmentService.markAsPaid(appointment.id);
+      }
       
       toast({
         title: "Thành công",
@@ -437,6 +441,8 @@ const AppointmentDetail: React.FC = () => {
         return "bg-orange-100 text-orange-800";
       case "PENDING":
         return "bg-yellow-100 text-yellow-800";
+      case "PENDING_WITHOUT_ASSIGNMENT":
+        return "bg-yellow-100 text-yellow-800";
       case "IN_EXAMINATION_PROGRESS":
         return "bg-purple-100 text-purple-800";
       case "IN_LABORATORY_PROGRESS":
@@ -459,6 +465,8 @@ const AppointmentDetail: React.FC = () => {
       case "WAITING_FOR_CONFIRMATION":
         return "Chờ xác nhận";
       case "PENDING":
+        return "Đang chờ thanh toán";
+      case "PENDING_WITHOUT_ASSIGNMENT":
         return "Đang chờ thanh toán";
       case "IN_EXAMINATION_PROGRESS":
         return "Đang khám";
@@ -861,7 +869,7 @@ const AppointmentDetail: React.FC = () => {
       const priorityText = isPriority ? " (Ưu tiên)" : "";
       toast({
         title: "Thành công",
-        description: `Đã tạo visit cho phòng: ${room.room.name}${priorityText}`,
+        description: `Đã tạo lượt khám cho phòng: ${room.room.name}${priorityText}`,
       });
       
       // Refresh appointment data để cập nhật trạng thái
@@ -1217,6 +1225,7 @@ const AppointmentDetail: React.FC = () => {
           appointment.status === "WAITING_FOR_CHECK_IN" || 
           appointment.status === "CHECKED_IN" || 
           appointment.status === "PENDING"
+          
         ) && (
           <Button
             variant="destructive"
@@ -1411,8 +1420,8 @@ const AppointmentDetail: React.FC = () => {
           </div>
         </div>
 
-        {/* Payment Section - Chỉ hiển thị khi trạng thái là PENDING */}
-        {appointment.status === "PENDING" && (
+        {/* Payment Section - Chỉ hiển thị khi trạng thái là PENDING hoặc PENDING_WITHOUT_ASSIGNMENT */}
+        {(appointment.status === "PENDING" || appointment.status === "PENDING_WITHOUT_ASSIGNMENT") && (
           <div className="clinic-card">
             <h3 className="text-lg font-semibold text-clinic-navy mb-4">
               Thanh toán

@@ -80,6 +80,20 @@ namespace SEP490_BE.Controllers
                 Data = new[] { result }
             });
         }
+        
+        [Authorize(Roles = RoleConstants.Doctor)]
+        [HttpPut("{id}/mark-as-completed-without-assignment")]
+        public async Task<ActionResult<ApiResponse>> MarkAsCompletedWithoutAssignment(string id)
+        {
+            var result = await _visitService.MarkAsCompleteWithoutAssignment(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { result }
+            });
+        }
 
         [Authorize(Roles = RoleConstants.Nurse)]
         [HttpPut("{id}/calling")]
