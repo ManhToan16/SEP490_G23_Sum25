@@ -614,7 +614,7 @@ export const adminService = {
   getExaminationRoomsActive: async () => {
     try {
       const response = await api.get(`/ExaminationRooms/active`);
-      return response?.data?.[0] || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
       throw error;
@@ -628,7 +628,7 @@ export const adminService = {
   getLaboratoryRoomsActive: async () => {
     try {
       const response = await api.get(`/LaboratoryRooms/active`);
-      return response?.data?.[0] || [];
+      return response?.data?.data || [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;
