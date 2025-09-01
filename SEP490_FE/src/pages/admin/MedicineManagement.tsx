@@ -99,7 +99,7 @@ const MedicineManagement: React.FC = () => {
     }
 
     // Validate pattern (only letters, numbers, spaces, hyphens, and dots)
-    const pattern = /^[a-zA-Z0-9\s\-\.]+$/;
+    const pattern = /^[\p{L}0-9\s\-.]+$/u;
     if (data.name && !pattern.test(data.name)) {
       errors.push(
         "Tên thuốc chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm."
