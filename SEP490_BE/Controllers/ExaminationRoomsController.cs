@@ -93,7 +93,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = new[] { dto }
+                Data =  dto 
             });
         }
 
