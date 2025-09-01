@@ -67,7 +67,20 @@ namespace SEP490_BE.Controllers
                 Data = null
             });
         }
-
+        [Authorize(Roles = RoleConstants.Admin)]
+        [HttpPut("active/{id}")]
+        public async Task<IActionResult> ActiveMedicine(string id)
+        {
+            await _medicineService.ActiveMedicine(id);
+           
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = null
+            });
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetMedicineById(string id)
         {

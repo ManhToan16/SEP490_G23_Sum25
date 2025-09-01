@@ -121,6 +121,17 @@ namespace SEP490_BE.Services.MedicineServices
             await _context.SaveChangesAsync();
 
         }
+        public async Task ActiveMedicine(string id)
+        {
+            var medicine = await _medicineRepository.FindByIdAsync(id);
+            if (medicine == null)
+            {
+                throw new ResourceNotFoundException("Thuốc không tồn tại.");
+            }
+
+            medicine.IsActive = true;
+            await _context.SaveChangesAsync();
+        }
 
         public async Task<MedicineResponseDTO> GetMedicineById(string id)
         {

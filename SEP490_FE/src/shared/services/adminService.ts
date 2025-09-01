@@ -1344,6 +1344,21 @@ export const adminService = {
       throw error;
     }
   },
+  /**
+ * Active thuốc
+ * @param id - ID thuốc cần active
+ * @returns Kết quả active
+ */
+activeMedicine: async (id: string) => {
+  try {
+    const response = await api.put(`/Medicines/active/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error activating medicine:", error?.response?.data || error.message);
+    throw error;
+  }
+},
+
 
   // ===============================================
   // TRANSACTION IMPORT - Nhập lô hàng mới
