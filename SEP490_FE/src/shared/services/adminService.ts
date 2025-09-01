@@ -611,6 +611,30 @@ export const adminService = {
     }
   },
 
+  getExaminationRoomsActive: async () => {
+    try {
+      const response = await api.get(`/ExaminationRooms/active`);
+      return response?.data?.[0] || [];
+    } catch (error: any) {
+      console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phòng xét nghiệm
+   * @returns Danh sách phòng xét nghiệm
+   */
+  getLaboratoryRoomsActive: async () => {
+    try {
+      const response = await api.get(`/LaboratoryRooms/active`);
+      return response?.data?.[0] || [];
+    } catch (error: any) {
+      console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
   /**
    * Tạo phòng khám mới
    * @param data - Thông tin phòng khám

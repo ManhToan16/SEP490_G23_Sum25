@@ -792,14 +792,14 @@ const ScheduleManagement: React.FC = () => {
         setStaffOptions(staffList);
         
         if (activeTab === 'doctors') {
-          const rooms = await adminService.getExaminationRooms();
+          const rooms = await adminService.getExaminationRoomsActive();
           setRoomOptions(rooms);
         } else if (activeTab === 'technicians') {
-          const rooms = await adminService.getLaboratoryRooms();
+          const rooms = await adminService.getLaboratoryRoomsActive();
           setRoomOptions(rooms);
         } else if (activeTab === 'nurses') {
-          const examRooms = await adminService.getExaminationRooms();
-          const labRooms = await adminService.getLaboratoryRooms();
+          const examRooms = await adminService.getExaminationRoomsActive();
+          const labRooms = await adminService.getLaboratoryRoomsActive();
           setRoomOptions([...examRooms, ...labRooms]);
         }
       } catch (err) {
