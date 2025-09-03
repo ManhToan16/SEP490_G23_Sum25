@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SEP490_BE.Entities;
+using System.Linq.Expressions;
 
 namespace SEP490_BE.Repositories.ScheduleRepositories
 {
@@ -93,6 +94,10 @@ namespace SEP490_BE.Repositories.ScheduleRepositories
                 _context.Schedules.Remove(schedule);
                 await _context.SaveChangesAsync();
             }
+        }
+        public async Task<bool> ExistsAsync(Expression<Func<Schedule, bool>> predicate)
+        {
+            return await _context.Schedules.AnyAsync(predicate);
         }
     }
 }

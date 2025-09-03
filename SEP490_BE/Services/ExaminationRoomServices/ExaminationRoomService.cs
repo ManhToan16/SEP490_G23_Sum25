@@ -312,6 +312,13 @@ namespace SEP490_BE.Services.ExaminationRoomServices
         {
             var room = await _examinationRoomRepository.FindByIdAsync(id)
                       ?? throw new ResourceNotFoundException("Không tìm thấy phòng khám");
+            bool hasFutureSchedule = await _scheduleRepository.ExistsAsync(s =>
+        s.RoomId == id && s.Date >= DateTime.Now);
+
+            if (hasFutureSchedule)
+            {
+                throw new ConflictDataException("Phòng này vẫn còn lịch hẹn trong tương lai, không thể inactive.");
+            }
             room.IsActive = false;
             await _examinationRoomRepository.UpdateAsync(room);
 
