@@ -2,6 +2,7 @@
 using Moq;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
+using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Services.MedicineServices;
 using System;
@@ -18,19 +19,21 @@ namespace Test2.Services.MedicineTest
         private Mock<IMedicineRepository> _medicineRepoMock = null!;
         private MedicineService _medicineService = null!;
         private Mock<KhanhAnNeurologyClinicContext> _contextMock = null!;
+        private Mock<INotificationHubService> _notificationHubMock = null!;
+
 
         [SetUp]
         public void Setup()
         {
             _medicineRepoMock = new Mock<IMedicineRepository>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>();
-
+            _notificationHubMock = new Mock<INotificationHubService>();
             var dbMock = new Mock<DatabaseFacade>(_contextMock.Object);
             _contextMock.Setup(c => c.Database).Returns(dbMock.Object);
 
             _medicineService = new MedicineService(
                 
-                _contextMock.Object, _medicineRepoMock.Object
+                _contextMock.Object, _medicineRepoMock.Object,_notificationHubMock.Object
             );
         }
 

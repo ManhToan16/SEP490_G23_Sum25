@@ -101,7 +101,6 @@ export const NAVIGATION_ITEMS = {
     { path: ROUTES.DOCTOR.DASHBOARD, label: 'Trang chủ', icon: 'Home' },
     { path: ROUTES.DOCTOR.APPOINTMENT_QUEUE, label: 'Hàng chờ khám', icon: 'Clock' },
     { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
-    { path: ROUTES.DOCTOR.CREATE_MEDICAL_RECORD, label: 'Tạo hồ sơ', icon: 'Plus' },
     { path: ROUTES.DOCTOR.PROFILE, label: 'Hồ sơ chuyên môn', icon: 'FileText' },
   ],
 
@@ -144,7 +143,7 @@ export const NAVIGATION_ITEMS = {
   ],
 
   TECHNICIAN: [
-    { path: ROUTES.TECHNICIAN.DASHBOARD, label: 'Thông tin của tôi', icon: 'User' },
+    { path: ROUTES.TECHNICIAN.DASHBOARD, label: 'Trang chủ', icon: 'User' },
     { path: ROUTES.TECHNICIAN.TEST_SCHEDULE, label: 'Lịch xét nghiệm', icon: 'Calendar' },
     { path: ROUTES.MY_SCHEDULE, label: 'Lịch làm việc', icon: 'Calendar' },
   ],

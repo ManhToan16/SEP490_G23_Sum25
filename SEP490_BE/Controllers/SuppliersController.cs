@@ -29,7 +29,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> CreateSupplier([FromBody] CreateSupplierDTO request)
         {
             var supplier = await _supplierService.CreateSupplier(request);
-            await _notificationHubService.SendSupplierUpdate(supplier);
+            await _notificationHubService.SendSupplierUpdate(supplier,"Create");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -44,7 +44,7 @@ namespace SEP490_BE.Controllers
         public async Task<IActionResult> UpdateSupplier(string id, [FromBody] UpdateSupplierDTO request)
         {
             var supplier = await _supplierService.UpdateSupplier(id, request);
-            await _notificationHubService.SendSupplierUpdate(supplier);
+            await _notificationHubService.SendSupplierUpdate(supplier,"Update");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,

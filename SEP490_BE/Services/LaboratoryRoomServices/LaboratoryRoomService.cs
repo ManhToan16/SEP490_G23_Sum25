@@ -5,6 +5,7 @@ using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Services.ServiceServices;
 
 namespace SEP490_BE.Services.LaboratoryRoomServices
@@ -14,14 +15,16 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
         private readonly KhanhAnNeurologyClinicContext _context;
         private readonly ILaboratoryRoomRepository _laboratoryRoomRepository;
         private readonly IServiceService _serviceService;
+        private readonly IScheduleRepository _scheduleRepository;
 
         public LaboratoryRoomService(
             KhanhAnNeurologyClinicContext context,
-            ILaboratoryRoomRepository laboratoryRoomRepository, IServiceService serviceService)
+            ILaboratoryRoomRepository laboratoryRoomRepository, IServiceService serviceService, IScheduleRepository scheduleRepository)
         {
             _context = context;
             _laboratoryRoomRepository = laboratoryRoomRepository;
             _serviceService = serviceService;
+            _scheduleRepository = scheduleRepository;
         }
 
         public async Task<Pagination<LaboratoryRoomResponseDTO>> GetAll(
@@ -169,6 +172,13 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
         {
             var room = await _laboratoryRoomRepository.FindByIdAsync(id)
                       ?? throw new ResourceNotFoundException("Không tìm thấy phòng xét nghiệm");
+            bool hasFutureSchedule = await _scheduleRepository.ExistsAsync(s =>
+      s.RoomId == id && s.Date >= DateTime.Now);
+
+            if (hasFutureSchedule)
+            {
+                throw new ConflictDataException("Phòng này vẫn còn lịch làm việc trong tương lai, không thể inactive.");
+            }
             room.IsActive = false;
             await _laboratoryRoomRepository.UpdateAsync(room);
         }

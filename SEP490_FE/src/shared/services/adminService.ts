@@ -611,6 +611,30 @@ export const adminService = {
     }
   },
 
+  getExaminationRoomsActive: async () => {
+    try {
+      const response = await api.get(`/ExaminationRooms/active`);
+      return response?.data?.data || [];
+    } catch (error: any) {
+      console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách phòng xét nghiệm
+   * @returns Danh sách phòng xét nghiệm
+   */
+  getLaboratoryRoomsActive: async () => {
+    try {
+      const response = await api.get(`/LaboratoryRooms/active`);
+      return response?.data?.data || [];
+    } catch (error: any) {
+      console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
+      throw error;
+    }
+  },
+
   /**
    * Tạo phòng khám mới
    * @param data - Thông tin phòng khám
@@ -1321,6 +1345,21 @@ export const adminService = {
       throw error;
     }
   },
+  /**
+ * Active thuốc
+ * @param id - ID thuốc cần active
+ * @returns Kết quả active
+ */
+activeMedicine: async (id: string) => {
+  try {
+    const response = await api.put(`/Medicines/active/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error activating medicine:", error?.response?.data || error.message);
+    throw error;
+  }
+},
+
 
   // ===============================================
   // TRANSACTION IMPORT - Nhập lô hàng mới

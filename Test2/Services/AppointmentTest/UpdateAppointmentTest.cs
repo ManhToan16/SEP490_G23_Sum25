@@ -12,6 +12,7 @@ using SEP490_BE.Exceptions;
 using SEP490_BE.Hubs;
 using SEP490_BE.Repositories.AppointmentRepositories;
 using SEP490_BE.Repositories.AuditLogRepositories;
+using SEP490_BE.Repositories.ExaminationResultRepositories;
 using SEP490_BE.Repositories.MedicalRecordRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.TimeSlotRepositories;
@@ -46,6 +47,7 @@ namespace Test2.Services.AppointmentTest
         private Mock<IAuthService> _authServiceMock;
         private Mock<IAuditLogRepository> _logRepositoryMock;
         private Mock<ITimeSlotRepository> _timeSlotRepositoryMock;
+        private Mock<IExaminationResultRepository> _examinationResultRepository;
 
         private KhanhAnNeurologyClinicContext _context;
         private AppointmentService _appointmentService;
@@ -63,6 +65,7 @@ namespace Test2.Services.AppointmentTest
             _hubContextMock = new Mock<IHubContext<KhanhAnHub>>();
             _authServiceMock = new Mock<IAuthService>();
             _logRepositoryMock = new Mock<IAuditLogRepository>();
+            _examinationResultRepository = new Mock<IExaminationResultRepository>();
 
             _timeSlotRepositoryMock = new Mock<ITimeSlotRepository>();
 
@@ -93,7 +96,8 @@ namespace Test2.Services.AppointmentTest
                 _assignmentServiceMock.Object,
                 _loggerMock.Object,
                 _hubContextMock.Object,
-                _timeSlotRepositoryMock.Object
+                _timeSlotRepositoryMock.Object,
+                _examinationResultRepository.Object
             );
         }
 

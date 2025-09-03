@@ -1,6 +1,15 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Plus, Edit, Trash2, X, Save, Search, Filter, ChevronDown } from 'lucide-react';
-import { adminService } from '@/shared/services/adminService';
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  X,
+  Save,
+  Search,
+  Filter,
+  ChevronDown,
+} from "lucide-react";
+import { adminService } from "@/shared/services/adminService";
 import { useToast } from "@/shared/components/ui/use-toast";
 
 const PAGE_SIZE = 10;
@@ -33,80 +42,91 @@ const MedicineManagement: React.FC = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState<'add' | 'edit'>('add');
+  const [modalType, setModalType] = useState<"add" | "edit">("add");
   const [current, setCurrent] = useState<Medicine | null>(null);
   const [form, setForm] = useState<MedicineForm>({
-    name: '',
-    activeIngredients: '',
-    strength: '',
-    packaging: '',
-    unit: '',
-    description: ''
+    name: "",
+    activeIngredients: "",
+    strength: "",
+    packaging: "",
+    unit: "",
+    description: "",
   });
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  
+  const [searchTerm, setSearchTerm] = useState("");
+  const [activeId, setActiveId] = useState<string | null>(null);
+
   // Filter states
   const [filters, setFilters] = useState({
-    name: '',
-    activeIngredients: '',
-    strength: '',
-    packaging: '',
-    unit: ''
+    name: "",
+    activeIngredients: "",
+    strength: "",
+    packaging: "",
+    unit: "",
   });
   const [showFilters, setShowFilters] = useState(false);
 
   // Validation helper function
   const validateMedicineData = (data: MedicineForm): string[] => {
     const errors: string[] = [];
-    
+
     // Validate required fields
     if (!data.name.trim()) {
-      errors.push('Tên thuốc là bắt buộc.');
+      errors.push("Tên thuốc là bắt buộc.");
     }
     if (!data.activeIngredients.trim()) {
-      errors.push('Hoạt chất là bắt buộc.');
+      errors.push("Hoạt chất là bắt buộc.");
     }
     if (!data.strength.trim()) {
-      errors.push('Hàm lượng là bắt buộc.');
+      errors.push("Hàm lượng là bắt buộc.");
     }
     if (!data.packaging.trim()) {
-      errors.push('Quy cách đóng gói là bắt buộc.');
+      errors.push("Quy cách đóng gói là bắt buộc.");
     }
     if (!data.unit.trim()) {
-      errors.push('Đơn vị là bắt buộc.');
+      errors.push("Đơn vị là bắt buộc.");
     }
-    
+
     // Validate string length
     if (data.name.length > 200) {
-      errors.push('Tên thuốc không được vượt quá 200 ký tự.');
+      errors.push("Tên thuốc không được vượt quá 200 ký tự.");
     }
     if (data.packaging.length > 50) {
-      errors.push('Quy cách đóng gói không được vượt quá 50 ký tự.');
+      errors.push("Quy cách đóng gói không được vượt quá 50 ký tự.");
     }
     if (data.unit.length > 50) {
-      errors.push('Đơn vị không được vượt quá 50 ký tự.');
+      errors.push("Đơn vị không được vượt quá 50 ký tự.");
     }
-    
+
     // Validate pattern (only letters, numbers, spaces, hyphens, and dots)
-    const pattern = /^[a-zA-Z0-9\s\-\.]+$/;
+    const pattern = /^[\p{L}0-9\s\-.]+$/u;
     if (data.name && !pattern.test(data.name)) {
-      errors.push('Tên thuốc chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+      errors.push(
+        "Tên thuốc chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm."
+      );
     }
     if (data.activeIngredients && !pattern.test(data.activeIngredients)) {
-      errors.push('Hoạt chất chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+      errors.push(
+        "Hoạt chất chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm."
+      );
     }
     if (data.strength && !pattern.test(data.strength)) {
-      errors.push('Hàm lượng chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+      errors.push(
+        "Hàm lượng chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm."
+      );
     }
     if (data.packaging && !pattern.test(data.packaging)) {
-      errors.push('Quy cách đóng gói chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+      errors.push(
+        "Quy cách đóng gói chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm."
+      );
     }
     if (data.unit && !pattern.test(data.unit)) {
-      errors.push('Đơn vị chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.');
+      errors.push(
+        "Đơn vị chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm."
+      );
     }
-    
+
     return errors;
   };
 
@@ -126,9 +146,11 @@ const MedicineManagement: React.FC = () => {
       
       if (error?.response?.data) {
         const errorData = error.response.data;
-        
+
         if (errorData.errors && Array.isArray(errorData.errors)) {
-          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          const validationErrors = errorData.errors
+            .map((err: any) => err.error)
+            .join(", ");
           errorMessage = validationErrors;
         } else if (errorData.message) {
           errorMessage = errorData.message;
@@ -138,7 +160,7 @@ const MedicineManagement: React.FC = () => {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       toast({
         title: "Lỗi",
         description: errorMessage,
@@ -152,41 +174,44 @@ const MedicineManagement: React.FC = () => {
   // Combined effect for both page changes and search
   useEffect(() => {
     // Reset page to 1 when search term changes
-    if (searchTerm !== '' && page !== 1) {
+    if (searchTerm !== "" && page !== 1) {
       setPage(1);
       return;
     }
 
-    const timeoutId = setTimeout(() => {
-      fetchData(page);
-    }, searchTerm ? 500 : 0); // Debounce only for search
+    const timeoutId = setTimeout(
+      () => {
+        fetchData(page);
+      },
+      searchTerm ? 500 : 0
+    ); // Debounce only for search
 
     return () => clearTimeout(timeoutId);
   }, [page, searchTerm, fetchData]);
 
   const openAdd = () => {
-    setModalType('add');
+    setModalType("add");
     setForm({
-      name: '',
-      activeIngredients: '',
-      strength: '',
-      packaging: '',
-      unit: '',
-      description: ''
+      name: "",
+      activeIngredients: "",
+      strength: "",
+      packaging: "",
+      unit: "",
+      description: "",
     });
     setCurrent(null);
     setShowModal(true);
   };
 
   const openEdit = (item: Medicine) => {
-    setModalType('edit');
+    setModalType("edit");
     setForm({
       name: item.name,
       activeIngredients: item.activeIngredients,
       strength: item.strength,
       packaging: item.packaging,
       unit: item.unit,
-      description: item.description
+      description: item.description,
     });
     setCurrent(item);
     setShowModal(true);
@@ -196,12 +221,12 @@ const MedicineManagement: React.FC = () => {
     setShowModal(false);
     setCurrent(null);
     setForm({
-      name: '',
-      activeIngredients: '',
-      strength: '',
-      packaging: '',
-      unit: '',
-      description: ''
+      name: "",
+      activeIngredients: "",
+      strength: "",
+      packaging: "",
+      unit: "",
+      description: "",
     });
   };
 
@@ -211,7 +236,7 @@ const MedicineManagement: React.FC = () => {
     if (validationErrors.length > 0) {
       toast({
         title: "Lỗi",
-        description: validationErrors.join(', '),
+        description: validationErrors.join(", "),
         variant: "destructive",
       });
       return;
@@ -219,34 +244,37 @@ const MedicineManagement: React.FC = () => {
 
     setSaving(true);
     try {
-      if (modalType === 'add') {
+      if (modalType === "add") {
         await adminService.createMedicine(form);
-      } else if (modalType === 'edit' && current) {
+      } else if (modalType === "edit" && current) {
         await adminService.updateMedicine(current.id, form);
       }
-    
+
       toast({
         title: "Thành công",
-        description: `${modalType === 'add' ? 'Thêm' : 'Cập nhật'} thuốc thành công`,
+        description: `${
+          modalType === "add" ? "Thêm" : "Cập nhật"
+        } thuốc thành công`,
         variant: "default",
       });
-    
+
       closeModal();
       fetchData(page);
-    
     } catch (error: any) {
-      console.error('Error submitting medicine:', error);
-      console.error('Error details:', error?.response?.data);
-      
-      let errorMessage = 'Không thể lưu thuốc';
-      
+      console.error("Error submitting medicine:", error);
+      console.error("Error details:", error?.response?.data);
+
+      let errorMessage = "Không thể lưu thuốc";
+
       if (error?.response?.data) {
         const errorData = error.response.data;
-        
+
         // Kiểm tra cấu trúc lỗi validation từ backend
         if (errorData.errors && Array.isArray(errorData.errors)) {
           // Nếu có validation errors, hiển thị tất cả lỗi
-          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          const validationErrors = errorData.errors
+            .map((err: any) => err.error)
+            .join(", ");
           errorMessage = validationErrors;
         } else if (errorData.message) {
           errorMessage = errorData.message;
@@ -256,7 +284,7 @@ const MedicineManagement: React.FC = () => {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       toast({
         title: "Lỗi",
         description: errorMessage,
@@ -322,36 +350,28 @@ const MedicineManagement: React.FC = () => {
   };
 
   const handleActivate = async (id: string) => {
-    const itemToActivate = data.find(item => item.id === id);
-    if (!itemToActivate) return;
-    
-    setSaving(true);
+    setActiveId(id);
     try {
-      await adminService.updateMedicine(id, {
-        name: itemToActivate.name,
-        activeIngredients: itemToActivate.activeIngredients,
-        strength: itemToActivate.strength,
-        packaging: itemToActivate.packaging,
-        unit: itemToActivate.unit,
-        description: itemToActivate.description,
-        isActive: true
-      });
+      await adminService.activeMedicine(id);
       toast({
         title: "Thành công",
-        description: "Kích hoạt thuốc thành công",
+        description: "Thuốc đã được kích hoạt lại",
         variant: "default",
       });
       fetchData(page);
     } catch (error: any) {
-      console.error('Error activating medicine:', error);
-      
-      let errorMessage = 'Không thể kích hoạt thuốc';
-      
+      console.error("Error activating medicine:", error);
+      console.error("Error details:", error?.response?.data);
+
+      let errorMessage = "Không thể kích hoạt lại thuốc";
+
       if (error?.response?.data) {
         const errorData = error.response.data;
-        
+
         if (errorData.errors && Array.isArray(errorData.errors)) {
-          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          const validationErrors = errorData.errors
+            .map((err: any) => err.error)
+            .join(", ");
           errorMessage = validationErrors;
         } else if (errorData.message) {
           errorMessage = errorData.message;
@@ -361,14 +381,14 @@ const MedicineManagement: React.FC = () => {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       toast({
         title: "Lỗi",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setSaving(false);
+      setActiveId(null);
     }
   };
 
@@ -377,41 +397,63 @@ const MedicineManagement: React.FC = () => {
   // Filter options
   const filterOptions = useMemo(() => {
     const options = {
-      name: [...new Set(data.map(item => item.name))].sort(),
-      activeIngredients: [...new Set(data.map(item => item.activeIngredients))].sort(),
-      strength: [...new Set(data.map(item => item.strength))].sort(),
-      packaging: [...new Set(data.map(item => item.packaging))].sort(),
-      unit: [...new Set(data.map(item => item.unit))].sort()
+      name: [...new Set(data.map((item) => item.name))].sort(),
+      activeIngredients: [
+        ...new Set(data.map((item) => item.activeIngredients)),
+      ].sort(),
+      strength: [...new Set(data.map((item) => item.strength))].sort(),
+      packaging: [...new Set(data.map((item) => item.packaging))].sort(),
+      unit: [...new Set(data.map((item) => item.unit))].sort(),
     };
     return options;
   }, [data]);
 
   // Filtered data
   const filteredData = useMemo(() => {
-    return data.filter(item => {
-      const nameMatch = !filters.name || item.name.toLowerCase().includes(filters.name.toLowerCase());
-      const activeIngredientsMatch = !filters.activeIngredients || item.activeIngredients.toLowerCase().includes(filters.activeIngredients.toLowerCase());
-      const strengthMatch = !filters.strength || item.strength.toLowerCase().includes(filters.strength.toLowerCase());
-      const packagingMatch = !filters.packaging || item.packaging.toLowerCase().includes(filters.packaging.toLowerCase());
-      const unitMatch = !filters.unit || item.unit.toLowerCase().includes(filters.unit.toLowerCase());
-      
-      return nameMatch && activeIngredientsMatch && strengthMatch && packagingMatch && unitMatch;
+    return data.filter((item) => {
+      const nameMatch =
+        !filters.name ||
+        item.name.toLowerCase().includes(filters.name.toLowerCase());
+      const activeIngredientsMatch =
+        !filters.activeIngredients ||
+        item.activeIngredients
+          .toLowerCase()
+          .includes(filters.activeIngredients.toLowerCase());
+      const strengthMatch =
+        !filters.strength ||
+        item.strength.toLowerCase().includes(filters.strength.toLowerCase());
+      const packagingMatch =
+        !filters.packaging ||
+        item.packaging.toLowerCase().includes(filters.packaging.toLowerCase());
+      const unitMatch =
+        !filters.unit ||
+        item.unit.toLowerCase().includes(filters.unit.toLowerCase());
+
+      return (
+        nameMatch &&
+        activeIngredientsMatch &&
+        strengthMatch &&
+        packagingMatch &&
+        unitMatch
+      );
     });
   }, [data, filters]);
 
   // Clear all filters
   const clearAllFilters = () => {
     setFilters({
-      name: '',
-      activeIngredients: '',
-      strength: '',
-      packaging: '',
-      unit: ''
+      name: "",
+      activeIngredients: "",
+      strength: "",
+      packaging: "",
+      unit: "",
     });
   };
 
   // Check if any filter is active
-  const hasActiveFilters = Object.values(filters).some(filter => filter !== '');
+  const hasActiveFilters = Object.values(filters).some(
+    (filter) => filter !== ""
+  );
 
   return (
     <div className="p-6">
@@ -420,145 +462,180 @@ const MedicineManagement: React.FC = () => {
         <p className="text-gray-600">Quản lý danh sách thuốc trong hệ thống</p>
       </div>
 
-             {/* Search and Add */}
-       <div className="flex justify-between items-center mb-6">
-         <div className="flex items-center space-x-4">
-           <div className="relative">
-             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-             <input
-               type="text"
-               placeholder="Tìm kiếm thuốc..."
-               value={searchTerm}
-               onChange={(e) => setSearchTerm(e.target.value)}
-               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-               disabled={loading}
-             />
-             {loading && (
-               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-clinic-blue"></div>
-               </div>
-             )}
-           </div>
-           
-           {/* Filter Toggle Button */}
-           <button
-             onClick={() => setShowFilters(!showFilters)}
-             className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors ${
-               hasActiveFilters 
-                 ? 'bg-clinic-blue text-white border-clinic-blue' 
-                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-             }`}
-           >
-             <Filter size={16} />
-             <span className="text-sm">Bộ lọc</span>
-             {hasActiveFilters && (
-               <span className="bg-white text-clinic-blue text-xs px-1.5 py-0.5 rounded-full">
-                 {Object.values(filters).filter(f => f !== '').length}
-               </span>
-             )}
-           </button>
-         </div>
-         <button
-           onClick={openAdd}
-           disabled={loading}
-           className="flex items-center space-x-2 px-4 py-2 bg-clinic-blue text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
-         >
-           <Plus size={20} />
-           <span>Thêm thuốc</span>
-         </button>
-       </div>
+      {/* Search and Add */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-4">
+          <div className="relative">
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+              size={20}
+            />
+            <input
+              type="text"
+              placeholder="Tìm kiếm thuốc..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+              disabled={loading}
+            />
+            {loading && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-clinic-blue"></div>
+              </div>
+            )}
+          </div>
 
-       {/* Filter Section */}
-       {showFilters && (
-         <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
-           <div className="flex justify-between items-center mb-4">
-             <h3 className="text-sm font-medium text-gray-700">Bộ lọc nâng cao</h3>
-             <button
-               onClick={clearAllFilters}
-               className="text-sm text-clinic-blue hover:text-blue-600"
-             >
-               Xóa tất cả
-             </button>
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-             {/* Name Filter */}
-             <div>
-               <label className="block text-xs font-medium text-gray-600 mb-1">Tên thuốc</label>
-               <select
-                 value={filters.name}
-                 onChange={(e) => setFilters({ ...filters, name: e.target.value })}
-                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-               >
-                 <option value="">Tất cả</option>
-                 {filterOptions.name.map((name) => (
-                   <option key={name} value={name}>{name}</option>
-                 ))}
-               </select>
-             </div>
+          {/* Filter Toggle Button */}
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-colors ${
+              hasActiveFilters
+                ? "bg-clinic-blue text-white border-clinic-blue"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            <Filter size={16} />
+            <span className="text-sm">Bộ lọc</span>
+            {hasActiveFilters && (
+              <span className="bg-white text-clinic-blue text-xs px-1.5 py-0.5 rounded-full">
+                {Object.values(filters).filter((f) => f !== "").length}
+              </span>
+            )}
+          </button>
+        </div>
+        <button
+          onClick={openAdd}
+          disabled={loading}
+          className="flex items-center space-x-2 px-4 py-2 bg-clinic-blue text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+        >
+          <Plus size={20} />
+          <span>Thêm thuốc</span>
+        </button>
+      </div>
 
-             {/* Active Ingredients Filter */}
-             <div>
-               <label className="block text-xs font-medium text-gray-600 mb-1">Hoạt chất</label>
-               <select
-                 value={filters.activeIngredients}
-                 onChange={(e) => setFilters({ ...filters, activeIngredients: e.target.value })}
-                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-               >
-                 <option value="">Tất cả</option>
-                 {filterOptions.activeIngredients.map((ingredient) => (
-                   <option key={ingredient} value={ingredient}>{ingredient}</option>
-                 ))}
-               </select>
-             </div>
+      {/* Filter Section */}
+      {showFilters && (
+        <div className="mb-6 p-4 bg-gray-50 rounded-lg border">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-sm font-medium text-gray-700">
+              Bộ lọc nâng cao
+            </h3>
+            <button
+              onClick={clearAllFilters}
+              className="text-sm text-clinic-blue hover:text-blue-600"
+            >
+              Xóa tất cả
+            </button>
+          </div>
 
-             {/* Strength Filter */}
-             <div>
-               <label className="block text-xs font-medium text-gray-600 mb-1">Liều lượng</label>
-               <select
-                 value={filters.strength}
-                 onChange={(e) => setFilters({ ...filters, strength: e.target.value })}
-                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-               >
-                 <option value="">Tất cả</option>
-                 {filterOptions.strength.map((strength) => (
-                   <option key={strength} value={strength}>{strength}</option>
-                 ))}
-               </select>
-             </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Name Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Tên thuốc
+              </label>
+              <select
+                value={filters.name}
+                onChange={(e) =>
+                  setFilters({ ...filters, name: e.target.value })
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+              >
+                <option value="">Tất cả</option>
+                {filterOptions.name.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-             {/* Packaging Filter */}
-             <div>
-               <label className="block text-xs font-medium text-gray-600 mb-1">Quy cách</label>
-               <select
-                 value={filters.packaging}
-                 onChange={(e) => setFilters({ ...filters, packaging: e.target.value })}
-                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-               >
-                 <option value="">Tất cả</option>
-                 {filterOptions.packaging.map((packaging) => (
-                   <option key={packaging} value={packaging}>{packaging}</option>
-                 ))}
-               </select>
-             </div>
+            {/* Active Ingredients Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Hoạt chất
+              </label>
+              <select
+                value={filters.activeIngredients}
+                onChange={(e) =>
+                  setFilters({ ...filters, activeIngredients: e.target.value })
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+              >
+                <option value="">Tất cả</option>
+                {filterOptions.activeIngredients.map((ingredient) => (
+                  <option key={ingredient} value={ingredient}>
+                    {ingredient}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-             {/* Unit Filter */}
-             <div>
-               <label className="block text-xs font-medium text-gray-600 mb-1">Đơn vị</label>
-               <select
-                 value={filters.unit}
-                 onChange={(e) => setFilters({ ...filters, unit: e.target.value })}
-                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-               >
-                 <option value="">Tất cả</option>
-                 {filterOptions.unit.map((unit) => (
-                   <option key={unit} value={unit}>{unit}</option>
-                 ))}
-               </select>
-             </div>
-           </div>
-         </div>
-       )}
+            {/* Strength Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Liều lượng
+              </label>
+              <select
+                value={filters.strength}
+                onChange={(e) =>
+                  setFilters({ ...filters, strength: e.target.value })
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+              >
+                <option value="">Tất cả</option>
+                {filterOptions.strength.map((strength) => (
+                  <option key={strength} value={strength}>
+                    {strength}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Packaging Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Quy cách
+              </label>
+              <select
+                value={filters.packaging}
+                onChange={(e) =>
+                  setFilters({ ...filters, packaging: e.target.value })
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+              >
+                <option value="">Tất cả</option>
+                {filterOptions.packaging.map((packaging) => (
+                  <option key={packaging} value={packaging}>
+                    {packaging}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Unit Filter */}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Đơn vị
+              </label>
+              <select
+                value={filters.unit}
+                onChange={(e) =>
+                  setFilters({ ...filters, unit: e.target.value })
+                }
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+              >
+                <option value="">Tất cả</option>
+                {filterOptions.unit.map((unit) => (
+                  <option key={unit} value={unit}>
+                    {unit}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -687,7 +764,8 @@ const MedicineManagement: React.FC = () => {
       {totalPages > 1 && (
         <div className="flex justify-between items-center mt-6">
           <div className="text-sm text-gray-700">
-            Hiển thị {((page - 1) * PAGE_SIZE) + 1} đến {Math.min(page * PAGE_SIZE, totalItems)} của {totalItems} kết quả
+            Hiển thị {(page - 1) * PAGE_SIZE + 1} đến{" "}
+            {Math.min(page * PAGE_SIZE, totalItems)} của {totalItems} kết quả
           </div>
           <div className="flex space-x-2">
             <button
@@ -710,30 +788,30 @@ const MedicineManagement: React.FC = () => {
           </div>
         </div>
       )}
-      
-             {/* Show pagination info even when there's only one page */}
-       {totalItems > 0 && (
-         <div className="mt-4 text-center text-sm text-gray-600">
-           {hasActiveFilters || searchTerm ? (
-             <>
-               Hiển thị {filteredData.length} trong tổng số {totalItems} thuốc
-               {(hasActiveFilters || searchTerm) && (
-                 <button
-                   onClick={() => {
-                     setSearchTerm('');
-                     clearAllFilters();
-                   }}
-                   className="ml-2 text-clinic-blue hover:text-blue-600 underline"
-                 >
-                   Xóa bộ lọc
-                 </button>
-               )}
-             </>
-           ) : (
-             `Tổng cộng ${totalItems} thuốc`
-           )}
-         </div>
-       )}
+
+      {/* Show pagination info even when there's only one page */}
+      {totalItems > 0 && (
+        <div className="mt-4 text-center text-sm text-gray-600">
+          {hasActiveFilters || searchTerm ? (
+            <>
+              Hiển thị {filteredData.length} trong tổng số {totalItems} thuốc
+              {(hasActiveFilters || searchTerm) && (
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    clearAllFilters();
+                  }}
+                  className="ml-2 text-clinic-blue hover:text-blue-600 underline"
+                >
+                  Xóa bộ lọc
+                </button>
+              )}
+            </>
+          ) : (
+            `Tổng cộng ${totalItems} thuốc`
+          )}
+        </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (
@@ -741,9 +819,12 @@ const MedicineManagement: React.FC = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-clinic-navy">
-                {modalType === 'add' ? 'Thêm thuốc mới' : 'Cập nhật thuốc'}
+                {modalType === "add" ? "Thêm thuốc mới" : "Cập nhật thuốc"}
               </h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <X size={24} />
               </button>
             </div>
@@ -769,7 +850,9 @@ const MedicineManagement: React.FC = () => {
                   <input
                     type="text"
                     value={form.activeIngredients}
-                    onChange={(e) => setForm({ ...form, activeIngredients: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, activeIngredients: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
                     placeholder="Nhập hoạt chất"
                   />
@@ -784,7 +867,9 @@ const MedicineManagement: React.FC = () => {
                   <input
                     type="text"
                     value={form.strength}
-                    onChange={(e) => setForm({ ...form, strength: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, strength: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
                     placeholder="Ví dụ: 500 mg"
                   />
@@ -796,7 +881,9 @@ const MedicineManagement: React.FC = () => {
                   <input
                     type="text"
                     value={form.packaging}
-                    onChange={(e) => setForm({ ...form, packaging: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, packaging: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
                     placeholder="Ví dụ: Hộp 10 vỉ x 10 viên"
                   />
@@ -822,7 +909,9 @@ const MedicineManagement: React.FC = () => {
                 </label>
                 <textarea
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   rows={3}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-clinic-blue"
                   placeholder="Mô tả công dụng, chỉ định..."
@@ -847,7 +936,7 @@ const MedicineManagement: React.FC = () => {
                 ) : (
                   <Save size={16} />
                 )}
-                <span>{saving ? 'Đang lưu...' : 'Lưu'}</span>
+                <span>{saving ? "Đang lưu..." : "Lưu"}</span>
               </button>
             </div>
           </div>
@@ -889,4 +978,4 @@ const MedicineManagement: React.FC = () => {
   );
 };
 
-export default MedicineManagement; 
+export default MedicineManagement;

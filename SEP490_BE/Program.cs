@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using SEP490_BE.Config;
 using SEP490_BE.Constants;
@@ -25,11 +26,13 @@ using SEP490_BE.Repositories.MedicineRepositories;
 using SEP490_BE.Repositories.PatientProfileRepositories;
 using SEP490_BE.Repositories.PrescriptionRepositories;
 using SEP490_BE.Repositories.RoleRepositories;
+using SEP490_BE.Repositories.RoomMaterialStockRepositories;
 using SEP490_BE.Repositories.ScheduleChangeRepositories;
 using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Repositories.ServiceRepositories;
 using SEP490_BE.Repositories.SupplierRepositories;
 using SEP490_BE.Repositories.TimeSlotRepositories;
+using SEP490_BE.Repositories.TransactionDetailRepository;
 using SEP490_BE.Repositories.TransactionRepositories;
 using SEP490_BE.Repositories.UserRepositories;
 using SEP490_BE.Repositories.VisitRepositories;
@@ -53,18 +56,16 @@ using SEP490_BE.Services.PrescriptionServices;
 using SEP490_BE.Services.ScheduleChangeServices;
 using SEP490_BE.Services.ScheduleServices;
 using SEP490_BE.Services.ServiceServices;
+using SEP490_BE.Services.StatisticServices;
 using SEP490_BE.Services.SupplierServices;
 using SEP490_BE.Services.TimeSlotServices;
 using SEP490_BE.Services.TransactionServices;
 using SEP490_BE.Services.UserServices;
 using SEP490_BE.Services.VisitServices;
+using SEP490_BE.Utils;
 using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.FileProviders;
-using SEP490_BE.Repositories.TransactionDetailRepository;
-using SEP490_BE.Services.StatisticServices;
-using SEP490_BE.Repositories.RoomMaterialStockRepositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -212,7 +213,6 @@ builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<ILaboratoryResultService, LaboratoryResultService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IStatisticService, StatisticService>();
-
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();

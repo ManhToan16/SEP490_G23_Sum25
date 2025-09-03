@@ -43,6 +43,7 @@
 	</ItemGroup>
 	<ItemGroup>
 	  <Folder Include="Entities\" />
+	  <Folder Include="Services\NotificationServices\" />
 	  <Folder Include="wwwroot\" />
 	  <Folder Include="wwwroot\" />
 	</ItemGroup>

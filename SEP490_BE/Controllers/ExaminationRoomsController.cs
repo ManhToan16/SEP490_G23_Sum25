@@ -45,7 +45,7 @@ namespace SEP490_BE.Controllers
         {
             var createdDto = await _examinationRoomService.Create(dto);
             var data = createdDto != null ? new List<ExaminationRoomResponseDTO> { createdDto } : new List<ExaminationRoomResponseDTO>();
-            await _notificationHubService.SendExaminationRoomUpdate(createdDto);
+            await _notificationHubService.SendExaminationRoomUpdate(createdDto,"Create");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status201Created,
@@ -60,7 +60,7 @@ namespace SEP490_BE.Controllers
         {
             var updatedDto = await _examinationRoomService.Update(id, dto);
             var data = updatedDto != null ? new List<ExaminationRoomResponseDTO> { updatedDto } : new List<ExaminationRoomResponseDTO>();
-            await _notificationHubService.SendExaminationRoomUpdate(updatedDto);
+            await _notificationHubService.SendExaminationRoomUpdate(updatedDto,"Update");
             return Ok(new ApiResponse
             {
                 StatusCode = StatusCodes.Status200OK,
@@ -93,7 +93,7 @@ namespace SEP490_BE.Controllers
                 StatusCode = StatusCodes.Status200OK,
                 Success = true,
                 Message = MessageConstants.GET_SUCCESS,
-                Data = new[] { dto }
+                Data =  dto 
             });
         }
 

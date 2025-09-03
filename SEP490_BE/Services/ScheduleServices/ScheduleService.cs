@@ -664,8 +664,7 @@ namespace SEP490_BE.Services.ScheduleServices
 
             for (int row = 2; row <= rowCount; row++)
             {
-                try
-                {
+               
                     var dateStr = worksheet.Cells[row, 1].Value?.ToString();
                     var roomName = worksheet.Cells[row, 2].Value?.ToString();
                     var timeSlotId = worksheet.Cells[row, 3].Value?.ToString();
@@ -682,42 +681,67 @@ namespace SEP490_BE.Services.ScheduleServices
                         .Include(u => u.UserRoles)
                         .FirstOrDefaultAsync(u => u.Name == doctorName.Trim());
 
-                    if (doctor == null) throw new Exception($"Không tìm thấy bác sĩ '{doctorName}' (row {row})");
+                    if (doctor == null) throw new ConflictDataException($"Không tìm thấy bác sĩ '{doctorName}' (row {row})");
 
                     // Kiểm tra role của doctor
                     var role = doctor.UserRoles.FirstOrDefault()?.RoleName;
                     if (role == null || !(new[] { "DOCTOR", "TECHNICIAN", "NURSE" }.Contains(role)))
                     {
                         throw new Exception($"Bác sĩ '{doctorName}' không có role hợp lệ tại dòng {row}");
-                    }
+                }// Check TimeSlotId hợp lệ
+                var timeSlot = await _context.TimeSlots.FirstOrDefaultAsync(t => t.Id == timeSlotId.Trim());
+                if (timeSlot == null)
+                {
+                    throw new ConflictDataException($"TimeSlot '{timeSlotId}' không tồn tại trong hệ thống (dòng {row}).");
+                }
 
-                    // Tìm phòng theo role của user
-                    string? roomId = null;
-                    if (role == "DOCTOR")
+                // Tìm phòng theo role của user
+                string? roomId = null;
+                if (role == "DOCTOR")
+                {
+                    var examRoom = await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                    if (examRoom != null)
                     {
-                        var room = await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
-                        if (room == null)
-                            throw new Exception($"Không tìm thấy phòng khám '{roomName}' tại dòng {row}");
-                        roomId = room.Id;
+                        roomId = examRoom.Id;
                     }
-                    else if (role == "TECHNICIAN")
+                    else
                     {
-                        var room = await _context.LaboratoryRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
-                        if (room == null)
-                            throw new Exception($"Không tìm thấy phòng xét nghiệm '{roomName}' tại dòng {row}");
-                        roomId = room.Id;
+                        var labRoom = await _context.LaboratoryRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                        if (labRoom != null)
+                        {
+                            throw new ConflictDataException($"Bác sĩ '{doctorName}' chỉ được phép đặt phòng khám, không thể đặt phòng xét nghiệm '{roomName}' (dòng {row}).");
+                        }
+                        throw new ConflictDataException($"Không tìm thấy phòng '{roomName}' tại dòng {row}.");
                     }
-                    else if (role == "NURSE")
+                }
+                else if (role == "TECHNICIAN")
+                {
+                    var labRoom = await _context.LaboratoryRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                    if (labRoom != null)
+                    {
+                        roomId = labRoom.Id;
+                    }
+                    else
+                    {
+                        var examRoom = await _context.ExaminationRooms.FirstOrDefaultAsync(r => r.Name == roomName.Trim());
+                        if (examRoom != null)
+                        {
+                            throw new ConflictDataException($"Kỹ thuật viên '{doctorName}' chỉ được phép đặt phòng xét nghiệm, không thể đặt phòng khám '{roomName}' (dòng {row}).");
+                        }
+                        throw new ConflictDataException($"Không tìm thấy phòng '{roomName}' tại dòng {row}.");
+                    }
+                }
+                else if (role == "NURSE")
                     {
                         var room = await _context.ExaminationRooms
                             .FirstOrDefaultAsync(r => r.Name == roomName.Trim());
                         if (room == null)
-                            throw new Exception($"Không tìm thấy phòng khám '{roomName}' tại dòng {row}");
+                            throw new ConflictDataException($"Không tìm thấy phòng khám '{roomName}' tại dòng {row}");
                         roomId = room.Id;
                     }
                     else
                     {
-                        throw new Exception($"Role của '{doctorName}' không được hỗ trợ tại dòng {row}");
+                        throw new ConflictDataException($"Role của '{doctorName}' không được hỗ trợ tại dòng {row}");
                     }
 
                     scheduleList.Add(new ScheduleAssignment
@@ -728,11 +752,7 @@ namespace SEP490_BE.Services.ScheduleServices
                         UserId = doctor.Id,        // <-- tự gán userId 
                         Role = role               // <-- giữ thông tin role
                     });
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Lỗi tại dòng {row}: {ex.Message}");
-                }
+            
             }
             return scheduleList;
         }

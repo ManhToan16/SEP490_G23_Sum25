@@ -152,6 +152,20 @@ namespace SEP490_BE.Controllers
                 Data = new[] { result }
             });
         }
+        
+        [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.Receptionist)]
+        [HttpPut("{id}/mark-as-paid-without-assignment")]
+        public async Task<ActionResult<ApiResponse>> MarkAsPaidWithoutAssignment(string id)
+        {
+            var result = await _appointmentService.MarkAsPaidWithoutAssignment(id);
+            return Ok(new ApiResponse
+            {
+                StatusCode = StatusCodes.Status200OK,
+                Success = true,
+                Message = MessageConstants.PUT_SUCCESS,
+                Data = new[] { result }
+            });
+        }
 
         [HttpGet("{id}/invoice")]
         public async Task<IActionResult> PrintInvoice(string id)
