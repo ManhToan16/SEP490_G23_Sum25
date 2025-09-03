@@ -177,7 +177,7 @@ namespace SEP490_BE.Services.LaboratoryRoomServices
 
             if (hasFutureSchedule)
             {
-                throw new ConflictDataException("Phòng này vẫn còn lịch hẹn trong tương lai, không thể inactive.");
+                throw new ConflictDataException("Phòng này vẫn còn lịch làm việc trong tương lai, không thể inactive.");
             }
             room.IsActive = false;
             await _laboratoryRoomRepository.UpdateAsync(room);
