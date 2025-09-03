@@ -614,7 +614,7 @@ export const adminService = {
   getExaminationRoomsActive: async () => {
     try {
       const response = await api.get(`/ExaminationRooms/active`);
-      return response?.data?.data || [];
+      return response?.data || [];
     } catch (error: any) {
       console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
       throw error;
@@ -1416,7 +1416,13 @@ activeMedicine: async (id: string) => {
   getExaminationRoomsForDistribution: async () => {
     try {
       const response = await api.get('/ExaminationRooms/active');
-      return response.data[0] || [];
+      const data = response?.data;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.[0]?.items)) return data[0].items;
+      if (Array.isArray(data?.[0])) return data[0];
+      if (Array.isArray(data)) return data;
+      return [];
     } catch (error: any) {
       console.error("Error fetching examination rooms:", error?.response?.data?.Message || error.message);
       throw error;
@@ -1430,7 +1436,13 @@ activeMedicine: async (id: string) => {
   getLaboratoryRoomsForDistribution: async () => {
     try {
       const response = await api.get('/LaboratoryRooms/active');
-      return response.data[0] || [];
+      const data = response?.data;
+      if (Array.isArray(data?.data)) return data.data;
+      if (Array.isArray(data?.items)) return data.items;
+      if (Array.isArray(data?.[0]?.items)) return data[0].items;
+      if (Array.isArray(data?.[0])) return data[0];
+      if (Array.isArray(data)) return data;
+      return [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;

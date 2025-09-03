@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Plus, Edit, Trash2, X, Save, Search, Phone, Mail, MapPin } from 'lucide-react';
 import { adminService } from '@/shared/services/adminService';
 import { useToast } from "@/shared/components/ui/use-toast";
@@ -17,6 +17,7 @@ interface Supplier {
 const SupplierManagement: React.FC = () => {
   const { toast } = useToast();
   const [data, setData] = useState<Supplier[]>([]);
+  const [allSuppliers, setAllSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState<'add' | 'edit'>('add');
@@ -36,16 +37,7 @@ const SupplierManagement: React.FC = () => {
     try {
       setLoading(true);
       const suppliers = await adminService.getSupplierList();
-      // Filter data locally
-      let filteredData = suppliers;
-      if (searchTerm) {
-        filteredData = suppliers.filter(supplier => 
-          supplier.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          supplier.address.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-      }
-      setData(filteredData);
+      setAllSuppliers(suppliers || []);
     } catch (error: any) {
       console.error('Error fetching suppliers:', error);
       const message = error?.response?.data?.Message || error?.message || "Không thể tải danh sách nhà cung cấp";
@@ -59,14 +51,28 @@ const SupplierManagement: React.FC = () => {
     }
   };
 
+  // Avoid double-fetch in React 18 StrictMode
+  const hasFetchedRef = useRef(false);
   useEffect(() => {
+    if (hasFetchedRef.current) return;
+    hasFetchedRef.current = true;
     fetchData();
   }, []);
 
+  // Filter locally when search term changes
+  const filteredData = useMemo(() => {
+    if (!searchTerm) return allSuppliers;
+    const term = searchTerm.toLowerCase();
+    return allSuppliers.filter(supplier =>
+      (supplier.name || '').toLowerCase().includes(term) ||
+      (supplier.description || '').toLowerCase().includes(term) ||
+      (supplier.address || '').toLowerCase().includes(term)
+    );
+  }, [allSuppliers, searchTerm]);
+
   useEffect(() => {
-    // Refetch data when search changes
-    fetchData();
-  }, [searchTerm]);
+    setData(filteredData);
+  }, [filteredData]);
 
   const openAdd = () => {
     setModalType('add');
