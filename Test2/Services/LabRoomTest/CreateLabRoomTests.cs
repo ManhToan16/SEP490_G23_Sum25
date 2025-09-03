@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
 using SEP490_BE.Services.ServiceServices;
+using SEP490_BE.Repositories.ScheduleRepositories;
 
 namespace Test2.Services.LabRoomTest
 {
@@ -27,7 +28,7 @@ namespace Test2.Services.LabRoomTest
         private Mock<IDbContextTransaction> _transactionMock = null!;
         private LaboratoryRoomService _service = null!;
         private Mock<IServiceService> _serviceServiceMock = null!;
-
+        private Mock<IScheduleRepository> _scheduleRepo = null!;
 
 
         [SetUp]
@@ -36,6 +37,7 @@ namespace Test2.Services.LabRoomTest
             _roomRepositoryMock = new Mock<ILaboratoryRoomRepository>();
             _serviceServiceMock = new Mock<IServiceService>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
+            _scheduleRepo= new Mock<IScheduleRepository>();
 
             // Mock DbSet<LaboratoryRoom>
             var rooms = new List<LaboratoryRoom>().AsQueryable();
@@ -56,7 +58,7 @@ namespace Test2.Services.LabRoomTest
             _contextMock.Setup(c => c.Database).Returns(_databaseMock.Object);
             _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object,_serviceServiceMock.Object);
+            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object,_serviceServiceMock.Object,_scheduleRepo.Object);
         }
 
         [Test]
