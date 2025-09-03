@@ -1,19 +1,20 @@
-﻿using Microsoft.EntityFrameworkCore.Infrastructure;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using SEP490_BE.DTO.LaboratoryRoomDTO;
 using SEP490_BE.Entities;
 using SEP490_BE.Exceptions;
 using SEP490_BE.Repositories.LaboratoryRoomRepositories;
+using SEP490_BE.Repositories.ScheduleRepositories;
 using SEP490_BE.Services.LaboratoryRoomServices;
+using SEP490_BE.Services.ServiceServices;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using SEP490_BE.Services.ServiceServices;
 
 namespace Test2.Services.LabRoomTest
 {
@@ -27,6 +28,7 @@ namespace Test2.Services.LabRoomTest
         private Mock<IDbContextTransaction> _transactionMock = null!;
         private LaboratoryRoomService _service = null!;
         private Mock<IServiceService> _serviceMock = null!;
+        private Mock<IScheduleRepository> _scheduleRepo = null!;
 
         [SetUp]
         public void SetUp()
@@ -34,7 +36,7 @@ namespace Test2.Services.LabRoomTest
             _roomRepositoryMock = new Mock<ILaboratoryRoomRepository>();
             _serviceMock = new Mock<IServiceService>();
             _contextMock = new Mock<KhanhAnNeurologyClinicContext>(new DbContextOptions<KhanhAnNeurologyClinicContext>());
-
+            _scheduleRepo= new Mock<IScheduleRepository>();
             // Mock DbSet<LaboratoryRoom>
             var rooms = new List<LaboratoryRoom>().AsQueryable();
             _LaboratoryRoomsMock = new Mock<DbSet<LaboratoryRoom>>();
@@ -54,7 +56,7 @@ namespace Test2.Services.LabRoomTest
             _contextMock.Setup(c => c.Database).Returns(_databaseMock.Object);
             _contextMock.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>())).ReturnsAsync(1);
 
-            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object, _serviceMock.Object);
+            _service = new LaboratoryRoomService(_contextMock.Object, _roomRepositoryMock.Object, _serviceMock.Object, _scheduleRepo.Object);
         }
 
         [Test]

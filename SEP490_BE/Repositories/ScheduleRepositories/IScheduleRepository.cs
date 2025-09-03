@@ -1,4 +1,5 @@
 ﻿using SEP490_BE.Entities;
+using System.Linq.Expressions;
 
 namespace SEP490_BE.Repositories.ScheduleRepositories
 {
@@ -16,7 +17,7 @@ namespace SEP490_BE.Repositories.ScheduleRepositories
         Task UpdateAsync(Schedule schedule);
         Task DeleteAsync(string id);
         Task<bool> AnyScheduleUsingRoomAsync(string roomId, string roomType);
-        
+        Task<bool> ExistsAsync(Expression<Func<Schedule, bool>> predicate);
 
     }
 }
