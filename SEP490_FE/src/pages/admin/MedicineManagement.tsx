@@ -13,6 +13,7 @@ interface Medicine {
   packaging: string;
   unit: string;
   description: string;
+  isActive: boolean;
 }
 
 interface MedicineForm {
@@ -22,6 +23,7 @@ interface MedicineForm {
   packaging: string;
   unit: string;
   description: string;
+  isActive?: boolean;
 }
 
 const MedicineManagement: React.FC = () => {
@@ -112,14 +114,13 @@ const MedicineManagement: React.FC = () => {
     try {
       setLoading(true);
       const res = await adminService.getMedicineList(pageNumber, PAGE_SIZE);
-      console.log('Medicine data response:', res);
       
+      // Hiển thị tất cả thuốc (cả active và inactive)
       setData(res.items || []);
       setTotalItems(res.totalItems || 0);
       setPage(res.pageNumber || 1);
     } catch (error: any) {
       console.error('Error fetching medicines:', error);
-      console.error('Error details:', error?.response?.data);
       
       let errorMessage = 'Không thể tải danh sách thuốc';
       
@@ -269,21 +270,82 @@ const MedicineManagement: React.FC = () => {
   const handleDelete = async () => {
     if (!deleteId) return;
     
+    const itemToDelete = data.find(item => item.id === deleteId);
+    if (!itemToDelete) return;
+    
     setSaving(true);
     try {
-      await adminService.deleteMedicine(deleteId);
+      await adminService.updateMedicine(deleteId, {
+        name: itemToDelete.name,
+        activeIngredients: itemToDelete.activeIngredients,
+        strength: itemToDelete.strength,
+        packaging: itemToDelete.packaging,
+        unit: itemToDelete.unit,
+        description: itemToDelete.description,
+        isActive: false
+      });
       toast({
         title: "Thành công",
-        description: "Xóa thuốc thành công",
+        description: "Vô hiệu hóa thuốc thành công",
         variant: "default",
       });
       setDeleteId(null);
       fetchData(page);
     } catch (error: any) {
-      console.error('Error deleting medicine:', error);
-      console.error('Error details:', error?.response?.data);
+      console.error('Error deactivating medicine:', error);
       
-      let errorMessage = 'Không thể xóa thuốc';
+      let errorMessage = 'Không thể vô hiệu hóa thuốc';
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          const validationErrors = errorData.errors.map((err: any) => err.error).join(', ');
+          errorMessage = validationErrors;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.Message) {
+          errorMessage = errorData.Message;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Lỗi",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleActivate = async (id: string) => {
+    const itemToActivate = data.find(item => item.id === id);
+    if (!itemToActivate) return;
+    
+    setSaving(true);
+    try {
+      await adminService.updateMedicine(id, {
+        name: itemToActivate.name,
+        activeIngredients: itemToActivate.activeIngredients,
+        strength: itemToActivate.strength,
+        packaging: itemToActivate.packaging,
+        unit: itemToActivate.unit,
+        description: itemToActivate.description,
+        isActive: true
+      });
+      toast({
+        title: "Thành công",
+        description: "Kích hoạt thuốc thành công",
+        variant: "default",
+      });
+      fetchData(page);
+    } catch (error: any) {
+      console.error('Error activating medicine:', error);
+      
+      let errorMessage = 'Không thể kích hoạt thuốc';
       
       if (error?.response?.data) {
         const errorData = error.response.data;
@@ -522,6 +584,9 @@ const MedicineManagement: React.FC = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Mô tả
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Trạng thái
+                </th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Thao tác
                 </th>
@@ -530,7 +595,7 @@ const MedicineManagement: React.FC = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-4 text-center">
+                  <td colSpan={8} className="px-6 py-4 text-center">
                     <div className="flex items-center justify-center">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinic-blue"></div>
                       <span className="ml-2">Đang tải...</span>
@@ -539,7 +604,7 @@ const MedicineManagement: React.FC = () => {
                 </tr>
                              ) : filteredData.length === 0 ? (
                  <tr>
-                   <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                   <td colSpan={8} className="px-6 py-8 text-center text-gray-500">
                      <div className="flex flex-col items-center space-y-2">
                        <div className="text-4xl">📋</div>
                        <div className="text-lg font-medium">Không có thuốc nào</div>
@@ -567,12 +632,21 @@ const MedicineManagement: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {item.unit}
                     </td>
-                                         <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
+                                                              <td className="px-6 py-4 text-sm text-gray-500 max-w-xs">
                        <div className="truncate" title={item.description}>
                          {item.description || 'Không có mô tả'}
                        </div>
                      </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                     <td className="px-6 py-4 whitespace-nowrap text-sm">
+                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                         item.isActive 
+                           ? 'bg-green-100 text-green-800' 
+                           : 'bg-red-100 text-red-800'
+                       }`}>
+                         {item.isActive ? 'Hoạt động' : 'Vô hiệu hóa'}
+                       </span>
+                     </td>
+                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end space-x-2">
                         <button
                           onClick={() => openEdit(item)}
@@ -580,12 +654,25 @@ const MedicineManagement: React.FC = () => {
                         >
                           <Edit size={16} />
                         </button>
-                        <button
-                          onClick={() => setDeleteId(item.id)}
-                          className="text-red-600 hover:text-red-800"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {item.isActive ? (
+                          <button
+                            onClick={() => setDeleteId(item.id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Vô hiệu hóa"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleActivate(item.id)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Kích hoạt"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -771,9 +858,9 @@ const MedicineManagement: React.FC = () => {
       {deleteId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-clinic-navy mb-4">Xác nhận xóa</h3>
+            <h3 className="text-lg font-semibold text-clinic-navy mb-4">Xác nhận vô hiệu hóa</h3>
             <p className="text-gray-600 mb-6">
-              Bạn có chắc chắn muốn xóa thuốc này không? Hành động này không thể hoàn tác.
+              Bạn có chắc chắn muốn vô hiệu hóa thuốc này không? Thuốc sẽ không còn hiển thị trong danh sách.
             </p>
             <div className="flex justify-end space-x-3">
               <button
@@ -792,7 +879,7 @@ const MedicineManagement: React.FC = () => {
                 ) : (
                   <Trash2 size={16} />
                 )}
-                <span>{saving ? 'Đang xóa...' : 'Xóa'}</span>
+                <span>{saving ? 'Đang vô hiệu hóa...' : 'Vô hiệu hóa'}</span>
               </button>
             </div>
           </div>

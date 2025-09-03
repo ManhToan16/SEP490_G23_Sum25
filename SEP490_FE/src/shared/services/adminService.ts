@@ -1296,6 +1296,7 @@ export const adminService = {
     packaging: string;
     unit: string;
     description: string;
+    isActive?: boolean;
   }) => {
     try {
       const response = await api.put(`/Medicines/${id}`, medicineData);
@@ -1651,12 +1652,30 @@ export const adminService = {
    */
   getScheduleStatistics: async (fromDate?: string, toDate?: string) => {
     try {
+      // Nếu không có fromDate và toDate, lấy tuần hiện tại
+      let actualFromDate = fromDate;
+      let actualToDate = toDate;
+      
+      if (!fromDate || !toDate) {
+        const today = new Date();
+        const monday = new Date(today);
+        const dayOfWeek = monday.getDay();
+        const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+        monday.setDate(monday.getDate() - daysToMonday);
+        
+        const sunday = new Date(monday);
+        sunday.setDate(monday.getDate() + 6);
+        
+        actualFromDate = monday.toISOString().split('T')[0];
+        actualToDate = sunday.toISOString().split('T')[0];
+      }
+      
       let url = "/Statistics/schedules";
-      if (fromDate && toDate) {
-        url += `?fromDate=${fromDate}&toDate=${toDate}`;
+      if (actualFromDate && actualToDate) {
+        url += `?fromDate=${actualFromDate}&toDate=${actualToDate}`;
       }
       const response = await api.get(url);
-      return response.data;
+      return response;
     } catch (error: any) {
       console.error("Error fetching schedule statistics:", error?.response?.data?.Message || error.message);
       throw error;
@@ -1697,31 +1716,5 @@ export const adminService = {
     }
   },
 
-  /**
-   * Lấy thống kê hàng chờ bệnh nhân (real-time)
-   * @returns Thống kê hàng chờ bệnh nhân
-   */
-  getPatientQueue: async () => {
-    try {
-      const response = await api.get("/Statistics/patient-queue");
-      return response.data;
-    } catch (error: any) {
-      console.error("Error fetching patient queue:", error?.response?.data?.Message || error.message);
-      throw error;
-    }
-  },
 
-  /**
-   * Lấy thống kê nhân viên online (real-time)
-   * @returns Thống kê nhân viên online
-   */
-  getStaffOnline: async () => {
-    try {
-      const response = await api.get("/Statistics/staff-online");
-      return response.data;
-    } catch (error: any) {
-      console.error("Error fetching staff online:", error?.response?.data?.Message || error.message);
-      throw error;
-    }
-  },
 };

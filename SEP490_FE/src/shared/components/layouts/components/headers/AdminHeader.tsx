@@ -1,9 +1,11 @@
 import React from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
-import { Bell, User, LogOut } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
 import { useNavigate } from 'react-router-dom';
+import NotificationDropdown from '@/shared/components/ui/NotificationDropdown';
+
 const AdminHeader: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -29,9 +31,8 @@ const AdminHeader: React.FC = () => {
       </div>
 
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="sm">
-          <Bell className="h-5 w-5" />
-        </Button>
+        {/* Notification Dropdown with Connection Status */}
+        <NotificationDropdown showConnectionStatus={true} />
         
         <Button 
           variant="ghost" 

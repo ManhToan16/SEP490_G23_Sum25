@@ -47,6 +47,27 @@ const PatientListCommon: React.FC = () => {
   const [selectedPatient, setSelectedPatient] = useState<any | null>(null);
   const navigate = useNavigate();
 
+  // Get user role from localStorage to determine correct base path
+  const getUserRole = () => {
+    try {
+      const userData = localStorage.getItem('clinic_user_data');
+      if (userData) {
+        const parsedData = JSON.parse(userData);
+        return parsedData.Role || parsedData.role;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  };
+
+  // Get base path based on user role
+  const getBasePath = () => {
+    const role = getUserRole();
+    return role === 'RECEPTIONIST' ? '/receptionist' : '/admin';
+  };
+
   const handleViewDetail = (patient: any) => {
     setSelectedPatient(patient);
     setShowDetailModal(true);
@@ -449,13 +470,13 @@ const PatientListCommon: React.FC = () => {
                 <div className="flex gap-2">
                   <button
                     className="px-4 py-2 rounded bg-blue-50 text-blue-700 font-semibold border border-blue-200 hover:bg-blue-100"
-                    onClick={() => navigate(`/admin/patient/${selectedPatient.id}/medical-records`)}
+                    onClick={() => navigate(`${getBasePath()}/patient/${selectedPatient.id}/medical-records`)}
                   >
                     Hồ sơ y tế
                   </button>
                   <button
                     className="px-4 py-2 rounded bg-green-50 text-green-700 font-semibold border border-green-200 hover:bg-green-100"
-                    onClick={() => navigate(`/admin/patient/${selectedPatient.id}/history`)}
+                    onClick={() => navigate(`${getBasePath()}/patient/${selectedPatient.id}/history`)}
                   >
                     Lịch sử khám
                   </button>
