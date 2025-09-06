@@ -198,33 +198,6 @@ class SignalRService {
     this.connection.on("AssignmentChanged", (assignmentData) => {
       this.notifyListeners("assignmentChanged", assignmentData);
     });
-
-    // Debug: Listen to ALL events to see what backend is sending
-    this.connection.onreconnected(() => {
-      // Re-setup listeners on reconnect
-    });
-
-    // Listen for potential alternative event names that backend might use
-    const potentialEventNames = [
-      "VisitChanged", 
-      "visitChanged", 
-      "VisitCreated", 
-      "VisitUpdated",
-      "visit-changed",
-      "visit_changed",
-      "onVisitChanged",
-      "ReceiveVisitUpdate",
-      "ReceiveVisitChanged"
-    ];
-
-    potentialEventNames.forEach(eventName => {
-      this.connection.on(eventName, (data) => {
-        // If it's not the main VisitChanged event, also notify our listeners
-        if (eventName !== "VisitChanged") {
-          this.notifyListeners("visitChanged", data);
-        }
-      });
-    });
   }
 
   // Subscribe to events

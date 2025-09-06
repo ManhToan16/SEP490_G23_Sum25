@@ -167,7 +167,7 @@ const MaterialFormModal = React.memo(({
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="supplier">Nhà cung cấp</Label>
+            <Label htmlFor="supplier">Nhà cung cấp *</Label>
             <SupplierSelect 
               value={form.supplierId || 'no-supplier'} 
               onValueChange={handleSupplierChange}
@@ -229,7 +229,7 @@ const MaterialFormModal = React.memo(({
             <X className="h-4 w-4 mr-2" />
             Hủy
           </Button>
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || !form.name || !form.categoryId || !form.unit || !form.supplierId || form.supplierId === 'no-supplier'}>
             {saving ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
@@ -375,10 +375,10 @@ const MaterialManagement: React.FC = () => {
   }, []);
 
   const handleSave = async () => {
-    if (!form.name || !form.categoryId || !form.unit) {
+    if (!form.name || !form.categoryId || !form.unit || !form.supplierId || form.supplierId === 'no-supplier') {
       toast({
         title: "Lỗi",
-        description: "Vui lòng điền đầy đủ thông tin bắt buộc",
+        description: "Vui lòng điền đầy đủ thông tin bắt buộc, bao gồm Nhà cung cấp",
         variant: "destructive",
       });
       return;

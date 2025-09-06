@@ -51,41 +51,8 @@ const RealTimeMonitoring: React.FC = () => {
 
   const fetchRealTimeData = async () => {
     try {
-      const [queueRes, roomRes, staffRes] = await Promise.all([
-        adminService.getPatientQueue(),
-        adminService.getRoomUtilization(),
-        adminService.getStaffOnline(),
-      ]);
+      const roomRes = await adminService.getRoomUtilization();
 
-      setRealTimeData({
-        patientQueue: {
-          waitingForCheckIn: queueRes.waitingForCheckIn || 0,
-          inExamination: queueRes.inExamination || 0,
-          inLaboratory: queueRes.inLaboratory || 0,
-          completed: queueRes.completed || 0,
-        },
-        roomStatus: {
-          availableRooms: roomRes.availableRooms || 0,
-          occupiedRooms: roomRes.occupiedRooms || 0,
-          maintenanceRooms: roomRes.maintenanceRooms || 0,
-          totalRooms: roomRes.totalRooms || 0,
-        },
-        staffOnline: {
-          onlineDoctors: staffRes.onlineDoctors || 0,
-          onlineNurses: staffRes.onlineNurses || 0,
-          onlineTechnicians: staffRes.onlineTechnicians || 0,
-          onlineReceptionists: staffRes.onlineReceptionists || 0,
-        },
-        systemStatus: {
-          server: "online",
-          database: "online",
-          api: "online",
-          lastUpdate: new Date().toLocaleTimeString("vi-VN"),
-        },
-      });
-    } catch (error) {
-      console.error("Error fetching real-time data:", error);
-      // Mock data for demo
       setRealTimeData({
         patientQueue: {
           waitingForCheckIn: 5,
@@ -94,10 +61,10 @@ const RealTimeMonitoring: React.FC = () => {
           completed: 12,
         },
         roomStatus: {
-          availableRooms: 3,
-          occupiedRooms: 2,
-          maintenanceRooms: 1,
-          totalRooms: 6,
+          availableRooms: roomRes.availableRooms || 0,
+          occupiedRooms: roomRes.occupiedRooms || 0,
+          maintenanceRooms: roomRes.maintenanceRooms || 0,
+          totalRooms: roomRes.totalRooms || 0,
         },
         staffOnline: {
           onlineDoctors: 2,
@@ -112,6 +79,35 @@ const RealTimeMonitoring: React.FC = () => {
           lastUpdate: new Date().toLocaleTimeString("vi-VN"),
         },
       });
+    } catch (error) {
+      console.error("Error fetching real-time data:", error);
+      // Mock data for demo
+      // setRealTimeData({
+      //   patientQueue: {
+      //     waitingForCheckIn: 5,
+      //     inExamination: 3,
+      //     inLaboratory: 2,
+      //     completed: 12,
+      //   },
+      //   roomStatus: {
+      //     availableRooms: 3,
+      //     occupiedRooms: 2,
+      //     maintenanceRooms: 1,
+      //     totalRooms: 6,
+      //   },
+      //   staffOnline: {
+      //     onlineDoctors: 2,
+      //     onlineNurses: 3,
+      //     onlineTechnicians: 1,
+      //     onlineReceptionists: 1,
+      //   },
+      //   systemStatus: {
+      //     server: "online",
+      //     database: "online",
+      //     api: "online",
+      //     lastUpdate: new Date().toLocaleTimeString("vi-VN"),
+      //   },
+      // });
     } finally {
       setLoading(false);
     }

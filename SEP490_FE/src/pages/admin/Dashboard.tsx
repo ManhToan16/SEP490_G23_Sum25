@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { adminService } from "@/shared/services/adminService";
 import DashboardCharts from "./components/DashboardCharts";
-import RealTimeMonitoring from "./components/RealTimeMonitoring";
+
 
 interface DashboardData {
   patientStats: {
@@ -96,7 +96,6 @@ const AdminDashboard: React.FC = () => {
         patientStats,
         appointmentStats,
         revenueStats,
-        staffStats,
         inventoryStats,
         roomUtilization
       ] = await Promise.all([
@@ -104,7 +103,6 @@ const AdminDashboard: React.FC = () => {
         adminService.getPatientStatistics().catch(() => null),
         adminService.getAppointmentStatistics().catch(() => null),
         adminService.getRevenueStatistics().catch(() => null),
-        adminService.getStaffStatistics().catch(() => null),
         adminService.getInventoryStatistics().catch(() => null),
         adminService.getRoomUtilization().catch(() => null)
       ]);
@@ -133,11 +131,11 @@ const AdminDashboard: React.FC = () => {
           averageRevenuePerPatient: revenueStats?.averageRevenuePerPatient || dashboardOverview?.revenueStats?.averageRevenuePerPatient || 250000
         },
         staffStats: {
-          totalDoctors: staffStats?.totalDoctors || dashboardOverview?.staffStats?.totalDoctors || 8,
-          totalNurses: staffStats?.totalNurses || dashboardOverview?.staffStats?.totalNurses || 12,
-          totalTechnicians: staffStats?.totalTechnicians || dashboardOverview?.staffStats?.totalTechnicians || 4,
-          totalReceptionists: staffStats?.totalReceptionists || dashboardOverview?.staffStats?.totalReceptionists || 3,
-          doctorAttendanceRate: staffStats?.doctorAttendanceRate || dashboardOverview?.staffStats?.doctorAttendanceRate || 95.5
+          totalDoctors: dashboardOverview?.staffStats?.totalDoctors || 8,
+          totalNurses: dashboardOverview?.staffStats?.totalNurses || 12,
+          totalTechnicians: dashboardOverview?.staffStats?.totalTechnicians || 4,
+          totalReceptionists: dashboardOverview?.staffStats?.totalReceptionists || 3,
+          doctorAttendanceRate: dashboardOverview?.staffStats?.doctorAttendanceRate || 95.5
         },
         inventoryStats: {
           totalMaterials: inventoryStats?.totalMaterials || dashboardOverview?.inventoryStats?.totalMaterials || 45,
@@ -193,7 +191,6 @@ const AdminDashboard: React.FC = () => {
         patientStats,
         appointmentStats,
         revenueStats,
-        staffStats,
         inventoryStats,
         roomUtilization
       });
@@ -463,25 +460,15 @@ const AdminDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Charts & Real-time Monitoring */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Dashboard Charts */}
-        <div className="clinic-card">
-          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Biểu đồ thống kê
-          </h2>
-          <DashboardCharts />
-        </div>
-
-        {/* Real-time Monitoring */}
-        <div className="clinic-card">
-          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Giám sát thời gian thực
-          </h2>
-          <RealTimeMonitoring />
-        </div>
+      {/* Main Charts Section */}
+      <div className="clinic-card">
+        <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-6">
+          Biểu đồ thống kê tổng quan
+        </h2>
+        <DashboardCharts />
       </div>
 
+      {/* Activity & Alerts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Activities */}
         <div className="clinic-card">
@@ -548,31 +535,29 @@ const AdminDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Detailed Statistics */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Key Statistics Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Appointment Statistics */}
         <div className="clinic-card">
-          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Thống kê lịch hẹn
+          <h2 className="text-lg font-poppins font-semibold text-clinic-navy mb-4">
+            Lịch hẹn
           </h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">
-                  {dashboardData.appointmentStats.completedAppointments}
-                </p>
-                <p className="text-sm text-gray-600">Hoàn thành</p>
-              </div>
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-600">
-                  {dashboardData.appointmentStats.pendingAppointments}
-                </p>
-                <p className="text-sm text-gray-600">Chờ xác nhận</p>
-              </div>
+          <div className="space-y-3">
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <p className="text-2xl font-bold text-blue-600">
+                {dashboardData.appointmentStats.completedAppointments}
+              </p>
+              <p className="text-sm text-gray-600">Hoàn thành</p>
+            </div>
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <p className="text-xl font-bold text-orange-600">
+                {dashboardData.appointmentStats.pendingAppointments}
+              </p>
+              <p className="text-sm text-gray-600">Chờ xác nhận</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-clinic-navy">
-                Tỷ lệ hoàn thành: {dashboardData.appointmentStats.completionRate}%
+              <p className="text-sm font-semibold text-clinic-navy">
+                Tỷ lệ: {dashboardData.appointmentStats.completionRate}%
               </p>
             </div>
           </div>
@@ -580,136 +565,118 @@ const AdminDashboard: React.FC = () => {
 
         {/* Room Utilization */}
         <div className="clinic-card">
-          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Sử dụng phòng khám
+          <h2 className="text-lg font-poppins font-semibold text-clinic-navy mb-4">
+            Phòng khám
           </h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">
-                  {dashboardData.roomStats.availableRooms}
-                </p>
-                <p className="text-sm text-gray-600">Phòng trống</p>
-              </div>
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">
-                  {dashboardData.roomStats.occupiedRooms}
-                </p>
-                <p className="text-sm text-gray-600">Đang sử dụng</p>
-              </div>
+          <div className="space-y-3">
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <p className="text-2xl font-bold text-green-600">
+                {dashboardData.roomStats.availableRooms}
+              </p>
+              <p className="text-sm text-gray-600">Phòng trống</p>
+            </div>
+            <div className="text-center p-3 bg-purple-50 rounded-lg">
+              <p className="text-xl font-bold text-purple-600">
+                {dashboardData.roomStats.occupiedRooms}
+              </p>
+              <p className="text-sm text-gray-600">Đang sử dụng</p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-semibold text-clinic-navy">
-                Tỷ lệ sử dụng: {dashboardData.roomStats.utilizationRate}%
+              <p className="text-sm font-semibold text-clinic-navy">
+                Sử dụng: {dashboardData.roomStats.utilizationRate}%
               </p>
             </div>
+          </div>
+        </div>
+
+        {/* Staff Overview */}
+        <div className="clinic-card">
+          <h2 className="text-lg font-poppins font-semibold text-clinic-navy mb-4">
+            Nhân viên
+          </h2>
+          <div className="space-y-3">
+            <div className="text-center p-3 bg-indigo-50 rounded-lg">
+              <p className="text-2xl font-bold text-indigo-600">
+                {dashboardData.staffStats.totalDoctors + dashboardData.staffStats.totalNurses + dashboardData.staffStats.totalTechnicians}
+              </p>
+              <p className="text-sm text-gray-600">Tổng nhân viên</p>
+            </div>
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <p className="text-xl font-bold text-blue-600">
+                {dashboardData.staffStats.doctorAttendanceRate}%
+              </p>
+              <p className="text-sm text-gray-600">Tỷ lệ có mặt</p>
+            </div>
             <button
-              onClick={() => navigate("/admin/rooms")}
-              className="w-full clinic-button-secondary"
+              onClick={() => navigate("/admin/staff")}
+              className="w-full clinic-button-secondary text-sm"
             >
-              Quản lý phòng khám
+              Quản lý nhân viên
             </button>
           </div>
         </div>
 
         {/* Inventory Alerts */}
         <div className="clinic-card">
-          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Cảnh báo kho vật tư
+          <h2 className="text-lg font-poppins font-semibold text-clinic-navy mb-4">
+            Kho vật tư
           </h2>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4 bg-red-50 rounded-lg">
-                <p className="text-2xl font-bold text-red-600">
-                  {dashboardData.inventoryStats.lowStockMaterials}
-                </p>
-                <p className="text-sm text-gray-600">Vật tư sắp hết</p>
-              </div>
-              <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                <p className="text-2xl font-bold text-yellow-600">
-                  {dashboardData.inventoryStats.lowStockMedicines}
-                </p>
-                <p className="text-sm text-gray-600">Thuốc sắp hết</p>
-              </div>
+          <div className="space-y-3">
+            <div className="text-center p-3 bg-red-50 rounded-lg">
+              <p className="text-2xl font-bold text-red-600">
+                {dashboardData.inventoryStats.lowStockMaterials}
+              </p>
+              <p className="text-sm text-gray-600">Vật tư sắp hết</p>
+            </div>
+            <div className="text-center p-3 bg-yellow-50 rounded-lg">
+              <p className="text-xl font-bold text-yellow-600">
+                {dashboardData.inventoryStats.lowStockMedicines}
+              </p>
+              <p className="text-sm text-gray-600">Thuốc sắp hết</p>
             </div>
             <button
               onClick={() => navigate("/admin/materials")}
-              className="w-full clinic-button-primary"
+              className="w-full clinic-button-primary text-sm"
             >
-              Kiểm tra kho vật tư
+              Kiểm tra kho
             </button>
           </div>
         </div>
       </div>
 
-      {/* Schedule Statistics & Staff Attendance */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Schedule Statistics */}
+      {/* Management & System Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Schedule Management */}
         <div className="clinic-card">
           <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Thống kê lịch làm việc
+            Quản lý lịch làm việc
           </h2>
           <div className="space-y-4">
-            <div className="text-center p-4 bg-indigo-50 rounded-lg">
-              <p className="text-2xl font-bold text-indigo-600">
-                {dashboardData.staffStats.totalDoctors + dashboardData.staffStats.totalNurses + dashboardData.staffStats.totalTechnicians}
-              </p>
-              <p className="text-sm text-gray-600">Nhân viên có lịch</p>
-            </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <p className="text-lg font-bold text-green-600">
+              <div className="text-center p-4 bg-indigo-50 rounded-lg">
+                <p className="text-2xl font-bold text-indigo-600">
+                  {dashboardData.staffStats.totalDoctors + dashboardData.staffStats.totalNurses + dashboardData.staffStats.totalTechnicians}
+                </p>
+                <p className="text-sm text-gray-600">Nhân viên có lịch</p>
+              </div>
+              <div className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-2xl font-bold text-green-600">
                   {dashboardData.roomStats.totalRooms}
                 </p>
-                <p className="text-xs text-gray-600">Phòng được lên lịch</p>
+                <p className="text-sm text-gray-600">Phòng được lên lịch</p>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <p className="text-lg font-bold text-blue-600">
-                  {dashboardData.appointmentStats.totalAppointments}
-                </p>
-                <p className="text-xs text-gray-600">Lịch hẹn hôm nay</p>
-              </div>
+            </div>
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <p className="text-xl font-bold text-blue-600">
+                {dashboardData.appointmentStats.totalAppointments}
+              </p>
+              <p className="text-sm text-gray-600">Lịch hẹn hôm nay</p>
             </div>
             <button
               onClick={() => navigate("/admin/schedules")}
               className="w-full clinic-button-primary"
             >
               Quản lý lịch làm việc
-            </button>
-          </div>
-        </div>
-
-        {/* Staff Attendance */}
-        <div className="clinic-card">
-          <h2 className="text-xl font-poppins font-semibold text-clinic-navy mb-4">
-            Tỷ lệ có mặt nhân viên
-          </h2>
-          <div className="space-y-4">
-            <div className="text-center p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
-              <p className="text-4xl font-bold text-clinic-navy mb-2">
-                {dashboardData.staffStats.doctorAttendanceRate}%
-              </p>
-              <p className="text-lg text-gray-600">Tỷ lệ có mặt bác sĩ</p>
-            </div>
-            <div className="grid grid-cols-3 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-blue-600">{dashboardData.staffStats.totalDoctors}</p>
-                <p className="text-sm text-gray-600">Bác sĩ</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-green-600">{dashboardData.staffStats.totalNurses}</p>
-                <p className="text-sm text-gray-600">Y tá</p>
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-purple-600">{dashboardData.staffStats.totalTechnicians}</p>
-                <p className="text-sm text-gray-600">Kỹ thuật viên</p>
-              </div>
-            </div>
-            <button
-              onClick={() => navigate("/admin/staff")}
-              className="w-full clinic-button-secondary"
-            >
-              Quản lý nhân viên
             </button>
           </div>
         </div>
