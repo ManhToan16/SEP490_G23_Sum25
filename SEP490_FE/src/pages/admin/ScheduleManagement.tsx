@@ -45,6 +45,82 @@ const getWeekNumber = (date: Date) => {
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 };
 
+// Interface for schedule item from API
+interface ScheduleItem {
+  date: string;
+  timeSlot: string;
+  doctorName: string;
+  status: string;
+  roomType: string;
+  roomName: string;
+}
+
+// Helper function to calculate summary statistics from raw schedule data
+const calculateSummaryStatistics = (
+  schedules: ScheduleItem[], 
+  activeTab: string, 
+  fromDate: string, 
+  toDate: string
+) => {
+  if (!schedules || schedules.length === 0) {
+    return {
+      totalDoctors: 0,
+      totalTechnicians: 0,
+      totalNurses: 0,
+      totalRooms: 0,
+      totalShifts: 0,
+      shiftsPerDay: 0
+    };
+  }
+
+  // Filter schedules within the date range
+  const filteredSchedules = schedules.filter(schedule => {
+    const scheduleDate = schedule.date.split('T')[0]; // Extract date part only
+    return scheduleDate >= fromDate && scheduleDate <= toDate;
+  });
+
+  // Calculate unique staff members
+  const uniqueStaff = new Set(filteredSchedules.map(s => s.doctorName));
+  
+  // Calculate unique rooms
+  const uniqueRooms = new Set(filteredSchedules.map(s => s.roomName));
+  
+  // Calculate total shifts
+  const totalShifts = filteredSchedules.length;
+  
+  // Calculate shifts per day
+  const uniqueDays = new Set(filteredSchedules.map(s => s.date.split('T')[0]));
+  const shiftsPerDay = uniqueDays.size > 0 ? Math.round((totalShifts / uniqueDays.size) * 10) / 10 : 0;
+
+  // Determine which staff count to return based on activeTab
+  const staffCount = uniqueStaff.size;
+  
+  return {
+    totalDoctors: activeTab === 'doctors' ? staffCount : 0,
+    totalTechnicians: activeTab === 'technicians' ? staffCount : 0,
+    totalNurses: activeTab === 'nurses' ? staffCount : 0,
+    totalRooms: uniqueRooms.size,
+    totalShifts: totalShifts,
+    shiftsPerDay: shiftsPerDay
+  };
+};
+
+// Helper function để tính toán tuần hiện tại chính xác
+const getCurrentWeekString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const week = getWeekNumber(today);
+  return `${year}-W${week.toString().padStart(2, '0')}`;
+};
+
+// Helper function để tính toán tháng hiện tại
+const getCurrentMonthString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = today.getMonth() + 1;
+  return `${year}-${month.toString().padStart(2, '0')}`;
+};
+
 const getInitialWeekString = () => {
   const today = new Date();
   const year = today.getFullYear();
@@ -177,19 +253,19 @@ const ScheduleManagement: React.FC = () => {
   // States with validation
   const [selectedWeek, setSelectedWeek] = useState(() => {
     try {
-      return getInitialWeekString();
+      return getCurrentWeekString();
     } catch (error) {
-      console.error("Error getting initial week:", error);
-      return `${new Date().getFullYear()}-W01`;
+      console.error('Error getting initial week:', error);
+      return getCurrentWeekString();
     }
   });
 
   const [selectedMonth, setSelectedMonth] = useState(() => {
     try {
-      return new Date().toISOString().split("T")[0].substring(0, 7);
+      return getCurrentMonthString();
     } catch (error) {
-      console.error("Error getting initial month:", error);
-      return `${new Date().getFullYear()}-01`;
+      console.error('Error getting initial month:', error);
+      return getCurrentMonthString();
     }
   });
   const [viewMode, setViewMode] = useState<"week" | "month">("week");
@@ -297,39 +373,48 @@ const ScheduleManagement: React.FC = () => {
     let fromDate, toDate;
 
     try {
-      if (viewMode === "week") {
-        const weekStart = getDateFromWeekString(selectedWeek);
-        const startDate = new Date(weekStart);
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + 6);
-        fromDate = startDate.toISOString().split("T")[0];
-        toDate = endDate.toISOString().split("T")[0];
+      if (viewMode === 'week') {
+        // Kiểm tra xem selectedWeek có hợp lệ không
+        if (selectedWeek && selectedWeek.match(/^\d{4}-W\d{2}$/)) {
+          const weekStart = getDateFromWeekString(selectedWeek);
+          const startDate = new Date(weekStart);
+          
+          if (isNaN(startDate.getTime())) {
+            throw new Error(`Invalid week start date: ${weekStart}`);
+          }
+          
+          const endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + 6);
+          fromDate = startDate.toISOString().split('T')[0];
+          toDate = endDate.toISOString().split('T')[0];
+        } else {
+          // Nếu selectedWeek không hợp lệ, lấy tuần hiện tại
+          throw new Error(`Invalid week format: ${selectedWeek}`);
+        }
       } else {
         // Month view
-        const [year, month] = selectedMonth.split("-");
-        const yearNum = parseInt(year);
-        const monthNum = parseInt(month);
-
-        if (
-          isNaN(yearNum) ||
-          isNaN(monthNum) ||
-          monthNum < 1 ||
-          monthNum > 12
-        ) {
+        if (selectedMonth && selectedMonth.match(/^\d{4}-\d{2}$/)) {
+          const [year, month] = selectedMonth.split('-');
+          const yearNum = parseInt(year);
+          const monthNum = parseInt(month);
+          
+          if (isNaN(yearNum) || isNaN(monthNum) || monthNum < 1 || monthNum > 12) {
+            throw new Error(`Invalid month format: ${selectedMonth}`);
+          }
+          
+          const startDate = new Date(yearNum, monthNum - 1, 1);
+          const endDate = new Date(yearNum, monthNum, 0); // Last day of month
+          
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            throw new Error(`Invalid date calculation for month: ${selectedMonth}`);
+          }
+          
+          fromDate = startDate.toISOString().split('T')[0];
+          toDate = endDate.toISOString().split('T')[0];
+        } else {
+          // Nếu selectedMonth không hợp lệ, lấy tháng hiện tại
           throw new Error(`Invalid month format: ${selectedMonth}`);
         }
-
-        const startDate = new Date(yearNum, monthNum - 1, 1);
-        const endDate = new Date(yearNum, monthNum, 0); // Last day of month
-
-        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-          throw new Error(
-            `Invalid date calculation for month: ${selectedMonth}`
-          );
-        }
-
-        fromDate = startDate.toISOString().split("T")[0];
-        toDate = endDate.toISOString().split("T")[0];
       }
     } catch (error) {
       console.error("Error calculating date range:", error);
@@ -342,9 +427,22 @@ const ScheduleManagement: React.FC = () => {
 
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
-
-      fromDate = monday.toISOString().split("T")[0];
-      toDate = sunday.toISOString().split("T")[0];
+      
+      fromDate = monday.toISOString().split('T')[0];
+      toDate = sunday.toISOString().split('T')[0];
+      
+      // Cập nhật state để đồng bộ với fallback
+      if (viewMode === 'week') {
+        const fallbackWeek = `${monday.getFullYear()}-W${Math.ceil((monday.getDate() + monday.getDay()) / 7).toString().padStart(2, '0')}`;
+        if (fallbackWeek !== selectedWeek) {
+          setSelectedWeek(fallbackWeek);
+        }
+      } else {
+        const fallbackMonth = `${monday.getFullYear()}-${(monday.getMonth() + 1).toString().padStart(2, '0')}`;
+        if (fallbackMonth !== selectedMonth) {
+          setSelectedMonth(fallbackMonth);
+        }
+      }
     }
 
     return { role, fromDate, toDate };
@@ -910,8 +1008,19 @@ const ScheduleManagement: React.FC = () => {
               (async () => {
                 try {
                   setStatsLoading(true);
-                  const data = await adminService.getScheduleStatistics(role);
-                  setStatistics(data);
+                  // Truyền fromDate và toDate để adminService có thể xử lý fallback
+                  const response = await adminService.getScheduleStatistics(fromDate, toDate);
+                  const rawSchedules = response.data || response; // Handle both response.data and direct data
+                  
+                  // Calculate statistics from raw schedule data
+                  const calculatedStats = calculateSummaryStatistics(
+                    rawSchedules, 
+                    activeTab, 
+                    fromDate, 
+                    toDate
+                  );
+                  
+                  setStatistics(calculatedStats);
                 } catch (err) {
                   console.error("Error loading statistics:", err);
                   setStatistics(null);
@@ -1175,20 +1284,22 @@ const ScheduleManagement: React.FC = () => {
             </div>
 
             {/* Date Picker */}
-            {viewMode === "week" ? (
-              <input
-                type="week"
-                value={selectedWeek}
-                onChange={(e) => {
-                  const newWeek = e.target.value;
-                  if (newWeek && newWeek.match(/^\d{4}-W\d{2}$/)) {
-                    setSelectedWeek(newWeek);
-                  } else {
-                    console.error("Invalid week format:", newWeek);
-                  }
-                }}
-                className="px-2.5 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-clinic-blue"
-              />
+            {viewMode === 'week' ? (
+            <input
+              type="week"
+              value={selectedWeek}
+              onChange={(e) => {
+                const newWeek = e.target.value;
+                if (newWeek && newWeek.match(/^\d{4}-W\d{2}$/)) {
+                  setSelectedWeek(newWeek);
+                } else {
+                  console.error('Invalid week format:', newWeek);
+                  // Nếu format không hợp lệ, reset về tuần hiện tại
+                  setSelectedWeek(getCurrentWeekString());
+                }
+              }}
+              className="px-2.5 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-clinic-blue"
+            />
             ) : (
               <input
                 type="month"
@@ -1197,9 +1308,11 @@ const ScheduleManagement: React.FC = () => {
                   const newMonth = e.target.value;
                   if (newMonth && newMonth.match(/^\d{4}-\d{2}$/)) {
                     setSelectedMonth(newMonth);
-                  } else {
-                    console.error("Invalid month format:", newMonth);
-                  }
+                                  } else {
+                  console.error('Invalid month format:', newMonth);
+                  // Nếu format không hợp lệ, reset về tháng hiện tại
+                  setSelectedMonth(getCurrentMonthString());
+                }
                 }}
                 className="px-2.5 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-clinic-blue"
               />

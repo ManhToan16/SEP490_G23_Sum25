@@ -24,6 +24,10 @@ const AppointmentDetail = React.lazy(
 );
 const UserProfile = React.lazy(() => import("@/pages/receptionist/UserProfile"));
 
+// Shared patient pages (also used by admin)
+const PatientMedicalRecords = React.lazy(() => import("@/pages/admin/PatientMedicalRecords"));
+const PatientVisit = React.lazy(() => import("@/pages/admin/PatientVisit"));
+
 const ReceptionistRoutes: React.FC = () => {
   return (
     <Suspense fallback={<Loading />}>
@@ -36,6 +40,10 @@ const ReceptionistRoutes: React.FC = () => {
         <Route path="create-appointment" element={<CreateAppointment />} />
         <Route path="appointments-pending-confirm" element={<AppointmentPendingConfirm />} />
         <Route path="profile" element={<UserProfile />} />
+        
+        {/* Shared patient routes - accessible to both ADMIN and RECEPTIONIST */}
+        <Route path="patient/:id/medical-records" element={<PatientMedicalRecords />} />
+        <Route path="patient/:id/history" element={<PatientVisit />} />
       </Routes>
     </Suspense>
   );
