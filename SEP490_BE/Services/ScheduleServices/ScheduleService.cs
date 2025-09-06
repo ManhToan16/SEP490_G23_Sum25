@@ -192,6 +192,10 @@ namespace SEP490_BE.Services.ScheduleServices
             foreach (var assignment in request.ScheduleAssignments.OrderBy(a => a.Date))
             {
                 var date = assignment.Date.Date;
+                if (date < DateTime.Today)
+                {
+                    throw new ConflictDataException($"Không thể tạo lịch cho ngày trong quá khứ: {date:dd/MM/yyyy}.");
+                }
                 var hasSameTimeSlot = await _context.Schedules.AnyAsync(s =>
                     s.UserId == assignment.UserId &&
                     s.Date == date &&
