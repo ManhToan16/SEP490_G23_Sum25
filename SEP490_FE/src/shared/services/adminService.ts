@@ -628,7 +628,7 @@ export const adminService = {
   getLaboratoryRoomsActive: async () => {
     try {
       const response = await api.get(`/LaboratoryRooms/active`);
-      return response?.data?.data || [];
+      return response?.data|| [];
     } catch (error: any) {
       console.error("Error fetching laboratory rooms:", error?.response?.data?.Message || error.message);
       throw error;
