@@ -285,7 +285,7 @@ jobs:
           
           # 4. Stop và REMOVE containers cũ
           echo "⏹️ Stopping and removing old containers..."
-          docker-compose down --remove-orphans || true
+            docker compose down --remove-orphans || true
           
           # 5. Force remove containers nếu còn tồn tại
           docker rm -f clinic-frontend clinic-backend 2>/dev/null || true
@@ -296,7 +296,7 @@ jobs:
           
           # 7. Start containers mới
           echo "🚀 Starting new containers..."
-          docker-compose up -d
+            docker compose up -d
           
           # 8. Wait for containers to start
           echo "⏳ Waiting for containers to start..."
