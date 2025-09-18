@@ -79,10 +79,10 @@ namespace Test2.Services.DoctorProfileTest
             var dto = new CreateDoctorProfileDTO
             {
                 DoctorId = doctorId,
-                Biography = "Bio",
-                Qualifications = "MD",
+                Biography = "Chuyên khoa thần kinh",
+                Qualifications = "PhD",
                 YearsOfExperience = 10,
-                Avatar = "avatar.png"
+                Avatar = "url1.png",
             };
 
             _doctorProfileRepoMock.Setup(r => r.FindByDoctorIdAsync(doctorId)).ReturnsAsync((DoctorProfile)null);
