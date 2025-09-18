@@ -228,7 +228,8 @@ jobs:
               start_period: 30s
             depends_on:
               - clinic-backend
-            networks: [clinic-network]
+            networks: 
+              - clinic-network
         
           clinic-backend:
             image: quanghd/be:latest
@@ -246,7 +247,8 @@ jobs:
               timeout: 10s
               retries: 3
               start_period: 30s
-            networks:[clinic-network]
+            networks:
+              - clinic-network
             volumes:
               - ./appsettings.Production.json:/app/appsettings.Production.json:ro
               - /opt/khanhan/uploads:/opt/khanhan/uploads
