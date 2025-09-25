@@ -844,8 +844,12 @@ const ScheduleManagement: React.FC = () => {
 
         console.log("Creating schedule:", scheduleData);
         await addScheduleAPI(scheduleData);
-
-        // Don't show toast here - realtime will handle it
+        //await refreshSchedules();
+        toast({
+            title: "Thành công",
+            description: "Thêm lịch làm việc thành công",
+          variant: "default",
+        });
         return true;
       } catch (error) {
         const message =
@@ -914,9 +918,13 @@ const ScheduleManagement: React.FC = () => {
       };
 
       await adminService.updateSchedule(editingSchedule.id, updateData);
-      // Don't show toast here - realtime will handle it
       setEditingSchedule(null);
-      // Don't refresh manually - realtime will handle it
+      await refreshSchedules();
+      toast({
+        title: "Thành công",
+        description: "Cập nhật lịch làm việc thành công",
+        variant: "default",
+      });
     } catch (err) {
       const message =
         err?.response?.data?.Message ||
