@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
 import { User, LogOut } from 'lucide-react';
 import { useAuth } from '@/shared/hooks/business/useAuth';
 import { useNavigate } from 'react-router-dom';
 import NotificationDropdown from '@/shared/components/ui/NotificationDropdown';
+import signalRService from '@/shared/services/signalRService';
 
 const AdminHeader: React.FC = () => {
   const { user, logout } = useAuth();
@@ -18,6 +19,50 @@ const AdminHeader: React.FC = () => {
   const handleUserProfile = () => {
     navigate('/admin/profile');
   };
+
+  // Debug: log SignalR notifications in header
+  useEffect(() => {
+    // Ensure connection is started
+    signalRService.startConnection();
+
+    const events = [
+      'scheduleUpdate',
+      'scheduleDelete',
+      'scheduleChangeRequest',
+      'doctorProfileUpdate',
+      'doctorProfileDelete',
+      'examinationRoomUpdate',
+      'examinationRoomDelete',
+      'laboratoryRoomUpdate',
+      'laboratoryRoomDelete',
+      'serviceUpdate',
+      'serviceDelete',
+      'supplierUpdate',
+      'supplierDelete',
+      'medicineUpdate',
+      'medicineDelete',
+      'categoryUpdate',
+      'categoryDelete',
+      'lowStockAlert',
+      'transactionUpdate',
+      'appointmentChanged',
+      'visitChanged',
+      'assignmentChanged',
+    ];
+
+    const handlers = events.map((evt) => {
+      const handler = (payload: any) => {
+        // Console all SignalR notifications here
+        console.log('[SignalR]', evt, payload);
+      };
+      signalRService.on(evt, handler);
+      return { evt, handler } as const;
+    });
+
+    return () => {
+      handlers.forEach(({ evt, handler }) => signalRService.off(evt, handler));
+    };
+  }, []);
 
   return (
     <div className="h-16 px-6 flex items-center justify-between bg-white border-b">
