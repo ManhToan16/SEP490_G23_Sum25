@@ -19,12 +19,12 @@ namespace SEP490_BE.DTO.MedicineDTO
 
         [Required(ErrorMessage = "Cách đóng gói là bắt buộc.")]
         [StringLength(50, ErrorMessage = "Quy cách đóng gói không được vượt quá 50 ký tự.")]
-        [RegularExpression(@"^[a-zA-Z0-9\s\-.]*$", ErrorMessage = "Quy cách đóng gói chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.")]
+        [RegularExpression(@"^[\p{L}0-9\s\-.]*$", ErrorMessage = "Quy cách đóng gói chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.")]
         public string Packaging { get; set; } = null!;
 
         [Required(ErrorMessage = "Đơn vị là bắt buộc.")]
         [StringLength(50, ErrorMessage = "Đơn vị không được vượt quá 50 ký tự.")]
-        [RegularExpression(@"^[a-zA-Z0-9\s\-.]*$", ErrorMessage = "Đơn vị chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.")]
+        [RegularExpression(@"^^[\p{L}0-9\s\-.]*$", ErrorMessage = "Đơn vị chỉ được chứa chữ cái, số, khoảng trắng, dấu gạch ngang và dấu chấm.")]
         public string Unit { get; set; } = null!;
 
         public string? Description { get; set; } 
