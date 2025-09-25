@@ -17,6 +17,7 @@ class SignalRService {
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map();
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private handlersRegistered = false;
 
   constructor() {
     this.initializeConnection();
@@ -103,6 +104,8 @@ class SignalRService {
 
   private setupEventListeners() {
     if (!this.connection) return;
+    if (this.handlersRegistered) return; // prevent duplicate registrations
+    this.handlersRegistered = true;
 
     // Schedule events - matching BE exactly
     // BE sends both CREATE and UPDATE via ReceiveScheduleUpdate
